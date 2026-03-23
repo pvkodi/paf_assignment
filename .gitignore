@@ -1,0 +1,31 @@
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Logs and env
+*.log
+.env*
+
+# Node.js / frontend
+node_modules/
+dist/
+build/
+coverage/
+
+# Java / backend
+target/
+*.class
+*.jar
+.gradle/
+
+# Maven wrapper cache
+.mvn/wrapper/maven-wrapper.jar
+
+# Uploads and runtime artifacts
+backend/uploads/
+uploads/
+*.lst
