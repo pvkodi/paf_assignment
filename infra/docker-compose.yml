@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: smartcampus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartcampus
+      POSTGRES_USER: smartcampus
+      POSTGRES_PASSWORD: smartcampus
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mailtrap:
+    image: maildev/maildev:2.1.0
+    container_name: smartcampus-mailtrap
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+
+volumes:
+  postgres_data:

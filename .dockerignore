@@ -1,0 +1,21 @@
+# VCS and editor
+.git/
+.vscode/
+.idea/
+
+# Dependencies and builds
+node_modules/
+dist/
+build/
+target/
+
+# Runtime and logs
+*.log*
+.env*
+coverage/
+uploads/
+backend/uploads/
+
+# Docker files
+Dockerfile*
+.dockerignore
