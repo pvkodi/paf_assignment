@@ -31,7 +31,25 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Layering gate: design shows strict `Controller -> Service -> Repository` flow with no
+  layer skipping.
+- API boundary gate: all external API inputs/outputs are DTOs; no entity exposure across
+  REST boundaries.
+- Security gate: every endpoint declares RBAC requirements for `USER`, `LECTURER`,
+  `TECHNICIAN`, `FACILITY_MANAGER`, or `ADMIN` and uses Google OAuth + JWT flows.
+- Pattern gate: feature design explicitly applies required patterns when relevant:
+  Factory (facility creation), Strategy (quota policy), Chain of Responsibility
+  (approval and escalation), State (ticket transitions), Observer (notifications),
+  Builder (booking construction), Repository (data access).
+- Quality gate: plan includes unit tests for all affected service methods.
+- REST gate: API contracts define status codes, naming conventions, and meaningful
+  structured error responses.
+- Validation gate: request DTOs include Bean Validation constraints and controller
+  entry points apply `@Valid`.
+- File handling gate: image upload flows define type check, size limit, and sanitized
+  filename handling; storage target remains local filesystem only.
+- Ownership and traceability gate: work items are mapped to module owners and commit
+  conventions reference implemented feature identifiers.
 
 ## Project Structure
 

@@ -1,50 +1,113 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: template-placeholder -> 1.0.0
+- Modified principles:
+	- Placeholder Principle 1 -> I. Layered Architecture Integrity
+	- Placeholder Principle 2 -> II. DTO-First API Boundaries
+	- Placeholder Principle 3 -> III. Endpoint Security and Role Enforcement
+	- Placeholder Principle 4 -> IV. Mandatory Pattern-Driven Domain Design
+	- Placeholder Principle 5 -> V. Quality, Validation, and Delivery Discipline
+- Added sections:
+	- Technology Baseline and Security Constraints
+	- Team Ownership and Delivery Workflow
+- Removed sections:
+	- None
+- Templates requiring updates:
+	- ✅ .specify/templates/plan-template.md
+	- ✅ .specify/templates/spec-template.md
+	- ✅ .specify/templates/tasks-template.md
+	- ✅ .specify/templates/commands/*.md (no files present)
+	- ✅ Runtime guidance docs (README.md, docs/quickstart.md) not present
+- Follow-up TODOs:
+	- None
+-->
+
+# Smart Campus Operations Hub Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Layered Architecture Integrity
+All backend request flow MUST follow `Controller -> Service -> Repository` with no layer skipping.
+Controllers MUST contain transport concerns only, services MUST contain business rules, and
+repositories MUST contain persistence concerns only. Direct controller-to-repository access,
+service-to-web coupling, or embedding SQL in non-repository classes is prohibited. Rationale:
+strict layering preserves maintainability, supports module ownership boundaries, and reduces
+regression risk in a Java monolith.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. DTO-First API Boundaries
+Every API request and response MUST use explicit DTOs; JPA entities MUST NOT be exposed at API
+boundaries. DTO-to-entity mapping MUST occur in service or dedicated mapper components, and API
+contracts MUST document fields, validation constraints, and error formats. Rationale: DTO-only
+boundaries prevent persistence leakage, protect internal schema evolution, and provide stable
+front-end contracts for React clients.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Endpoint Security and Role Enforcement
+Every endpoint MUST enforce role-based access control for at least one of these roles:
+`USER`, `LECTURER`, `TECHNICIAN`, `FACILITY_MANAGER`, `ADMIN`. Authorization checks MUST be
+declared and testable per endpoint (for example with Spring Security annotations and endpoint
+tests). Authentication MUST use Google OAuth plus JWT for session propagation, and unsecured
+business endpoints are forbidden. Rationale: campus operations contain privileged workflows that
+require explicit least-privilege controls.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Mandatory Pattern-Driven Domain Design
+The following design patterns are mandatory where the related domain behavior exists, and their
+implementations MUST be explicit in code structure and naming:
+- Factory pattern for facility creation flows.
+- Strategy pattern for quota policy selection and evaluation.
+- Chain of Responsibility for approval workflow routing and escalation.
+- State pattern for ticket status transitions.
+- Observer pattern for notifications.
+- Builder pattern for booking construction.
+- Repository pattern for data access abstractions.
+Replacing these with ad hoc branching logic is non-compliant unless the constitution is amended.
+Rationale: explicit patterns improve readability, extensibility, and ownership across modules.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Quality, Validation, and Delivery Discipline
+All service methods MUST have unit tests, and pull requests MUST fail if any service method lacks
+coverage. All request DTO inputs MUST use Bean Validation and MUST be invoked with `@Valid` at
+controller boundaries. REST APIs MUST use correct HTTP status codes, consistent naming, and
+meaningful structured error responses. File uploads for images MUST enforce MIME/type checks,
+size limits, and sanitized filenames. File storage MUST remain local filesystem only; cloud
+storage usage is prohibited. Rationale: predictable quality gates and secure input handling are
+non-negotiable for operational reliability.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology Baseline and Security Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+The approved stack is Spring Boot 3.x on Java 21 (monolith backend), React 18 (frontend), and
+PostgreSQL 15 (primary datastore). Authentication baseline is Google OAuth integrated with JWT.
+Alternative major stack components require a constitution amendment with migration impact notes.
+All API changes MUST preserve backward-compatible DTO contracts unless versioned and approved.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Team Ownership and Delivery Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+The project MUST be partitioned into four modules, with one module and its special functionality
+owned by each of the four team members. Each task and pull request MUST identify module owner,
+changed module, and verification evidence. Git commits MUST reference the implemented feature
+identifier (for example ticket ID, story ID, or feature key). Cross-module changes require review
+from affected owners before merge.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution is the highest engineering authority for the Smart Campus Operations Hub.
+All plans, specs, tasks, and code reviews MUST include an explicit constitutional compliance
+check against each core principle.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendment process:
+1. Propose changes via pull request that includes rationale, affected principles/sections, and
+	 migration impact on existing artifacts.
+2. Obtain approval from at least three of four module owners, including one owner outside the
+	 directly impacted module.
+3. Update dependent templates and guidance files in the same change set.
+
+Versioning policy:
+- MAJOR for backward-incompatible governance or principle removals/redefinitions.
+- MINOR for new principles/sections or materially expanded requirements.
+- PATCH for clarifications, wording improvements, and non-semantic refinements.
+
+Compliance review expectations:
+- Every feature plan MUST pass all constitution gates before implementation starts.
+- Every pull request MUST include evidence for layered architecture, DTO boundaries, RBAC,
+	validation, service unit tests, and secure file handling when relevant.
+- Violations MUST be documented with remediation tasks before release.
+
+**Version**: 1.0.0 | **Ratified**: 2026-03-23 | **Last Amended**: 2026-03-23

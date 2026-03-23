@@ -90,6 +90,27 @@
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
 
+### Architecture and API Contract Requirements *(mandatory)*
+
+- **AR-001**: Backend flows MUST enforce strict `Controller -> Service -> Repository`
+  layering with no skipped layers.
+- **AR-002**: API boundaries MUST use request/response DTOs only; entities MUST NOT be
+  exposed directly.
+- **AR-003**: Specification MUST identify required design patterns for relevant domain
+  behaviors (Factory, Strategy, Chain of Responsibility, State, Observer, Builder,
+  Repository).
+
+### Security, Validation, and Error Requirements *(mandatory)*
+
+- **SV-001**: Every endpoint MUST define role-based access requirements and allowed
+  roles in an access matrix.
+- **SV-002**: Request DTOs MUST define Bean Validation constraints and validation failure
+  behavior.
+- **SV-003**: API responses MUST define meaningful error payloads and correct HTTP status
+  codes for success and failure paths.
+- **SV-004**: Any file upload workflow MUST define type validation, size limits,
+  filename sanitization, and local-filesystem storage behavior.
+
 *Example of marking unclear requirements:*
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
@@ -99,6 +120,11 @@
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
+
+### Role Access Matrix *(mandatory for API features)*
+
+List each endpoint and required roles using this baseline role set:
+`USER`, `LECTURER`, `TECHNICIAN`, `FACILITY_MANAGER`, `ADMIN`.
 
 ## Success Criteria *(mandatory)*
 
