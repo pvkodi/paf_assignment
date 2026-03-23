@@ -1,0 +1,531 @@
+openapi: 3.0.3
+info:
+  title: Smart Campus Operations Hub API
+  version: 1.0.0
+  description: Contract-first API for auth, facilities, bookings, maintenance, notifications, and analytics.
+servers:
+  - url: http://localhost:8080/api/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/oauth/google/callback:
+    post:
+      summary: Exchange Google authorization code and issue JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthCodeExchangeRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /facilities:
+    get:
+      summary: Search facilities
+      parameters:
+        - in: query
+          name: type
+          schema:
+            $ref: '#/components/schemas/FacilityType'
+        - in: query
+          name: minCapacity
+          schema:
+            type: integer
+        - in: query
+          name: location
+          schema:
+            type: string
+        - in: query
+          name: building
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Facility list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FacilityResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /bookings:
+    post:
+      summary: Create booking request
+      description: Applies quota, role policy, overlap checks, and approval workflow creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Optimistic lock or overlap conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+
+  /bookings/{bookingId}/approve:
+    post:
+      summary: Approve booking step
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Approval applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /bookings/{bookingId}/check-in:
+    post:
+      summary: Check in to booking
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInRequest'
+      responses:
+        '200':
+          description: Check-in recorded
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /appeals:
+    post:
+      summary: Submit suspension appeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppealRequest'
+      responses:
+        '201':
+          description: Appeal submitted
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets:
+    post:
+      summary: Create maintenance ticket with optional image attachments
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateTicketRequest'
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /tickets/{ticketId}/comments:
+    post:
+      summary: Add ticket comment
+      parameters:
+        - in: path
+          name: ticketId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets/{ticketId}/assign:
+    post:
+      summary: Assign or reassign technician
+      parameters:
+        - in: path
+          name: ticketId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignTechnicianRequest'
+      responses:
+        '200':
+          description: Assignment updated
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/utilization:
+    get:
+      summary: Get utilization heatmap and underutilization insights
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Utilization analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilizationResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: RBAC denied or suspended account policy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    OAuthCodeExchangeRequest:
+      type: object
+      required: [code, redirectUri]
+      properties:
+        code:
+          type: string
+        redirectUri:
+          type: string
+          format: uri
+
+    AuthResponse:
+      type: object
+      required: [token, expiresAt, user]
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      required: [id, email, displayName, roles, suspended]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+        suspended:
+          type: boolean
+
+    CreateBookingRequest:
+      type: object
+      required: [facilityId, bookingDate, startTime, endTime, purpose, attendees]
+      properties:
+        facilityId:
+          type: string
+          format: uuid
+        bookingDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+        endTime:
+          type: string
+          pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+        purpose:
+          type: string
+          minLength: 3
+        attendees:
+          type: integer
+          minimum: 1
+        bookedForUserId:
+          type: string
+          format: uuid
+        recurrenceRule:
+          type: string
+
+    BookingResponse:
+      type: object
+      required: [id, status, facility, startDateTime, endDateTime, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, CANCELLED]
+        facility:
+          $ref: '#/components/schemas/FacilityResponse'
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+        version:
+          type: integer
+
+    FacilityResponse:
+      type: object
+      required: [id, name, type, capacity, location, building, floor, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/FacilityType'
+        capacity:
+          type: integer
+        location:
+          type: string
+        building:
+          type: string
+        floor:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, OUT_OF_SERVICE]
+
+    CreateTicketRequest:
+      type: object
+      required: [facilityId, category, priority, description]
+      properties:
+        facilityId:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/TicketCategory'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        description:
+          type: string
+          minLength: 5
+        attachments:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+            format: binary
+
+    TicketResponse:
+      type: object
+      required: [id, status, category, priority, slaDueAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED, REJECTED]
+        category:
+          $ref: '#/components/schemas/TicketCategory'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        slaDueAt:
+          type: string
+          format: date-time
+
+    AssignTechnicianRequest:
+      type: object
+      required: [technicianUserId]
+      properties:
+        technicianUserId:
+          type: string
+          format: uuid
+
+    CreateCommentRequest:
+      type: object
+      required: [body, visibility]
+      properties:
+        body:
+          type: string
+          minLength: 1
+        visibility:
+          type: string
+          enum: [PUBLIC, INTERNAL]
+
+    CheckInRequest:
+      type: object
+      required: [method]
+      properties:
+        method:
+          type: string
+          enum: [QR, MANUAL]
+
+    AppealRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+
+    UtilizationResponse:
+      type: object
+      properties:
+        heatmap:
+          type: array
+          items:
+            type: object
+            properties:
+              facilityId:
+                type: string
+                format: uuid
+              dayOfWeek:
+                type: integer
+              hourOfDay:
+                type: integer
+              utilizationPercent:
+                type: number
+        underutilizedFacilities:
+          type: array
+          items:
+            type: object
+            properties:
+              facilityId:
+                type: string
+                format: uuid
+              utilizationPercent:
+                type: number
+              consecutiveUnderutilizedDays:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      required: [code, message, timestamp]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ConflictErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            currentVersion:
+              type: integer
+            conflictingBookingId:
+              type: string
+              format: uuid
+
+    Role:
+      type: string
+      enum: [USER, LECTURER, TECHNICIAN, FACILITY_MANAGER, ADMIN]
+
+    FacilityType:
+      type: string
+      enum: [LECTURE_HALL, LAB, MEETING_ROOM, AUDITORIUM, EQUIPMENT, SPORTS_FACILITY]
+
+    TicketCategory:
+      type: string
+      enum: [ELECTRICAL, PLUMBING, HVAC, IT_NETWORKING, STRUCTURAL, CLEANING, SAFETY, OTHER]
+
+    TicketPriority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
