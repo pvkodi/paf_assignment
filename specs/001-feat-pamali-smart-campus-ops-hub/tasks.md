@@ -206,6 +206,24 @@
 
 ---
 
+## Phase 9: Documentation, Diagrams, and Contribution Governance
+
+**Purpose**: Ensure full requirement coverage in documentation, clear endpoint ownership, and verifiable individual contributions with GitHub + CI.
+
+- [ ] T089 [P] Create architecture overview and deployment diagram docs in `docs/architecture/overview.md` and `docs/architecture/deployment.md`
+- [ ] T090 [P] Create UML class diagram source and rendered diagram in `docs/architecture/class-diagram.mmd` and `docs/architecture/class-diagram.png`
+- [ ] T091 [P] Create booking workflow sequence diagram and escalation flow diagram in `docs/architecture/booking-sequence.mmd` and `docs/architecture/escalation-sequence.mmd`
+- [ ] T092 Create endpoint contribution matrix (endpoint -> owner -> tests -> PR links) in `docs/api/endpoint-contributions.md`
+- [ ] T093 [P] Create module ownership and special-function ownership register in `docs/ownership-and-traceability.md`
+- [ ] T094 [P] Document GitHub workflow standards (branch naming, PR template usage, labels, reviews) in `docs/github/workflow.md`
+- [ ] T095 [P] Add CODEOWNERS mapping by module and endpoint groups in `.github/CODEOWNERS`
+- [ ] T096 [P] Add PR template requiring endpoint/test evidence in `.github/pull_request_template.md`
+- [ ] T097 [P] Expand CI with backend unit/contract/integration split and frontend checks in `.github/workflows/ci.yml`
+- [ ] T098 Add requirement-to-task traceability matrix for FR/AR/SV coverage in `specs/001-feat-pamali-smart-campus-ops-hub/coverage-matrix.md`
+- [ ] T099 Add release readiness checklist (API docs, diagrams, tests, contribution proof) in `specs/001-feat-pamali-smart-campus-ops-hub/release-checklist.md`
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -214,6 +232,7 @@
 - Foundational (Phase 2): Depends on Setup; blocks all user stories.
 - User Stories (Phases 3-7): Depend on Foundational completion.
 - Polish (Phase 8): Depends on all completed user stories.
+- Documentation/Governance (Phase 9): Starts after Phase 2 for baseline docs; final completion depends on Phases 3-8 outputs.
 
 ### User Story Dependencies
 
@@ -274,10 +293,76 @@
 
 ### Parallel Team Strategy
 
-1. Shared completion of Setup + Foundational.
-2. Module-owner parallelization after foundations:
-   - Member 4 leads US1.
-   - Member 1 and Member 2 split US2.
-   - Member 2 and Member 4 split US3.
-   - Member 3 leads US4.
-   - Member 1 and Member 4 split US5.
+1. Shared completion of Setup + Foundational (`T001`-`T022`) before feature branching.
+2. After foundations, split by module ownership and special-function ownership so each member can build independently.
+
+### Rebalanced Task Ownership (Authoritative Assignment)
+
+This section is the single source of truth for ownership to avoid confusion. Each task has one primary owner; integration tasks can have reviewers from other modules.
+
+**Load target**: keep each member in a similar band.
+
+- Member 1: 25 tasks (Facilities + Smart Utilization)
+- Member 2: 24 tasks (Booking + Fair-Usage Policy)
+- Member 3: 25 tasks (Maintenance + Escalation)
+- Member 4: 25 tasks (Auth + Approval + Notifications)
+
+**Member 1 (M1) - Facilities + Smart Utilization & Optimization Engine**
+
+- Setup/Foundational: `T001`, `T003`, `T006`, `T010`, `T014`, `T018`
+- US1 support: `T026`, `T034`
+- US2 facilities core: `T035`, `T039`, `T040`, `T041`, `T042`, `T047`
+- US3 integration/UI: `T052`, `T059`
+- US5 analytics core: `T074`, `T076`, `T080`, `T081`, `T083`
+- Cross-cutting/docs: `T084`, `T089`, `T091`, `T098`
+
+**Member 2 (M2) - Booking + Fair-Usage & Quota Policy Engine**
+
+- Setup/Foundational: `T002`, `T004`, `T011`, `T015`, `T020`, `T022`
+- US1 test support: `T023`, `T025`
+- US2 booking core: `T036`, `T038`, `T043`, `T044`, `T045`, `T046`
+- US3 quota/check-in core: `T048`, `T053`, `T054`, `T057`
+- US4 support tests: `T062`, `T064`
+- US5 contract support: `T075`
+- Cross-cutting/docs: `T085`, `T094`, `T099`
+
+**Member 3 (M3) - Maintenance Tickets + Intelligent Escalation System**
+
+- Setup/Foundational: `T005`, `T007`, `T012`, `T017`, `T021`
+- US1 model support: `T027`, `T028`
+- US3 suspension/appeal support: `T050`, `T058`
+- US4 ticket/escalation core: `T060`, `T061`, `T065`, `T066`, `T067`, `T068`, `T069`, `T070`, `T071`, `T072`
+- Cross-cutting/docs: `T086`, `T088`, `T090`, `T092`, `T095`, `T097`
+
+**Member 4 (M4) - Auth + Dynamic Approval + Notifications**
+
+- Setup/Foundational: `T008`, `T009`, `T013`, `T016`, `T019`
+- US1 auth core: `T024`, `T029`, `T030`, `T031`, `T032`, `T033`
+- US2 contract support: `T037`
+- US3 approval core: `T049`, `T051`, `T055`, `T056`
+- US4 contract support: `T063`
+- US5 notification core: `T073`, `T077`, `T078`, `T079`, `T082`
+- Cross-cutting/docs: `T087`, `T093`, `T096`
+
+### Ownership Rules (To Keep Collaboration Easy)
+
+1. Primary owner merges the task PR and maintains the module contract.
+2. Cross-module tasks require one reviewer from each dependent module before merge.
+3. If a task touches two owned modules, split into two subtasks with separate PRs.
+4. Endpoint ownership must be recorded in `docs/api/endpoint-contributions.md` (`T092`).
+5. Conflicts are resolved by contract-first approach (OpenAPI/schema, then implementation).
+
+### Cross-Module Contract Checkpoints (Keep Independent Dev Safe)
+
+1. Booking-Approval API contract freeze after `T046` + `T055`.
+2. Booking-Analytics event contract freeze before `T080`/`T081`.
+3. Ticket-Escalation-Notification event contract freeze before `T069` + `T078`.
+4. Auth role claims contract freeze before approval and quota integration (`T054`, `T056`).
+
+### Suggested Branching Model
+
+1. `feature/member1-facility-analytics`
+2. `feature/member2-booking-quota`
+3. `feature/member3-ticket-escalation`
+4. `feature/member4-auth-approval-notification`
+5. Merge cadence: daily into `develop` after module tests pass.
