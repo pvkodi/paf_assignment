@@ -3,9 +3,22 @@ spring:
     name: api
   datasource:
     url: jdbc:postgresql://localhost:5432/smartcampus
-    username: smartcampus
-    password: smartcampus
+    username: postgres
+    password: Adithya123@
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
+
+app:
+  auth:
+    jwt:
+      secret: your-super-secret-jwt-key-change-this-in-production-at-least-32-characters-long
+      expiration: 86400000 # 24 hours in milliseconds
+      refresh-expiration: 604800000 # 7 days in milliseconds
+    google:
+      client-id: 954142944464-qroe8pd2cpv00lt158p4o7dj2a1sc6vd.apps.googleusercontent.com
+      client-secret: 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
+
+cors:
+  allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080

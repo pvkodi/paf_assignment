@@ -35,7 +35,7 @@
 **CRITICAL**: No user story work starts before this phase is complete.
 
 - [ ] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
-- [ ] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
+- [X] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
 - [ ] T011 [P] Implement base repositories in `backend/src/main/java/com/smartcampus/repositories/`
 - [ ] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/smartcampus/dto/` and `backend/src/main/java/com/smartcampus/util/mapping/`
 - [ ] T013 Implement global API error model and exception handler in `backend/src/main/java/com/smartcampus/controllers/advice/GlobalExceptionHandler.java`
