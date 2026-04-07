@@ -17,14 +17,14 @@
 
 **Purpose**: Initialize backend/frontend workspaces, local runtime, and CI baseline.
 
-- [X] T001 Create backend module structure in `backend/src/main/java/com/smartcampus/` and `backend/src/test/java/com/smartcampus/`
-- [X] T002 Create frontend app shell with route skeleton in `frontend/src/app/` and `frontend/src/routes/`
-- [X] T003 [P] Configure Docker Compose services in `infra/docker-compose.yml`
-- [X] T004 [P] Add backend dependencies (security, jjwt, mail, thumbnailator, test libs) in `backend/pom.xml`
-- [X] T005 [P] Add frontend dependencies (router, axios, tailwind) in `frontend/package.json`
-- [X] T006 [P] Configure Tailwind and base styles in `frontend/tailwind.config.js` and `frontend/src/index.css`
-- [X] T007 [P] Add environment templates in `backend/.env.example` and `frontend/.env.example`
-- [X] T008 Add CI pipeline for backend/frontend build and tests in `.github/workflows/ci.yml`
+- [x] T001 Create backend module structure in `backend/src/main/java/com/smartcampus/` and `backend/src/test/java/com/smartcampus/`
+- [x] T002 Create frontend app shell with route skeleton in `frontend/src/app/` and `frontend/src/routes/`
+- [x] T003 [P] Configure Docker Compose services in `infra/docker-compose.yml`
+- [x] T004 [P] Add backend dependencies (security, jjwt, mail, thumbnailator, test libs) in `backend/pom.xml`
+- [x] T005 [P] Add frontend dependencies (router, axios, tailwind) in `frontend/package.json`
+- [x] T006 [P] Configure Tailwind and base styles in `frontend/tailwind.config.js` and `frontend/src/index.css`
+- [x] T007 [P] Add environment templates in `backend/.env.example` and `frontend/.env.example`
+- [x] T008 Add CI pipeline for backend/frontend build and tests in `.github/workflows/ci.yml`
 
 ---
 
@@ -34,13 +34,15 @@
 
 **CRITICAL**: No user story work starts before this phase is complete.
 
-- [X] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
-- [ ] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
-- [ ] T011 [P] Implement base repositories in `backend/src/main/java/com/smartcampus/repositories/`
-- [ ] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/smartcampus/dto/` and `backend/src/main/java/com/smartcampus/util/mapping/`
-- [ ] T013 Implement global API error model and exception handler in `backend/src/main/java/com/smartcampus/controllers/advice/GlobalExceptionHandler.java`
-- [ ] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/smartcampus/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
-- [ ] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/smartcampus/config/SecurityConfig.java`
+
+- [x] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
+- [x] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
+- [x] T011 [P] Implement base repositories in `backend/src/main/java/com/smartcampus/repositories/`
+- [x] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/smartcampus/dto/` and `backend/src/main/java/com/smartcampus/util/mapping/`
+- [x] T013 Implement global API error model and exception handler in `backend/src/main/java/com/smartcampus/controllers/advice/GlobalExceptionHandler.java`
+- [x] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/smartcampus/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
+- [x] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/smartcampus/config/SecurityConfig.java`
+
 - [ ] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/smartcampus/config/security/`
 - [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/smartcampus/config/FileStorageConfig.java` and `backend/src/main/java/com/smartcampus/services/storage/LocalFileStorageService.java`
 - [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/smartcampus/config/TimePolicyConfig.java` and `backend/src/main/java/com/smartcampus/services/calendar/PublicHolidayService.java`
