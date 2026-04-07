@@ -41,7 +41,7 @@
 - [x] T013 Implement global API error model and exception handler in `backend/src/main/java/com/smartcampus/controllers/advice/GlobalExceptionHandler.java`
 - [x] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/smartcampus/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
 - [x] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/smartcampus/config/SecurityConfig.java`
-- [ ] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/smartcampus/config/security/`
+- [x] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/smartcampus/config/security/`
 - [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/smartcampus/config/FileStorageConfig.java` and `backend/src/main/java/com/smartcampus/services/storage/LocalFileStorageService.java`
 - [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/smartcampus/config/TimePolicyConfig.java` and `backend/src/main/java/com/smartcampus/services/calendar/PublicHolidayService.java`
 - [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/smartcampus/observers/`
