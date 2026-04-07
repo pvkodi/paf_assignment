@@ -3,15 +3,12 @@ spring:
     name: api
   datasource:
     url: jdbc:postgresql://localhost:5432/smartcampus
-    username: postgres
-    password: Adithya123@
+    username: smartcampus
+    password: smartcampus
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
 
 app:
   auth:
@@ -22,6 +19,17 @@ app:
     google:
       client-id: 954142944464-qroe8pd2cpv00lt158p4o7dj2a1sc6vd.apps.googleusercontent.com
       client-secret: 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
+  file-storage:
+    upload-dir: /uploads
+    max-file-size: 5242880 # 5 MB in bytes
+    allowed-extensions: jpg,jpeg,png,gif,webp
+    allowed-mime-types: image/jpeg,image/png,image/gif,image/webp
+    thumbnail-dimensions: 200x200
+  time-policy:
+    campus-timezone: Asia/Colombo # DST-aware campus timezone
+    peak-hour-start: "08:00" # Peak hour restriction start
+    peak-hour-end: "10:00" # Peak hour restriction end
+    no-show-grace-minutes: 15 # 15 minutes from booking start to classify as no-show
 
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080

@@ -34,7 +34,7 @@
 
 **CRITICAL**: No user story work starts before this phase is complete.
 
-- [ ] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
+- [x] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
 - [x] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
 - [x] T011 [P] Implement base repositories in `backend/src/main/java/com/sliitreserve/api/repositories/`
 - [x] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/sliitreserve/api/dto/` and `backend/src/main/java/com/sliitreserve/api/util/mapping/`
@@ -42,8 +42,8 @@
 - [x] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/sliitreserve/api/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
 - [x] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/sliitreserve/api/config/SecurityConfig.java`
 - [x] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/sliitreserve/api/config/security/`
-- [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/storage/LocalFileStorageService.java`
-- [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/calendar/PublicHolidayService.java`
+- [x] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/storage/LocalFileStorageService.java`
+- [x] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/calendar/PublicHolidayService.java`
 - [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observers/`
 - [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
 - [ ] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
