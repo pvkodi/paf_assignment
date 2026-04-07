@@ -1,6 +1,8 @@
 package com.smartcampus.config;
 
+import com.smartcampus.config.security.JwtAuthenticationFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -54,15 +57,22 @@ import java.util.Arrays;
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 public class SecurityConfig {
 
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     /**
      * Configures the main security filter chain.
      * Handles CSRF, CORS, authorization, and exception handling.
+     * Registers JWT authentication filter before standard authentication processing.
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        log.info("Configuring OAuth2 + JWT security baseline");
+        log.info("Configuring OAuth2 + JWT security baseline with JWT filter");
         
         http
+            // Add JWT filter before UsernamePasswordAuthenticationFilter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            
             // Disable CSRF for stateless JWT authentication
             .csrf(AbstractHttpConfigurer::disable)
             
