@@ -34,7 +34,7 @@
 
 **CRITICAL**: No user story work starts before this phase is complete.
 
-- [ ] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
+- [X] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
 - [ ] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
 - [ ] T011 [P] Implement base repositories in `backend/src/main/java/com/smartcampus/repositories/`
 - [ ] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/smartcampus/dto/` and `backend/src/main/java/com/smartcampus/util/mapping/`
@@ -45,9 +45,9 @@
 - [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/smartcampus/config/FileStorageConfig.java` and `backend/src/main/java/com/smartcampus/services/storage/LocalFileStorageService.java`
 - [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/smartcampus/config/TimePolicyConfig.java` and `backend/src/main/java/com/smartcampus/services/calendar/PublicHolidayService.java`
 - [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/smartcampus/observers/`
-- [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/smartcampus/strategy/quota/`
+- [ ] T020 [P] Impent strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/smartcampus/strategy/quota/`
 - [ ] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/smartcampus/workflow/`
-- [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
+- [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.lemmd`
 
 **Checkpoint**: Foundation complete, user story phases can proceed.
 
