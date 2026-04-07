@@ -28,4 +28,3 @@ target/
 # Uploads and runtime artifacts
 backend/uploads/
 uploads/
-*.lst
