@@ -17,7 +17,7 @@
 
 **Purpose**: Initialize backend/frontend workspaces, local runtime, and CI baseline.
 
-- [x] T001 Create backend module structure in `backend/src/main/java/com/smartcampus/` and `backend/src/test/java/com/smartcampus/`
+- [x] T001 Create backend module structure in `backend/src/main/java/com/sliitreserve/api/` and `backend/src/test/java/com/sliitreserve/api/`
 - [x] T002 Create frontend app shell with route skeleton in `frontend/src/app/` and `frontend/src/routes/`
 - [x] T003 [P] Configure Docker Compose services in `infra/docker-compose.yml`
 - [x] T004 [P] Add backend dependencies (security, jjwt, mail, thumbnailator, test libs) in `backend/pom.xml`
@@ -35,18 +35,18 @@
 **CRITICAL**: No user story work starts before this phase is complete.
 
 - [ ] T009 Create initial Flyway migration for core schema in `backend/src/main/resources/db/migration/V1__init_core_schema.sql`
-- [x] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/smartcampus/entities/facility/`
-- [x] T011 [P] Implement base repositories in `backend/src/main/java/com/smartcampus/repositories/`
-- [x] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/smartcampus/dto/` and `backend/src/main/java/com/smartcampus/util/mapping/`
-- [x] T013 Implement global API error model and exception handler in `backend/src/main/java/com/smartcampus/controllers/advice/GlobalExceptionHandler.java`
-- [x] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/smartcampus/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
-- [x] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/smartcampus/config/SecurityConfig.java`
-- [x] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/smartcampus/config/security/`
-- [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/smartcampus/config/FileStorageConfig.java` and `backend/src/main/java/com/smartcampus/services/storage/LocalFileStorageService.java`
-- [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/smartcampus/config/TimePolicyConfig.java` and `backend/src/main/java/com/smartcampus/services/calendar/PublicHolidayService.java`
-- [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/smartcampus/observers/`
-- [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/smartcampus/strategy/quota/`
-- [ ] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/smartcampus/workflow/`
+- [x] T010 Implement Facility SINGLE_TABLE inheritance entities in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
+- [x] T011 [P] Implement base repositories in `backend/src/main/java/com/sliitreserve/api/repositories/`
+- [x] T012 Implement DTO base packages and mapper conventions in `backend/src/main/java/com/sliitreserve/api/dto/` and `backend/src/main/java/com/sliitreserve/api/util/mapping/`
+- [x] T013 Implement global API error model and exception handler in `backend/src/main/java/com/sliitreserve/api/controllers/advice/GlobalExceptionHandler.java`
+- [x] T014 [P] Implement Bean Validation configuration and message bundles in `backend/src/main/java/com/sliitreserve/api/config/ValidationConfig.java` and `backend/src/main/resources/messages.properties`
+- [x] T015 Implement OAuth2 + JWT security baseline in `backend/src/main/java/com/sliitreserve/api/config/SecurityConfig.java`
+- [x] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/sliitreserve/api/config/security/`
+- [ ] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/storage/LocalFileStorageService.java`
+- [ ] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/calendar/PublicHolidayService.java`
+- [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observers/`
+- [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [ ] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
 - [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
 
 **Checkpoint**: Foundation complete, user story phases can proceed.
@@ -61,20 +61,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] Add unit tests for OAuth auth and JWT services in `backend/src/test/java/com/smartcampus/unit/auth/AuthServiceTest.java`
-- [ ] T024 [P] [US1] Add unit tests for suspended-user guard rules in `backend/src/test/java/com/smartcampus/unit/auth/SuspensionPolicyServiceTest.java`
-- [ ] T025 [P] [US1] Add contract tests for auth callback/profile endpoints in `backend/src/test/java/com/smartcampus/contract/auth/AuthContractTest.java`
-- [ ] T026 [P] [US1] Add integration tests for RBAC and suspended-user exceptions in `backend/src/test/java/com/smartcampus/integration/auth/RbacIntegrationTest.java`
+- [ ] T023 [P] [US1] Add unit tests for OAuth auth and JWT services in `backend/src/test/java/com/sliitreserve/api/unit/auth/AuthServiceTest.java`
+- [ ] T024 [P] [US1] Add unit tests for suspended-user guard rules in `backend/src/test/java/com/sliitreserve/api/unit/auth/SuspensionPolicyServiceTest.java`
+- [ ] T025 [P] [US1] Add contract tests for auth callback/profile endpoints in `backend/src/test/java/com/sliitreserve/api/contract/auth/AuthContractTest.java`
+- [ ] T026 [P] [US1] Add integration tests for RBAC and suspended-user exceptions in `backend/src/test/java/com/sliitreserve/api/integration/auth/RbacIntegrationTest.java`
 
 ### Implementation for User Story 1
 
-- [ ] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/smartcampus/entities/auth/`
-- [ ] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/smartcampus/dto/auth/`
-- [ ] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/smartcampus/services/auth/OAuthAuthService.java`
-- [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/smartcampus/services/auth/JwtTokenService.java`
-- [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/smartcampus/services/auth/SuspensionPolicyService.java`
-- [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/smartcampus/controllers/AuthController.java`
-- [ ] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/smartcampus/config/security/EndpointAuthorizationConfig.java`
+- [ ] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
+- [ ] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
+- [ ] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
+- [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
+- [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
+- [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java`
+- [ ] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
 - [ ] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
 
 **Checkpoint**: US1 is independently testable and deployable.
@@ -89,21 +89,21 @@
 
 ### Tests for User Story 2
 
-- [ ] T035 [P] [US2] Add unit tests for facility search and factory logic in `backend/src/test/java/com/smartcampus/unit/facility/FacilityServiceTest.java`
-- [ ] T036 [P] [US2] Add unit tests for booking builder and booking service rules in `backend/src/test/java/com/smartcampus/unit/booking/BookingServiceTest.java`
-- [ ] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/smartcampus/contract/booking/BookingContractTest.java`
-- [ ] T038 [P] [US2] Add integration tests for overlap conflict and recurrence holiday skips in `backend/src/test/java/com/smartcampus/integration/booking/BookingConcurrencyIntegrationTest.java`
+- [ ] T035 [P] [US2] Add unit tests for facility search and factory logic in `backend/src/test/java/com/sliitreserve/api/unit/facility/FacilityServiceTest.java`
+- [ ] T036 [P] [US2] Add unit tests for booking builder and booking service rules in `backend/src/test/java/com/sliitreserve/api/unit/booking/BookingServiceTest.java`
+- [ ] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
+- [ ] T038 [P] [US2] Add integration tests for overlap conflict and recurrence holiday skips in `backend/src/test/java/com/sliitreserve/api/integration/booking/BookingConcurrencyIntegrationTest.java`
 
 ### Implementation for User Story 2
 
-- [ ] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/smartcampus/entities/facility/`
-- [ ] T040 [P] [US2] Implement FacilityFactory in `backend/src/main/java/com/smartcampus/factories/FacilityFactory.java`
-- [ ] T041 [US2] Implement facility query service and repository specifications in `backend/src/main/java/com/smartcampus/services/facility/FacilityService.java`
-- [ ] T042 [US2] Implement facilities search controller with DTO output in `backend/src/main/java/com/smartcampus/controllers/FacilityController.java`
-- [ ] T043 [P] [US2] Implement Booking entity with `@Version` and recurrence fields in `backend/src/main/java/com/smartcampus/entities/booking/Booking.java`
-- [ ] T044 [P] [US2] Implement BookingBuilder in `backend/src/main/java/com/smartcampus/util/booking/BookingBuilder.java`
-- [ ] T045 [US2] Implement booking service (capacity, overlap, 409 conflicts, recurrence skips, timezone) in `backend/src/main/java/com/smartcampus/services/booking/BookingService.java`
-- [ ] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/smartcampus/controllers/BookingController.java`
+- [ ] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
+- [ ] T040 [P] [US2] Implement FacilityFactory in `backend/src/main/java/com/sliitreserve/api/factories/FacilityFactory.java`
+- [ ] T041 [US2] Implement facility query service and repository specifications in `backend/src/main/java/com/sliitreserve/api/services/facility/FacilityService.java`
+- [ ] T042 [US2] Implement facilities search controller with DTO output in `backend/src/main/java/com/sliitreserve/api/controllers/FacilityController.java`
+- [ ] T043 [P] [US2] Implement Booking entity with `@Version` and recurrence fields in `backend/src/main/java/com/sliitreserve/api/entities/booking/Booking.java`
+- [ ] T044 [P] [US2] Implement BookingBuilder in `backend/src/main/java/com/sliitreserve/api/util/booking/BookingBuilder.java`
+- [ ] T045 [US2] Implement booking service (capacity, overlap, 409 conflicts, recurrence skips, timezone) in `backend/src/main/java/com/sliitreserve/api/services/booking/BookingService.java`
+- [ ] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java`
 - [ ] T047 [US2] Implement frontend facility search and booking forms in `frontend/src/features/facilities/` and `frontend/src/features/bookings/`
 
 **Checkpoint**: US2 is independently testable and deployable.
@@ -118,20 +118,20 @@
 
 ### Tests for User Story 3
 
-- [ ] T048 [P] [US3] Add unit tests for quota strategy engine in `backend/src/test/java/com/smartcampus/unit/quota/QuotaPolicyEngineTest.java`
-- [ ] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/smartcampus/unit/workflow/ApprovalWorkflowServiceTest.java`
-- [ ] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/smartcampus/unit/auth/NoShowSuspensionServiceTest.java`
-- [ ] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/smartcampus/contract/workflow/ApprovalAndAppealContractTest.java`
-- [ ] T052 [P] [US3] Add integration tests for multi-role permissive policy and suspension lifecycle in `backend/src/test/java/com/smartcampus/integration/workflow/QuotaApprovalIntegrationTest.java`
+- [ ] T048 [P] [US3] Add unit tests for quota strategy engine in `backend/src/test/java/com/sliitreserve/api/unit/quota/QuotaPolicyEngineTest.java`
+- [ ] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
+- [ ] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
+- [ ] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
+- [ ] T052 [P] [US3] Add integration tests for multi-role permissive policy and suspension lifecycle in `backend/src/test/java/com/sliitreserve/api/integration/workflow/QuotaApprovalIntegrationTest.java`
 
 ### Implementation for User Story 3
 
-- [ ] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/smartcampus/strategy/quota/`
-- [ ] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/smartcampus/services/booking/QuotaPolicyEngine.java`
-- [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/smartcampus/workflow/approval/`
-- [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/smartcampus/services/booking/ApprovalWorkflowService.java`
-- [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/smartcampus/services/booking/CheckInService.java`
-- [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/smartcampus/services/auth/AppealService.java` and `backend/src/main/java/com/smartcampus/controllers/AppealController.java`
+- [ ] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [ ] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
+- [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
+- [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
+- [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
+- [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 
 **Checkpoint**: US3 is independently testable and deployable.
@@ -146,21 +146,21 @@
 
 ### Tests for User Story 4
 
-- [ ] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/smartcampus/unit/ticket/TicketStateMachineTest.java`
-- [ ] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/smartcampus/unit/ticket/EscalationServiceTest.java`
-- [ ] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/smartcampus/unit/ticket/AttachmentServiceTest.java`
-- [ ] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/smartcampus/contract/ticket/TicketContractTest.java`
-- [ ] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/smartcampus/integration/ticket/TicketEscalationIntegrationTest.java`
+- [ ] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
+- [ ] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
+- [ ] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/sliitreserve/api/unit/ticket/AttachmentServiceTest.java`
+- [ ] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/sliitreserve/api/contract/ticket/TicketContractTest.java`
+- [ ] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/sliitreserve/api/integration/ticket/TicketEscalationIntegrationTest.java`
 
 ### Implementation for User Story 4
 
-- [ ] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/smartcampus/entities/ticket/`
-- [ ] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/smartcampus/state/TicketStateMachine.java`
-- [ ] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/smartcampus/services/ticket/TicketAttachmentService.java`
-- [ ] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/smartcampus/services/ticket/TicketService.java`
-- [ ] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/smartcampus/workflow/escalation/` and `backend/src/main/java/com/smartcampus/services/ticket/EscalationService.java`
-- [ ] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/smartcampus/services/ticket/SlaScheduler.java`
-- [ ] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/smartcampus/controllers/TicketController.java`
+- [ ] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/sliitreserve/api/entities/ticket/`
+- [ ] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java`
+- [ ] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketAttachmentService.java`
+- [ ] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketService.java`
+- [ ] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/sliitreserve/api/workflow/escalation/` and `backend/src/main/java/com/sliitreserve/api/services/ticket/EscalationService.java`
+- [ ] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/sliitreserve/api/services/ticket/SlaScheduler.java`
+- [ ] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java`
 - [ ] T072 [US4] Implement frontend ticketing, assignment, and comments UI in `frontend/src/features/tickets/`
 
 **Checkpoint**: US4 is independently testable and deployable.
@@ -175,19 +175,19 @@
 
 ### Tests for User Story 5
 
-- [ ] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/smartcampus/unit/notification/NotificationServiceTest.java`
-- [ ] T074 [P] [US5] Add unit tests for utilization calculation and underutilization detection in `backend/src/test/java/com/smartcampus/unit/analytics/UtilizationServiceTest.java`
-- [ ] T075 [P] [US5] Add contract tests for notification feed and analytics endpoints in `backend/src/test/java/com/smartcampus/contract/analytics/AnalyticsContractTest.java`
-- [ ] T076 [P] [US5] Add integration tests for notification channels and daily snapshot jobs in `backend/src/test/java/com/smartcampus/integration/analytics/NotificationAnalyticsIntegrationTest.java`
+- [ ] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/sliitreserve/api/unit/notification/NotificationServiceTest.java`
+- [ ] T074 [P] [US5] Add unit tests for utilization calculation and underutilization detection in `backend/src/test/java/com/sliitreserve/api/unit/analytics/UtilizationServiceTest.java`
+- [ ] T075 [P] [US5] Add contract tests for notification feed and analytics endpoints in `backend/src/test/java/com/sliitreserve/api/contract/analytics/AnalyticsContractTest.java`
+- [ ] T076 [P] [US5] Add integration tests for notification channels and daily snapshot jobs in `backend/src/test/java/com/sliitreserve/api/integration/analytics/NotificationAnalyticsIntegrationTest.java`
 
 ### Implementation for User Story 5
 
-- [ ] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/smartcampus/observers/impl/`
-- [ ] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/smartcampus/services/notification/NotificationService.java`
-- [ ] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/smartcampus/config/MailConfig.java`
-- [ ] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/smartcampus/services/analytics/UtilizationSnapshotService.java`
-- [ ] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/smartcampus/services/analytics/RecommendationService.java`
-- [ ] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/smartcampus/controllers/AnalyticsController.java` and `backend/src/main/java/com/smartcampus/controllers/NotificationController.java`
+- [ ] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
+- [ ] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
+- [ ] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
+- [ ] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/sliitreserve/api/services/analytics/UtilizationSnapshotService.java`
+- [ ] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/sliitreserve/api/services/analytics/RecommendationService.java`
+- [ ] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
 - [ ] T083 [US5] Implement frontend notification center and utilization dashboard in `frontend/src/features/notifications/` and `frontend/src/features/analytics/`
 
 **Checkpoint**: US5 is independently testable and deployable.
@@ -199,9 +199,9 @@
 **Purpose**: Hardening and verification across all stories.
 
 - [ ] T084 [P] Update API and module documentation in `docs/api/` and `docs/architecture/`
-- [ ] T085 [P] Add missing service-method unit tests and coverage gate in `backend/pom.xml` and `backend/src/test/java/com/smartcampus/`
+- [ ] T085 [P] Add missing service-method unit tests and coverage gate in `backend/pom.xml` and `backend/src/test/java/com/sliitreserve/api/`
 - [ ] T086 Optimize critical DB queries and indexes in `backend/src/main/resources/db/migration/V2__performance_indexes.sql`
-- [ ] T087 Run security hardening for JWT, RBAC, and upload paths in `backend/src/main/java/com/smartcampus/config/security/` and `backend/src/main/java/com/smartcampus/services/storage/`
+- [ ] T087 Run security hardening for JWT, RBAC, and upload paths in `backend/src/main/java/com/sliitreserve/api/config/security/` and `backend/src/main/java/com/sliitreserve/api/services/storage/`
 - [ ] T088 Validate local Docker persistence and operational runbook in `quickstart.md` and `infra/docker-compose.yml`
 
 ---
