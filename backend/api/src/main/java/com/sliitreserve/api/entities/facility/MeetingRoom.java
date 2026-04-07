@@ -1,4 +1,4 @@
-package com.smartcampus.entities.facility;
+package com.sliitreserve.api.entities.facility;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
