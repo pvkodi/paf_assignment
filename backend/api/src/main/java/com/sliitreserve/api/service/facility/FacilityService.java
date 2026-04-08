@@ -17,26 +17,26 @@ public class FacilityService {
     private FacilityRepository facilityRepository;
 
     public List<Facility> searchFacilities(Boolean active, FacilityType type, Integer minCapacity, String building, String namePattern) {
-        Specification<Facility> spec = Specification.where(null);
+        Specification<Facility> spec = null;
 
         if (Boolean.TRUE.equals(active)) {
-            spec = spec.and(FacilitySpecifications.isActive());
+            spec = (spec == null) ? FacilitySpecifications.isActive() : spec.and(FacilitySpecifications.isActive());
         }
 
         if (type != null) {
-            spec = spec.and(FacilitySpecifications.ofType(type));
+            spec = (spec == null) ? FacilitySpecifications.ofType(type) : spec.and(FacilitySpecifications.ofType(type));
         }
 
         if (minCapacity != null) {
-            spec = spec.and(FacilitySpecifications.hasMinCapacity(minCapacity));
+            spec = (spec == null) ? FacilitySpecifications.hasMinCapacity(minCapacity) : spec.and(FacilitySpecifications.hasMinCapacity(minCapacity));
         }
 
         if (building != null && !building.isEmpty()) {
-            spec = spec.and(FacilitySpecifications.inBuilding(building));
+            spec = (spec == null) ? FacilitySpecifications.inBuilding(building) : spec.and(FacilitySpecifications.inBuilding(building));
         }
 
         if (namePattern != null && !namePattern.isEmpty()) {
-            spec = spec.and(FacilitySpecifications.nameContains(namePattern));
+            spec = (spec == null) ? FacilitySpecifications.nameContains(namePattern) : spec.and(FacilitySpecifications.nameContains(namePattern));
         }
 
         return facilityRepository.findAll(spec);
