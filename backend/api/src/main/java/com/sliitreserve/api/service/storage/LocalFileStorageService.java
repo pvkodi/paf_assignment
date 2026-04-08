@@ -211,7 +211,7 @@ public class LocalFileStorageService {
      * @throws FileNotFoundException if file doesn't exist
      * @throws FileStorageException if read fails
      */
-    public InputStream getFileStream(String storageFilename, boolean isThumbnail) {
+    public InputStream getFileStream(String storageFilename, boolean isThumbnail) throws FileNotFoundException {
         try {
             String directory = isThumbnail ? "thumbnails" : "original";
             Path filePath = Paths.get(storageProperties.uploadDir, directory, storageFilename);

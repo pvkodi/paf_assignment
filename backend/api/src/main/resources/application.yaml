@@ -20,7 +20,7 @@ app:
       client-id: 954142944464-qroe8pd2cpv00lt158p4o7dj2a1sc6vd.apps.googleusercontent.com
       client-secret: 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
   file-storage:
-    upload-dir: /uploads
+    upload-dir: uploads
     max-file-size: 5242880 # 5 MB in bytes
     allowed-extensions: jpg,jpeg,png,gif,webp
     allowed-mime-types: image/jpeg,image/png,image/gif,image/webp
