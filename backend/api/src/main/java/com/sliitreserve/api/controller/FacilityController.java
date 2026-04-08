@@ -1,0 +1,37 @@
+package com.sliitreserve.api.controller;
+
+import com.sliitreserve.api.entities.facility.Facility;
+import com.sliitreserve.api.entities.facility.Facility.FacilityType;
+import com.sliitreserve.api.service.facility.FacilityService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/facilities")
+public class FacilityController {
+
+    @Autowired
+    private FacilityService facilityService;
+
+    @GetMapping
+    public ResponseEntity<List<Facility>> search(
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) FacilityType type,
+            @RequestParam(required = false) Integer minCapacity,
+            @RequestParam(required = false) String building,
+            @RequestParam(required = false, name = "name") String namePattern
+    ) {
+        List<Facility> result = facilityService.searchFacilities(active, type, minCapacity, building, namePattern);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{code}")
+    public ResponseEntity<?> getByCode(@PathVariable("code") String code) {
+        Facility f = facilityService.findByCode(code);
+        if (f == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(f);
+    }
+}
