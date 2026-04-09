@@ -1,158 +1,314 @@
 package com.sliitreserve.api.controller;
 
-import com.sliitreserve.api.dto.AuthResponse;
-import com.sliitreserve.api.dto.GoogleTokenRequest;
-import com.sliitreserve.api.service.GoogleAuthService;
-import com.sliitreserve.api.util.JwtUtil;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.sliitreserve.api.dto.auth.AuthResponse;
+import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
+import com.sliitreserve.api.dto.auth.UserProfileResponse;
+import com.sliitreserve.api.entities.auth.User;
+import com.sliitreserve.api.exception.UnauthorizedException;
+import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.services.auth.OAuthAuthService;
+import com.sliitreserve.api.services.auth.JwtTokenService;
+import com.sliitreserve.api.services.auth.SuspensionPolicyService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+import java.io.IOException;
+import java.time.LocalDateTime;
+
+/**
+ * Authentication Controller.
+ *
+ * <p><b>Purpose</b>: Handles user authentication flow via OAuth and manages user session/profile endpoints.
+ * Enforces suspension policy on protected endpoints per FR-003.
+ *
+ * <p><b>Endpoints</b>:
+ * <ul>
+ *   <li><b>POST /auth/oauth/google/callback</b> [PUBLIC]
+ *     - Exchange Google authorization code for JWT
+ *     - Returns: AuthResponse (token, expiresAt, user profile)
+ *   <li><b>GET /auth/profile</b> [PROTECTED - Allows suspended users]
+ *     - Get current authenticated user's profile
+ *     - Returns: UserProfileResponse (id, email, roles, suspended status)
+ *   <li><b>POST /auth/logout</b> [PROTECTED - Allows suspended users]
+ *     - Clear user session (stateless JWT requires client-side token deletion)
+ *     - Returns: Confirmation response
+ * </ul>
+ *
+ * <p><b>Security</b>:
+ * <ul>
+ *   <li>OAuth callback is public (no Bearer auth required)
+ *   <li>Profile and logout endpoints are protected but allow suspended users (whitelist)
+ *   <li>JWT Bearer token extracted from Authorization header for protected endpoints
+ * </ul>
+ *
+ * <p><b>Integration</b>:
+ * <ul>
+ *   <li>OAuthAuthService: Exchanges OAuth code for JWT and user profile
+ *   <li>JwtTokenService: Validates tokens and extracts user email
+ *   <li>UserRepository: Looks up user profile for protected endpoints
+ *   <li>SuspensionPolicyService: Enforces suspension on non-whitelisted operations
+ * </ul>
+ *
+ * @see OAuthAuthService for OAuth flow implementation
+ * @see JwtTokenService for JWT operations
+ * @see SuspensionPolicyService for suspension enforcement
+ */
+@Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:8080"})
 public class AuthController {
 
     @Autowired
-    private GoogleAuthService googleAuthService;
+    private OAuthAuthService oauthAuthService;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtTokenService jwtTokenService;
 
-    @PostMapping("/google")
-    public ResponseEntity<?> authenticateGoogle(@RequestBody GoogleTokenRequest request) {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private SuspensionPolicyService suspensionPolicyService;
+
+    /**
+     * OAuth 2.0 Authorization Code Exchange Endpoint.
+     *
+     * <p>Implements RFC 6749 Section 4.1.3 - Authorization Code Exchange.
+     * Frontend sends Google authorization code received from OAuth consent screen.
+     * Backend exchanges code for ID token, verifies signature, creates/retrieves user,
+     * generates JWT session token, and returns authenticated user profile.
+     *
+     * <p><b>Request</b>: OAuthCodeExchangeRequest
+     * - code: Authorization code from Google OAuth
+     * - redirectUri: Origin of request (must match registered URI)
+     *
+     * <p><b>Response</b>: AuthResponse (HTTP 200)
+     * - token: JWT access token for subsequent API calls
+     * - expiresAt: Token expiration timestamp (ISO 8601)
+     * - user: UserProfileResponse with id, email, roles, suspension status
+     *
+     * <p><b>Error Responses</b>:
+     * - HTTP 400: Invalid authorization code or redirect URI mismatch
+     * - HTTP 401: Token verification failed (invalid signature or expired)
+     * - HTTP 500: Unexpected error during code exchange
+     *
+     * <p><b>Security</b>: Public endpoint (no authentication required).
+     *
+     * @param request OAuth code exchange request (code + redirectUri)
+     * @return ResponseEntity with AuthResponse (200 OK) or error (40x/50x)
+     */
+    @PostMapping("/oauth/google/callback")
+    public ResponseEntity<?> exchangeOAuthCode(@Valid @RequestBody OAuthCodeExchangeRequest request) {
+        log.info("OAuth callback initiated for redirectUri: {}", request.getRedirectUri());
+
         try {
-            // Verify the Google token
-            GoogleIdToken.Payload payload = googleAuthService.verifyToken(request.getToken());
+            // Exchange authorization code for JWT and user profile
+            OAuthAuthService.OAuthTokenResponse tokenResponse = oauthAuthService.exchangeCodeForToken(request);
 
-            // Extract user information from payload
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String picture = (String) payload.get("picture");
+            // Build response with contract-compliant fields
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(tokenResponse.getAccessToken());
+            authResponse.setExpiresAt(tokenResponse.getExpiresAt());
+            authResponse.setUser(tokenResponse.getUser());
 
-            // Generate JWT tokens
-            String accessToken = jwtUtil.generateToken(email, name, picture);
-            String refreshToken = jwtUtil.generateRefreshToken(email);
-
-            // Return authentication response
-            AuthResponse authResponse = new AuthResponse(
-                    accessToken,
-                    refreshToken,
-                    email,
-                    name,
-                    picture
-            );
+            log.info("OAuth authentication successful for user: {}", tokenResponse.getUser().getEmail());
 
             return ResponseEntity.ok(authResponse);
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid authorization code: {}", e.getMessage());
             return ResponseEntity
-                    .badRequest()
-                    .body(new ErrorResponse("Authentication failed: " + e.getMessage()));
-        }
-    }
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(createErrorResponse("INVALID_CODE", "Authorization code is invalid or expired"));
 
-    @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Invalid authorization header"));
-            }
-
-            String refreshToken = authHeader.substring(7);
-
-            // Validate refresh token
-            if (!jwtUtil.validateToken(refreshToken)) {
-                return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Invalid or expired refresh token"));
-            }
-
-            String email = jwtUtil.getEmailFromToken(refreshToken);
-            String name = jwtUtil.getClaimFromToken(refreshToken, "name");
-            String picture = jwtUtil.getClaimFromToken(refreshToken, "picture");
-
-            // Generate new access token
-            String newAccessToken = jwtUtil.generateToken(email, name, picture);
-
-            return ResponseEntity.ok(new TokenRefreshResponse(newAccessToken, refreshToken));
+        } catch (IOException e) {
+            log.error("Error during OAuth code exchange: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("OAUTH_ERROR", "Error communicating with OAuth provider"));
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Token refresh failed: " + e.getMessage()));
+            log.error("Unexpected error during OAuth authentication: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("AUTH_ERROR", "Authentication failed"));
         }
     }
 
-    @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authHeader) {
+    /**
+     * Get Current User Profile Endpoint.
+     *
+     * <p>Returns the authenticated user's profile information including roles and suspension status.
+     * This endpoint is specifically whitelisted for suspended users (FR-003) so they can
+     * view their profile and suspension reason.
+     *
+     * <p><b>Request</b>: No body. Uses Bearer token from Authorization header.
+     *
+     * <p><b>Response</b>: UserProfileResponse (HTTP 200)
+     * - id: User UUID
+     * - email: User's institutional email
+     * - displayName: User's display name
+     * - roles: Set of assigned roles
+     * - suspended: Suspension status (true/false)
+     *
+     * <p><b>Error Responses</b>:
+     * - HTTP 401: Missing or invalid Bearer token
+     * - HTTP 404: User not found in database
+     * - HTTP 500: Unexpected error
+     *
+     * <p><b>Security</b>: Protected endpoint with Bearer token authentication.
+     * Suspended users explicitly allowed (whitelist exception).
+     *
+     * @return ResponseEntity with UserProfileResponse (200 OK) or error
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getCurrentUserProfile() {
         try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Invalid authorization header"));
+            // Extract user email from JWT token in SecurityContext
+            String userEmail = extractEmailFromSecurityContext();
+
+            if (userEmail == null) {
+                log.warn("Profile request without valid authentication");
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(createErrorResponse("UNAUTHORIZED", "Authentication required"));
             }
 
-            String token = authHeader.substring(7);
+            // Look up user in database
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-            if (jwtUtil.validateToken(token)) {
-                String email = jwtUtil.getEmailFromToken(token);
-                return ResponseEntity.ok(new TokenValidationResponse(true, email));
-            } else {
-                return ResponseEntity.ok(new TokenValidationResponse(false, null));
-            }
+            log.debug("Profile retrieved for user: {}", userEmail);
+
+            // Build response with current user data
+            UserProfileResponse profile = new UserProfileResponse(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getDisplayName(),
+                    user.getRoles(),
+                    suspensionPolicyService.isSuspended(user)
+            );
+            profile.setPicture(null); // Not stored on User entity yet
+
+            return ResponseEntity.ok(profile);
+
+        } catch (UnauthorizedException e) {
+            log.warn("Unauthorized profile access: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(createErrorResponse("UNAUTHORIZED", e.getMessage()));
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Token validation failed: " + e.getMessage()));
+            log.error("Error retrieving user profile: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("PROFILE_ERROR", "Error retrieving profile"));
         }
     }
 
-    // Inner classes for responses
-    public static class ErrorResponse {
-        public String error;
+    /**
+     * Logout Endpoint.
+     *
+     * <p>Provides a signal for client-side logout. Since JWT is stateless, logout is
+     * primarily a client-side operation (delete token from storage). This endpoint can be
+     * used for audit logging or to trigger any server-side cleanup.
+     *
+     * <p>This endpoint is whitelisted for suspended users so they can end their session.
+     *
+     * <p><b>Request</b>: No body. Uses Bearer token from Authorization header.
+     *
+     * <p><b>Response</b>: Success response (HTTP 200)
+     *
+     * <p><b>Security</b>: Protected endpoint with Bearer token authentication.
+     * Suspended users explicitly allowed (whitelist exception).
+     *
+     * @return ResponseEntity with success message
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        try {
+            String userEmail = extractEmailFromSecurityContext();
 
-        public ErrorResponse(String error) {
-            this.error = error;
+            if (userEmail == null) {
+                log.warn("Logout request without valid authentication");
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(createErrorResponse("UNAUTHORIZED", "Authentication required"));
+            }
+
+            log.info("User logout: {}", userEmail);
+
+            return ResponseEntity.ok(createSuccessResponse("Logged out successfully"));
+
+        } catch (Exception e) {
+            log.error("Error during logout: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("LOGOUT_ERROR", "Error during logout"));
         }
+    }
 
-        public String getError() {
-            return error;
+    /**
+     * Extract user email from Spring Security context.
+     *
+     * <p>Retrieves the authenticated user's email (username) from SecurityContextHolder.
+     * This value is set by JwtAuthenticationFilter during request processing.
+     *
+     * @return User email if authenticated, null otherwise
+     */
+    private String extractEmailFromSecurityContext() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
+            }
+
+            // Principal is set as email by JwtAuthenticationFilter
+            Object principal = authentication.getPrincipal();
+            return principal != null ? principal.toString() : null;
+
+        } catch (Exception e) {
+            log.debug("Error extracting email from security context: {}", e.getMessage());
+            return null;
         }
     }
 
-    public static class TokenRefreshResponse {
-        public String accessToken;
-        public String refreshToken;
-
-        public TokenRefreshResponse(String accessToken, String refreshToken) {
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
-        }
-
-        public String getAccessToken() {
-            return accessToken;
-        }
-
-        public String getRefreshToken() {
-            return refreshToken;
-        }
+    /**
+     * Build a standardized error response DTO.
+     *
+     * @param errorCode Application error code
+     * @param message Human-readable error message
+     * @return Error response object
+     */
+    private ErrorResponse createErrorResponse(String errorCode, String message) {
+        return new ErrorResponse(errorCode, message, LocalDateTime.now());
     }
 
-    public static class TokenValidationResponse {
-        public boolean valid;
-        public String email;
-
-        public TokenValidationResponse(boolean valid, String email) {
-            this.valid = valid;
-            this.email = email;
-        }
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public String getEmail() {
-            return email;
-        }
+    /**
+     * Build a standardized success response DTO.
+     *
+     * @param message Success message
+     * @return Success response object
+     */
+    private SuccessResponse createSuccessResponse(String message) {
+        return new SuccessResponse(message, LocalDateTime.now());
     }
+
+    /**
+     * Simple error response DTO for API responses.
+     */
+    record ErrorResponse(String code, String message, LocalDateTime timestamp) { }
+
+    /**
+     * Simple success response DTO for API responses.
+     */
+    record SuccessResponse(String message, LocalDateTime timestamp) { }
 }
