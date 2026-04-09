@@ -71,11 +71,11 @@
 - [x] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
 - [x] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
 - [x] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
-- [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
-- [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
-- [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java`
-- [ ] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
-- [ ] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
+- [x] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
+- [x] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
+- [x] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controller/AuthController.java`
+- [x] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
+- [x] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
 
 **Checkpoint**: US1 is independently testable and deployable.
 
