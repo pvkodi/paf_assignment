@@ -2,6 +2,7 @@ package com.sliitreserve.api.services.auth;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
@@ -91,19 +92,24 @@ public class OAuthAuthService {
     @Transactional
     public OAuthTokenResponse exchangeCodeForToken(OAuthCodeExchangeRequest request)
             throws IOException {
-        log.debug("Exchanging authorization code for tokens");
+        log.debug("Exchanging authorization code for tokens: {}", request.getRedirectUri());
 
         try {
-            // Step 1: Exchange authorization code with Google Token Endpoint
-            GoogleTokenResponse tokenResponse = new GoogleTokenResponse()
-                    .setAccessToken(request.getCode()); // In real flow, this would be exchanged
+            // Step 1: Exchange authorization code for ID token with Google Token Endpoint
+            // This implements RFC 6749 Section 4.1.3 - Authorization Code Exchange
+            GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
+                    new NetHttpTransport(),
+                    new GsonFactory(),
+                    "https://oauth2.googleapis.com/token",  // Google Token Endpoint
+                    googleClientId,
+                    googleClientSecret,
+                    request.getCode(),                      // Authorization code from frontend
+                    request.getRedirectUri()                // Must match registered redirect URI
+            ).execute();
 
-            // For Google OAuth 2.0, we would normally use GoogleAuthorizationCodeTokenRequest
-            // But since we're using the ID token approach, we verify it directly
-            // This implementation assumes frontend has already done the code exchange
-            // and is sending us the ID token in the code field (or we need GoogleIdTokenVerifier)
+            log.debug("Successfully exchanged authorization code for tokens");
 
-            // Step 2: Verify ID token signature and extract claims
+            // Step 2: Verify ID token signature with Google's public keys
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                     new NetHttpTransport(),
                     new GsonFactory()
@@ -111,11 +117,17 @@ public class OAuthAuthService {
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
-            // The code field should contain the ID token for this implementation
-            var idToken = verifier.verify(request.getCode());
+            // Get ID token from the token response
+            String idTokenString = tokenResponse.getIdToken();
+            if (idTokenString == null) {
+                log.warn("No ID token in response from Google Token Endpoint");
+                throw new IllegalArgumentException("No ID token received from Google");
+            }
+
+            var idToken = verifier.verify(idTokenString);
 
             if (idToken == null) {
-                log.warn("ID token verification failed for request");
+                log.warn("ID token verification failed for authorization code");
                 throw new IllegalArgumentException("Invalid or expired authorization code");
             }
 
@@ -159,7 +171,7 @@ public class OAuthAuthService {
             log.warn("ID token verification failed: {}", e.getMessage());
             throw new IllegalArgumentException("Invalid authorization code: token verification failed", e);
         } catch (IOException e) {
-            log.error("Error exchanging authorization code", e);
+            log.error("Error exchanging authorization code with Google: {}", e.getMessage(), e);
             throw e;
         }
     }
