@@ -47,7 +47,7 @@
 - [x] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observer/`
 - [x] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
 - [x] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
-- [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
+- [x] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
 
 **Checkpoint**: Foundation complete, user story phases can proceed.
 
