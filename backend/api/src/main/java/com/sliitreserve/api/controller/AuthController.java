@@ -1,6 +1,6 @@
 package com.sliitreserve.api.controller;
 
-import com.sliitreserve.api.dto.AuthResponse;
+import com.sliitreserve.api.dto.auth.AuthResponse;
 import com.sliitreserve.api.dto.GoogleTokenRequest;
 import com.sliitreserve.api.service.GoogleAuthService;
 import com.sliitreserve.api.util.JwtUtil;

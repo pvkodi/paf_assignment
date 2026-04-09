@@ -68,9 +68,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
-- [ ] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
-- [ ] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
+- [x] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
+- [x] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
+- [x] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
 - [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
 - [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
 - [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java`
