@@ -45,7 +45,7 @@
 - [x] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/storage/LocalFileStorageService.java`
 - [x] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/calendar/PublicHolidayService.java`
 - [x] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observer/`
-- [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [x] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
 - [x] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
 - [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
 
