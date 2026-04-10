@@ -91,7 +91,7 @@
 
 - [ ] T035 [P] [US2] Add unit tests for facility search and factory logic in `backend/src/test/java/com/sliitreserve/api/unit/facility/FacilityServiceTest.java`
 - [ ] T036 [P] [US2] Add unit tests for booking builder and booking service rules in `backend/src/test/java/com/sliitreserve/api/unit/booking/BookingServiceTest.java`
-- [ ] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
+- [x] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
 - [ ] T038 [P] [US2] Add integration tests for overlap conflict and recurrence holiday skips in `backend/src/test/java/com/sliitreserve/api/integration/booking/BookingConcurrencyIntegrationTest.java`
 
 ### Implementation for User Story 2
