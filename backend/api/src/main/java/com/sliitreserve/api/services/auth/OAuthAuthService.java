@@ -93,11 +93,15 @@ public class OAuthAuthService {
     public OAuthTokenResponse exchangeCodeForToken(OAuthCodeExchangeRequest request)
             throws IOException {
         log.debug("Exchanging authorization code for tokens: {}", request.getRedirectUri());
+        log.debug("Using Google Client ID: {}", googleClientId);
+        log.debug("Authorization code: {}", request.getCode().substring(0, Math.min(10, request.getCode().length())));
 
         try {
             // Step 1: Exchange authorization code for ID token with Google Token Endpoint
             // This implements RFC 6749 Section 4.1.3 - Authorization Code Exchange
-            GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
+            log.info("Calling Google Token Endpoint with redirect URI: {}", request.getRedirectUri());
+            
+            GoogleAuthorizationCodeTokenRequest tokenRequest = new GoogleAuthorizationCodeTokenRequest(
                     new NetHttpTransport(),
                     new GsonFactory(),
                     "https://oauth2.googleapis.com/token",  // Google Token Endpoint
@@ -105,7 +109,9 @@ public class OAuthAuthService {
                     googleClientSecret,
                     request.getCode(),                      // Authorization code from frontend
                     request.getRedirectUri()                // Must match registered redirect URI
-            ).execute();
+            );
+
+            GoogleTokenResponse tokenResponse = tokenRequest.execute();
 
             log.debug("Successfully exchanged authorization code for tokens");
 
@@ -168,10 +174,10 @@ public class OAuthAuthService {
             return new OAuthTokenResponse(accessToken, expiresAt, userProfile);
 
         } catch (GeneralSecurityException e) {
-            log.warn("ID token verification failed: {}", e.getMessage());
+            log.warn("ID token verification failed: {}", e.getMessage(), e);
             throw new IllegalArgumentException("Invalid authorization code: token verification failed", e);
         } catch (IOException e) {
-            log.error("Error exchanging authorization code with Google: {}", e.getMessage(), e);
+            log.error("Error exchanging authorization code with Google: {} | Cause: {}", e.getMessage(), e.getCause() != null ? e.getCause().getMessage() : "unknown", e);
             throw e;
         }
     }
