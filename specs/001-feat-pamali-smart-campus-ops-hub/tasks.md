@@ -126,7 +126,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [x] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
 - [ ] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
 - [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
 - [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
