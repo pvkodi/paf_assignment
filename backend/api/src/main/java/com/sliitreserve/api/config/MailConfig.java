@@ -218,7 +218,6 @@ public class MailConfig {
  * ));
  * ```
  */
-@Component
 @Slf4j
 class MailtrapEmailTemplateFactory implements EmailTemplateFactory {
 

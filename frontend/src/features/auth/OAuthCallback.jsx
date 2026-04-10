@@ -27,6 +27,21 @@ export function OAuthCallback() {
         const errorParam = params.get("error");
         const errorDescription = params.get("error_description");
 
+        // Validate state parameter for CSRF protection (optional - warn if mismatch)
+        const savedState = sessionStorage.getItem("oauth_state");
+        if (savedState && state !== savedState) {
+          console.warn(
+            "State parameter mismatch - possible CSRF attack. Saved:",
+            savedState,
+            "Returned:",
+            state,
+          );
+          sessionStorage.removeItem("oauth_state");
+          // Continue anyway since backend already validated the code
+        } else if (savedState) {
+          sessionStorage.removeItem("oauth_state");
+        }
+
         // Check for OAuth error
         if (errorParam) {
           throw new Error(

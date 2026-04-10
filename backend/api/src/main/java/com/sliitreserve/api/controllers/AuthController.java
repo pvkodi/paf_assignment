@@ -1,4 +1,4 @@
-package com.sliitreserve.api.controller;
+package com.sliitreserve.api.controllers;
 
 import com.sliitreserve.api.dto.auth.AuthResponse;
 import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
@@ -126,13 +126,17 @@ public class AuthController {
             log.warn("Invalid authorization code: {}", e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(createErrorResponse("INVALID_CODE", "Authorization code is invalid or expired"));
+                    .body(createErrorResponse("INVALID_CODE", "Authorization code is invalid, expired, or already used. Please try logging in again."));
 
         } catch (IOException e) {
             log.error("Error during OAuth code exchange: {}", e.getMessage(), e);
+            String message = "Error communicating with OAuth provider. ";
+            if (e.getMessage() != null && e.getMessage().contains("invalid_grant")) {
+                message += "Possible causes: (1) Redirect URI mismatch with Google Console, (2) Code expired (10 min timeout), (3) Code already used. Check application logs for details.";
+            }
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("OAUTH_ERROR", "Error communicating with OAuth provider"));
+                    .body(createErrorResponse("OAUTH_ERROR", message));
 
         } catch (Exception e) {
             log.error("Unexpected error during OAuth authentication: {}", e.getMessage(), e);
