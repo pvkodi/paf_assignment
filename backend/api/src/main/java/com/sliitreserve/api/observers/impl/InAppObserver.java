@@ -98,7 +98,7 @@ public class InAppObserver implements Observer {
             }
 
             // Look up recipient user
-            var recipient = userRepository.findById(UUID.fromString(event.getAffectedUserId()));
+            var recipient = userRepository.findById(UUID.fromString(String.valueOf(event.getAffectedUserId())));
             if (recipient.isEmpty()) {
                 log.warn("InAppObserver: Recipient user not found: {}", event.getAffectedUserId());
                 return;

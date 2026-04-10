@@ -1,5 +1,6 @@
 package com.sliitreserve.api.unit.notification;
 
+import com.sliitreserve.api.services.notification.NotificationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
