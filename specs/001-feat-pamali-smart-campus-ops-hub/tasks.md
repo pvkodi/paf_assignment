@@ -130,7 +130,7 @@
 - [x] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
 - [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
 - [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
-- [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
+- [x] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
 - [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 
