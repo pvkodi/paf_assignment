@@ -124,19 +124,23 @@ public class Booking {
   @NotNull(message = "Status is required")
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 50)
+  @Builder.Default
   private BookingStatus status = BookingStatus.PENDING;
 
   @Column(name = "recurrence_rule", length = 500)
   private String recurrenceRule;
 
   @Column(name = "is_recurring_master", nullable = false)
+  @Builder.Default
   private boolean isRecurringMaster = false;
 
   @Column(nullable = false, length = 50)
+  @Builder.Default
   private String timezone = "Asia/Colombo";
 
   @Version
   @Column(nullable = false)
+  @Builder.Default
   private Long version = 0L;
 
   @CreationTimestamp
