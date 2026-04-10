@@ -1,4 +1,4 @@
-package com.sliitreserve.api.controller.advice;
+package com.sliitreserve.api.controllers.advice;
 
 import com.sliitreserve.api.dto.ErrorResponseDTO;
 import com.sliitreserve.api.dto.ConflictErrorResponseDTO;

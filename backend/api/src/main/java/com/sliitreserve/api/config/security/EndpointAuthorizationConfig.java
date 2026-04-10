@@ -52,7 +52,7 @@ import java.util.*;
  * </ul>
  *
  * @see SuspensionPolicyService for suspension enforcement
- * @see com.sliitreserve.api.controller.AuthController for auth endpoints
+ * @see com.sliitreserve.api.controllers.AuthController for auth endpoints
  * @see com.sliitreserve.api.exceptions.ForbiddenException for access denied responses
  */
 @Slf4j
