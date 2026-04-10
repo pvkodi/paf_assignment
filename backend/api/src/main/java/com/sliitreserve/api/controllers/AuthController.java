@@ -1,4 +1,4 @@
-package com.sliitreserve.api.controller;
+package com.sliitreserve.api.controllers;
 
 import com.sliitreserve.api.dto.auth.AuthResponse;
 import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
