@@ -120,7 +120,7 @@
 
 - [ ] T048 [P] [US3] Add unit tests for quota strategy engine in `backend/src/test/java/com/sliitreserve/api/unit/quota/QuotaPolicyEngineTest.java`
 - [x] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
-- [ ] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
+- [x] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
 - [x] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
 - [ ] T052 [P] [US3] Add integration tests for multi-role permissive policy and suspension lifecycle in `backend/src/test/java/com/sliitreserve/api/integration/workflow/QuotaApprovalIntegrationTest.java`
 
@@ -131,7 +131,7 @@
 - [x] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
 - [x] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
 - [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
-- [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
+- [x] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 
 **Checkpoint**: US3 is independently testable and deployable.
