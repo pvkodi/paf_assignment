@@ -1,4 +1,4 @@
-package com.sliitreserve.api.service.facility;
+package com.sliitreserve.api.services.facility;
 
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;

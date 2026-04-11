@@ -1,4 +1,4 @@
-package com.sliitreserve.api.service;
+package com.sliitreserve.api.services.auth;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;

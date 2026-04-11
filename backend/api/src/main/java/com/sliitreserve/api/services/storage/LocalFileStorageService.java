@@ -1,4 +1,4 @@
-package com.sliitreserve.api.service.storage;
+package com.sliitreserve.api.services.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;

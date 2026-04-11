@@ -1,4 +1,4 @@
-package com.sliitreserve.api.observer;
+package com.sliitreserve.api.observers;
 
 /**
  * Observer Interface for Event Handling.
