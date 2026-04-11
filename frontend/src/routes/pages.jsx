@@ -3,6 +3,7 @@ import { ApprovalQueue } from '../features/approvals'
 import { AppealCenter } from '../features/appeals'
 import { NotificationCenter } from '../features/notifications'
 import { UtilizationDashboard } from '../features/analytics'
+import FacilitySearch from '../features/facilities/FacilitySearch'
 
 function DashboardPage() {
   return (
@@ -46,11 +47,16 @@ function AnalyticsPage() {
   return <UtilizationDashboard />
 }
 
+function FacilitiesPage() {
+  return <FacilitySearch />
+}
+
 export {
   AnalyticsPage,
   AppealsPage,
   ApprovalsPage,
   DashboardPage,
+  FacilitiesPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,

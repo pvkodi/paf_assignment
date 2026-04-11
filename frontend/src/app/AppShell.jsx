@@ -48,6 +48,16 @@ function AppShell() {
                   Tickets
                 </Link>
                 <Link
+                  to="/facilities"
+                  className={`pb-2 text-sm font-medium transition ${
+                    isActive('/facilities')
+                      ? 'border-b-2 border-indigo-600 text-indigo-600'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Facilities
+                </Link>
+                <Link
                   to="/appeals"
                   className={`pb-2 text-sm font-medium transition ${
                     isActive('/appeals')

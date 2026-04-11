@@ -30,3 +30,4 @@ target/
 # Uploads and runtime artifacts
 backend/uploads/
 uploads/
+/specs/006-feat-pamali-facilities-core

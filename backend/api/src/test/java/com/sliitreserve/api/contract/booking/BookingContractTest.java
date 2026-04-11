@@ -1,677 +1,294 @@
 package com.sliitreserve.api.contract.booking;
 
+import com.sliitreserve.api.controllers.BookingController;
+import com.sliitreserve.api.controllers.advice.GlobalExceptionHandler;
+import com.sliitreserve.api.entities.auth.Role;
+import com.sliitreserve.api.entities.auth.User;
+import com.sliitreserve.api.entities.booking.Booking;
+import com.sliitreserve.api.entities.booking.BookingStatus;
+import com.sliitreserve.api.entities.facility.Facility;
+import com.sliitreserve.api.exception.ConflictException;
+import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.services.booking.BookingService;
+import com.sliitreserve.api.util.mapping.BookingMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Arrays;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Contract Tests for Facilities and Bookings Endpoints (OpenAPI Compliance)
- * 
- * Purpose: Verify that facilities search and booking creation endpoints
- * conform to the contract defined in specs/001-feat-pamali-smart-campus-ops-hub/contracts/openapi.yaml
- * 
- * Test Scope:
- * 1. GET /facilities - Search facilities with various filter combinations
- * 2. POST /bookings - Create booking requests with valid and invalid payloads
- * 3. Response schema validation (required fields, types, enums)
- * 4. HTTP status codes per contract (200, 201, 400, 403, 409)
- * 5. Error response structure compliance
- */
-@SpringBootTest
-@ActiveProfiles("test")
-@DisplayName("Facilities and Bookings Contract Tests")
+@ExtendWith(MockitoExtension.class)
 class BookingContractTest {
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+    @Mock
+    private BookingService bookingService;
+
+    @Mock
+    private UserRepository userRepository;
 
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private static final String FACILITIES_ENDPOINT = "/api/v1/facilities";
-    private static final String BOOKINGS_ENDPOINT = "/api/v1/bookings";
-
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper());
+        mockMvc = MockMvcBuilders.standaloneSetup(bookingController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
-    @Nested
-    @DisplayName("GET /facilities - Facility Search Contract Tests")
-    class FacilitiesSearchContractTests {
+    @Test
+    void createBooking_returns201WithCurrentSnakeCaseContract() throws Exception {
+        UUID facilityId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
 
-        @Test
-        @DisplayName("Should return 200 with facilities array when no filters applied")
-        void testGetFacilitiesNoFilters() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
+        User currentUser = user(userId, "student@sliit.lk", Role.USER);
+        when(userRepository.findByEmail("student@sliit.lk")).thenReturn(Optional.of(currentUser));
 
-        @Test
-        @DisplayName("Should return facilities filtered by type query parameter")
-        void testGetFacilitiesByType() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .param("type", "LECTURE_HALL")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
+        Booking created = booking(facilityId, userId, userId, BookingStatus.PENDING);
+        when(bookingService.createBooking(any(), any(), any(), any(), any(), any(), anyString(), anyInt(), nullable(String.class)))
+                .thenReturn(created);
 
-        @Test
-        @DisplayName("Should return facilities filtered by minCapacity query parameter")
-        void testGetFacilitiesByMinCapacity() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .param("minCapacity", "50")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
+        String payload = """
+                {
+                  "facility_id": "%s",
+                  "booking_date": "%s",
+                  "start_time": "09:00:00",
+                  "end_time": "10:00:00",
+                  "purpose": "Lecture",
+                  "attendees": 40,
+                  "recurrence_rule": ""
+                }
+                """.formatted(facilityId, LocalDate.now().plusDays(1));
 
-        @Test
-        @DisplayName("Should return facilities filtered by location query parameter")
-        void testGetFacilitiesByLocation() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .param("location", "Building A")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
-
-        @Test
-        @DisplayName("Should return facilities filtered by building query parameter")
-        void testGetFacilitiesByBuilding() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .param("building", "Main Campus")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
-
-        @Test
-        @DisplayName("Should return facilities with multiple filters applied")
-        void testGetFacilitiesMultipleFilters() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .param("type", "LECTURE_HALL")
-                    .param("minCapacity", "30")
-                    .param("location", "Building A")
-                    .param("building", "Main Campus")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", isA(java.util.List.class)));
-        }
-
-        @Test
-        @DisplayName("Should validate FacilityResponse schema - required fields present")
-        void testFacilityResponseSchemaRequiredFields() throws Exception {
-            MvcResult result = mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andReturn();
-
-            String response = result.getResponse().getContentAsString();
-            // Facilities list might be empty initially; contract defines required fields if present
-            if (!response.equals("[]")) {
-                mockMvc.perform(get(FACILITIES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$[0].id").exists())
-                        .andExpect(jsonPath("$[0].name").exists())
-                        .andExpect(jsonPath("$[0].type").exists())
-                        .andExpect(jsonPath("$[0].capacity").exists())
-                        .andExpect(jsonPath("$[0].location").exists())
-                        .andExpect(jsonPath("$[0].building").exists())
-                        .andExpect(jsonPath("$[0].floor").exists())
-                        .andExpect(jsonPath("$[0].status").exists());
-            }
-        }
-
-        @Test
-        @DisplayName("Should validate FacilityResponse schema - UUID format for id")
-        void testFacilityIdIsUuid() throws Exception {
-            MvcResult result = mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andReturn();
-
-            String response = result.getResponse().getContentAsString();
-            if (!response.equals("[]")) {
-                mockMvc.perform(get(FACILITIES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$[0].id", matchesPattern(
-                                "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")));
-            }
-        }
-
-        @Test
-        @DisplayName("Should validate FacilityType enum values")
-        void testFacilityTypeEnumValues() throws Exception {
-            MvcResult result = mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andReturn();
-
-            String response = result.getResponse().getContentAsString();
-            if (!response.equals("[]")) {
-                mockMvc.perform(get(FACILITIES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$[0].type", isIn(Arrays.asList(
-                                "LECTURE_HALL", "LAB", "MEETING_ROOM", "AUDITORIUM", "EQUIPMENT", "SPORTS_FACILITY"))));
-            }
-        }
-
-        @Test
-        @DisplayName("Should validate facility status enum values")
-        void testFacilityStatusEnumValues() throws Exception {
-            MvcResult result = mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andReturn();
-
-            String response = result.getResponse().getContentAsString();
-            if (!response.equals("[]")) {
-                mockMvc.perform(get(FACILITIES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$[0].status", isIn(Arrays.asList("ACTIVE", "OUT_OF_SERVICE"))));
-            }
-        }
-
-        @Test
-        @DisplayName("Should return 403 Forbidden when unauthorized")
-        void testGetFacilitiesForbidden() throws Exception {
-            // This test assumes secured endpoint; adjust based on actual security config
-            // Currently placeholder - endpoint may be public
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
-        }
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("student@sliit.lk"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.facility_id").value(facilityId.toString()))
+                .andExpect(jsonPath("$.requested_by_user_id").value(userId.toString()))
+                .andExpect(jsonPath("$.booked_for_user_id").value(userId.toString()))
+                .andExpect(jsonPath("$.booking_date").value(LocalDate.now().plusDays(1).toString()))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.timezone").value("Asia/Colombo"));
     }
 
-    @Nested
-    @DisplayName("POST /bookings - Booking Creation Contract Tests")
-    class BookingsCreationContractTests {
+    @Test
+    void createBooking_nonAdminOnBehalfRequest_returns403ForbiddenContract() throws Exception {
+        UUID facilityId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        UUID bookedForId = UUID.randomUUID();
 
-        private String validBookingJson;
+        when(userRepository.findByEmail("student@sliit.lk"))
+                .thenReturn(Optional.of(user(requesterId, "student@sliit.lk", Role.USER)));
 
-        @BeforeEach
-        void setUp() {
-            // Valid booking request payload per OpenAPI schema
-            validBookingJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting for project planning",
-                      "attendees": 5
-                    }
-                    """;
-        }
+        String payload = """
+                {
+                  "facility_id": "%s",
+                  "booked_for_user_id": "%s",
+                  "booking_date": "%s",
+                  "start_time": "09:00:00",
+                  "end_time": "10:00:00",
+                  "purpose": "Proxy booking",
+                  "attendees": 20
+                }
+                """.formatted(facilityId, bookedForId, LocalDate.now().plusDays(1));
 
-        @Test
-        @DisplayName("Should create booking with valid request payload")
-        void testCreateBookingWithValidPayload() throws Exception {
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andExpect(status().isCreated());
-        }
-
-        @Test
-        @DisplayName("Should return BookingResponse with required fields on successful creation")
-        void testCreateBookingResponseContainsRequiredFields() throws Exception {
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 201) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("student@sliit.lk"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(validBookingJson))
-                        .andExpect(jsonPath("$.id").exists())
-                        .andExpect(jsonPath("$.status").exists())
-                        .andExpect(jsonPath("$.facility").exists())
-                        .andExpect(jsonPath("$.startDateTime").exists())
-                        .andExpect(jsonPath("$.endDateTime").exists())
-                        .andExpect(jsonPath("$.version").exists());
-            }
-        }
-
-        @Test
-        @DisplayName("Should return booking ID as UUID")
-        void testBookingIdIsUuid() throws Exception {
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 201) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(validBookingJson))
-                        .andExpect(jsonPath("$.id", matchesPattern(
-                                "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")));
-            }
-        }
-
-        @Test
-        @DisplayName("Should return booking status enum value")
-        void testBookingStatusEnumValues() throws Exception {
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 201) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(validBookingJson))
-                        .andExpect(jsonPath("$.status", isIn(Arrays.asList("PENDING", "APPROVED", "REJECTED", "CANCELLED"))));
-            }
-        }
-
-        @Test
-        @DisplayName("Should contain facility object in response")
-        void testBookingResponseContainsFacility() throws Exception {
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 201) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(validBookingJson))
-                        .andExpect(jsonPath("$.facility.id").exists())
-                        .andExpect(jsonPath("$.facility.name").exists())
-                        .andExpect(jsonPath("$.facility.type").exists());
-            }
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when facilityId is missing")
-        void testCreateBookingMissingFacilityId() throws Exception {
-            String invalidJson = """
-                    {
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when bookingDate is missing")
-        void testCreateBookingMissingBookingDate() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when startTime is missing")
-        void testCreateBookingMissingStartTime() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when endTime is missing")
-        void testCreateBookingMissingEndTime() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when purpose is missing")
-        void testCreateBookingMissingPurpose() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when attendees is missing")
-        void testCreateBookingMissingAttendees() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting"
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when purpose is too short (< 3 chars)")
-        void testCreateBookingPurposeTooShort() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "ab",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when attendees is 0 (minimum 1)")
-        void testCreateBookingAttendeesZero() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 0
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when startTime format is invalid")
-        void testCreateBookingInvalidStartTimeFormat() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "25:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should return 400 Bad Request when endTime format is invalid")
-        void testCreateBookingInvalidEndTimeFormat() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "25:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
-        @DisplayName("Should support optional bookedForUserId for admin-on-behalf bookings")
-        void testCreateBookingWithBookedForUserId() throws Exception {
-            String bookingWithBookedFor = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting for project planning",
-                      "attendees": 5,
-                      "bookedForUserId": "660e8400-e29b-41d4-a716-446655440001"
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(bookingWithBookedFor))
-                    .andExpect(status().isCreated());
-        }
-
-        @Test
-        @DisplayName("Should support optional recurrenceRule for recurring bookings")
-        void testCreateBookingWithRecurrenceRule() throws Exception {
-            String bookingWithRecurrence = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Weekly team meeting",
-                      "attendees": 5,
-                      "recurrenceRule": "FREQ=WEEKLY;UNTIL=20260630"
-                    }
-                    """;
-
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(bookingWithRecurrence))
-                    .andExpect(status().isCreated());
-        }
-
-        @Test
-        @DisplayName("Should return 403 Forbidden when user lacks permission")
-        void testCreateBookingForbidden() throws Exception {
-            // This test assumes endpoint requires authentication
-            // Adjust based on actual security config
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("Should return 409 Conflict on booking overlap")
-        void testCreateBookingOverlapConflict() throws Exception {
-            // First booking succeeds
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andExpect(status().isCreated());
-
-            // Second overlapping booking should return 409
-            // This test assumes the facility and time overlap
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andExpect(status().isConflict());
-        }
-
-        @Test
-        @DisplayName("Should return ErrorResponse on 409 Conflict with proper schema")
-        void testConflictErrorResponseSchema() throws Exception {
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validBookingJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 409) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(validBookingJson))
-                        .andExpect(jsonPath("$.code").exists())
-                        .andExpect(jsonPath("$.message").exists())
-                        .andExpect(jsonPath("$.timestamp").exists());
-            }
-        }
+                        .content(payload))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value(containsString("Only ADMIN users can book on behalf of others")));
     }
 
-    @Nested
-    @DisplayName("Error Response Contract Tests")
-    class ErrorResponseContractTests {
+    @Test
+    void createBooking_adminOnBehalfRequest_usesBookedForUserId() throws Exception {
+        UUID facilityId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        UUID targetUserId = UUID.randomUUID();
 
-        @Test
-        @DisplayName("Should return ErrorResponse with required fields on bad request")
-        void testErrorResponseSchema() throws Exception {
-            String invalidJson = """
-                    {
-                      "invalidField": "test"
-                    }
-                    """;
+        when(userRepository.findByEmail("admin@sliit.lk"))
+                .thenReturn(Optional.of(user(adminId, "admin@sliit.lk", Role.ADMIN)));
 
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").exists())
-                    .andExpect(jsonPath("$.message").exists())
-                    .andExpect(jsonPath("$.timestamp").exists());
-        }
+        Booking created = booking(facilityId, adminId, targetUserId, BookingStatus.PENDING);
+        when(bookingService.createBooking(any(), any(), any(), any(), any(), any(), anyString(), anyInt(), nullable(String.class)))
+                .thenReturn(created);
 
-        @Test
-        @DisplayName("Should include details array in error response for validation errors")
-        void testErrorResponseWithDetails() throws Exception {
-            String invalidJson = """
-                    {
-                      "facilityId": "invalid-uuid",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "ab",
-                      "attendees": 0
-                    }
-                    """;
+        String payload = """
+                {
+                  "facility_id": "%s",
+                  "booked_for_user_id": "%s",
+                  "booking_date": "%s",
+                  "start_time": "11:00:00",
+                  "end_time": "12:00:00",
+                  "purpose": "Admin-assisted booking",
+                  "attendees": 15
+                }
+                """.formatted(facilityId, targetUserId, LocalDate.now().plusDays(1));
 
-            MvcResult result = mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(invalidJson))
-                    .andReturn();
-
-            if (result.getResponse().getStatus() == 400) {
-                mockMvc.perform(post(BOOKINGS_ENDPOINT)
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("admin@sliit.lk"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidJson))
-                        .andExpect(jsonPath("$.details", isA(java.util.List.class)));
-            }
-        }
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.requested_by_user_id").value(adminId.toString()))
+                .andExpect(jsonPath("$.booked_for_user_id").value(targetUserId.toString()));
+
+        ArgumentCaptor<UUID> bookedForCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(bookingService).createBooking(
+                any(),
+                any(),
+                bookedForCaptor.capture(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyInt(),
+                nullable(String.class)
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(targetUserId, bookedForCaptor.getValue());
     }
 
-    @Nested
-    @DisplayName("Content Type Contract Tests")
-    class ContentTypeContractTests {
+    @Test
+    void createBooking_missingRequiredFields_returns400ValidationContract() throws Exception {
+        String payload = """
+                {
+                  "booking_date": "%s",
+                  "start_time": "09:00:00",
+                  "end_time": "10:00:00",
+                  "purpose": "Incomplete payload",
+                  "attendees": 10
+                }
+                """.formatted(LocalDate.now().plusDays(1));
 
-        @Test
-        @DisplayName("Should require application/json content type for POST /bookings")
-        void testBookingsPostContentType() throws Exception {
-            String validJson = """
-                    {
-                      "facilityId": "550e8400-e29b-41d4-a716-446655440000",
-                      "bookingDate": "2026-04-20",
-                      "startTime": "10:00",
-                      "endTime": "11:00",
-                      "purpose": "Team meeting",
-                      "attendees": 5
-                    }
-                    """;
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("student@sliit.lk"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("Request validation failed"));
+    }
 
-            mockMvc.perform(post(BOOKINGS_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(validJson))
-                    .andExpect(status().isCreated());
-        }
+    @Test
+    void createBooking_whenUserMissing_returns404ResourceNotFoundContract() throws Exception {
+        UUID facilityId = UUID.randomUUID();
+        when(userRepository.findByEmail("ghost@sliit.lk")).thenReturn(Optional.empty());
 
-        @Test
-        @DisplayName("Should return application/json content type in response")
-        void testResponseContentType() throws Exception {
-            mockMvc.perform(get(FACILITIES_ENDPOINT)
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-        }
+        String payload = """
+                {
+                  "facility_id": "%s",
+                  "booking_date": "%s",
+                  "start_time": "09:00:00",
+                  "end_time": "10:00:00",
+                  "purpose": "Lecture",
+                  "attendees": 30
+                }
+                """.formatted(facilityId, LocalDate.now().plusDays(1));
+
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("ghost@sliit.lk"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value(containsString("User not found")));
+    }
+
+    @Test
+    void createBooking_whenServiceSignalsConflict_returns409ConflictContract() throws Exception {
+        UUID facilityId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+
+        when(userRepository.findByEmail("student@sliit.lk"))
+                .thenReturn(Optional.of(user(requesterId, "student@sliit.lk", Role.USER)));
+        when(bookingService.createBooking(any(), any(), any(), any(), any(), any(), anyString(), anyInt(), nullable(String.class)))
+                .thenThrow(new ConflictException("The facility is already booked during the requested time slot."));
+
+        String payload = """
+                {
+                  "facility_id": "%s",
+                  "booking_date": "%s",
+                  "start_time": "09:00:00",
+                  "end_time": "10:00:00",
+                  "purpose": "Conflict case",
+                  "attendees": 25
+                }
+                """.formatted(facilityId, LocalDate.now().plusDays(1));
+
+        mockMvc.perform(post("/api/v1/bookings")
+                        .principal(auth("student@sliit.lk"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CONFLICT"))
+                .andExpect(jsonPath("$.message").value(containsString("already booked")));
+    }
+
+    private User user(UUID id, String email, Role role) {
+        User user = new User();
+        user.setId(id);
+        user.setEmail(email);
+        user.setDisplayName("Test User");
+        user.setGoogleSubject("subject-" + id);
+        user.setRoles(Set.of(role));
+        return user;
+    }
+
+    private Booking booking(UUID facilityId, UUID requestedById, UUID bookedForId, BookingStatus status) {
+        Facility facility = new Facility();
+        facility.setId(facilityId);
+
+        User requestedBy = new User();
+        requestedBy.setId(requestedById);
+
+        User bookedFor = new User();
+        bookedFor.setId(bookedForId);
+
+        return Booking.builder()
+                .id(UUID.randomUUID())
+                .facility(facility)
+                .requestedBy(requestedBy)
+                .bookedFor(bookedFor)
+                .bookingDate(LocalDate.now().plusDays(1))
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(10, 0))
+                .purpose("Lecture")
+                .attendees(40)
+                .status(status)
+                .timezone("Asia/Colombo")
+                .version(1L)
+                .build();
+    }
+
+    private Authentication auth(String email) {
+        return new UsernamePasswordAuthenticationToken(email, "N/A");
     }
 }
