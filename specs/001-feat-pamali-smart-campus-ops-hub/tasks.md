@@ -146,22 +146,22 @@
 
 ### Tests for User Story 4
 
-- [ ] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
-- [ ] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
+- [x] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
+- [x] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
 - [ ] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/sliitreserve/api/unit/ticket/AttachmentServiceTest.java`
 - [ ] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/sliitreserve/api/contract/ticket/TicketContractTest.java`
 - [ ] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/sliitreserve/api/integration/ticket/TicketEscalationIntegrationTest.java`
 
 ### Implementation for User Story 4
 
-- [ ] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/sliitreserve/api/entities/ticket/`
-- [ ] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java`
-- [ ] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketAttachmentService.java`
-- [ ] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketService.java`
-- [ ] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/sliitreserve/api/workflow/escalation/` and `backend/src/main/java/com/sliitreserve/api/services/ticket/EscalationService.java`
-- [ ] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/sliitreserve/api/services/ticket/SlaScheduler.java`
-- [ ] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java`
-- [ ] T072 [US4] Implement frontend ticketing, assignment, and comments UI in `frontend/src/features/tickets/`
+- [x] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/sliitreserve/api/entities/ticket/`
+- [x] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java`
+- [x] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketAttachmentService.java`
+- [x] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketService.java`
+- [x] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/sliitreserve/api/workflow/escalation/` and `backend/src/main/java/com/sliitreserve/api/services/ticket/EscalationService.java`
+- [x] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/sliitreserve/api/services/ticket/SlaScheduler.java`
+- [x] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java`
+- [x] T072 [US4] Implement frontend ticketing, assignment, and comments UI in `frontend/src/features/tickets/`
 
 **Checkpoint**: US4 is independently testable and deployable.
 

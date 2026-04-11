@@ -1,3 +1,5 @@
+import { TicketDashboard, TicketDetailViewDefault } from '../features/tickets'
+
 function DashboardPage() {
   return (
     <section className="space-y-2">
@@ -16,4 +18,12 @@ function NotFoundPage() {
   )
 }
 
-export { DashboardPage, NotFoundPage }
+function TicketsPage() {
+  return <TicketDashboard />
+}
+
+function TicketDetailPage() {
+  return <TicketDetailViewDefault />
+}
+
+export { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage }
