@@ -44,10 +44,10 @@
 - [x] T016 [P] Implement JWT utility and auth filter in `backend/src/main/java/com/sliitreserve/api/config/security/`
 - [x] T017 [P] Implement local upload storage + static resource serving in `backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/storage/LocalFileStorageService.java`
 - [x] T018 Implement timezone and public-holiday provider foundation in `backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java` and `backend/src/main/java/com/sliitreserve/api/services/calendar/PublicHolidayService.java`
-- [ ] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observers/`
-- [ ] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
-- [ ] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
-- [ ] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
+- [x] T019 [P] Implement observer interfaces and event envelope in `backend/src/main/java/com/sliitreserve/api/observer/`
+- [x] T020 [P] Implement strategy interface and role-policy resolver scaffold in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [x] T021 [P] Implement workflow chain interfaces for approvals and escalation in `backend/src/main/java/com/sliitreserve/api/workflow/`
+- [x] T022 Document module ownership and feature traceability rules in `docs/ownership-and-traceability.md`
 
 **Checkpoint**: Foundation complete, user story phases can proceed.
 
@@ -68,14 +68,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
-- [ ] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
-- [ ] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
-- [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
-- [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
-- [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java`
-- [ ] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
-- [ ] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
+- [x] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
+- [x] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
+- [x] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
+- [x] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
+- [x] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
+- [x] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controller/AuthController.java`
+- [x] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
+- [x] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
 
 **Checkpoint**: US1 is independently testable and deployable.
 
@@ -91,19 +91,19 @@
 
  - [x] T035 [P] [US2] Add unit tests for facility search and factory logic in `backend/src/test/java/com/sliitreserve/api/unit/facility/FacilityServiceTest.java`
 - [ ] T036 [P] [US2] Add unit tests for booking builder and booking service rules in `backend/src/test/java/com/sliitreserve/api/unit/booking/BookingServiceTest.java`
-- [ ] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
+- [x] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
 - [ ] T038 [P] [US2] Add integration tests for overlap conflict and recurrence holiday skips in `backend/src/test/java/com/sliitreserve/api/integration/booking/BookingConcurrencyIntegrationTest.java`
 
 ### Implementation for User Story 2
 
- - [x] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
+- [x] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
 - [x] T040 [P] [US2] Implement FacilityFactory in `backend/src/main/java/com/sliitreserve/api/factories/FacilityFactory.java`
 - [x] T041 [US2] Implement facility query service and repository specifications in `backend/src/main/java/com/sliitreserve/api/services/facility/FacilityService.java`
 - [x] T042 [US2] Implement facilities search controller with DTO output in `backend/src/main/java/com/sliitreserve/api/controllers/FacilityController.java`
-- [ ] T043 [P] [US2] Implement Booking entity with `@Version` and recurrence fields in `backend/src/main/java/com/sliitreserve/api/entities/booking/Booking.java`
-- [ ] T044 [P] [US2] Implement BookingBuilder in `backend/src/main/java/com/sliitreserve/api/util/booking/BookingBuilder.java`
-- [ ] T045 [US2] Implement booking service (capacity, overlap, 409 conflicts, recurrence skips, timezone) in `backend/src/main/java/com/sliitreserve/api/services/booking/BookingService.java`
-- [ ] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java`
+- [x] T043 [P] [US2] Implement Booking entity with `@Version` and recurrence fields in `backend/src/main/java/com/sliitreserve/api/entities/booking/Booking.java`
+- [x] T044 [P] [US2] Implement BookingBuilder in `backend/src/main/java/com/sliitreserve/api/util/booking/BookingBuilder.java`
+- [x] T045 [US2] Implement booking service (capacity, overlap, 409 conflicts, recurrence skips, timezone) in `backend/src/main/java/com/sliitreserve/api/services/booking/BookingService.java`
+- [x] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java`
 - [x] T047 [US2] Implement frontend facility search and booking forms in `frontend/src/features/facilities/` and `frontend/src/features/bookings/`
 
 **Checkpoint**: US2 is independently testable and deployable.
@@ -119,19 +119,19 @@
 ### Tests for User Story 3
 
 - [ ] T048 [P] [US3] Add unit tests for quota strategy engine in `backend/src/test/java/com/sliitreserve/api/unit/quota/QuotaPolicyEngineTest.java`
-- [ ] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
-- [ ] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
-- [ ] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
+- [x] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
+- [x] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
+- [x] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
 - [ ] T052 [P] [US3] Add integration tests for multi-role permissive policy and suspension lifecycle in `backend/src/test/java/com/sliitreserve/api/integration/workflow/QuotaApprovalIntegrationTest.java`
 
 ### Implementation for User Story 3
 
-- [ ] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
-- [ ] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
-- [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
-- [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
-- [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
-- [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
+- [x] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
+- [x] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
+- [x] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
+- [x] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
+- [x] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
+- [x] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 
 **Checkpoint**: US3 is independently testable and deployable.
@@ -146,22 +146,22 @@
 
 ### Tests for User Story 4
 
-- [ ] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
-- [ ] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
+- [x] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
+- [x] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
 - [ ] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/sliitreserve/api/unit/ticket/AttachmentServiceTest.java`
 - [ ] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/sliitreserve/api/contract/ticket/TicketContractTest.java`
 - [ ] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/sliitreserve/api/integration/ticket/TicketEscalationIntegrationTest.java`
 
 ### Implementation for User Story 4
 
-- [ ] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/sliitreserve/api/entities/ticket/`
-- [ ] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java`
-- [ ] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketAttachmentService.java`
-- [ ] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketService.java`
-- [ ] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/sliitreserve/api/workflow/escalation/` and `backend/src/main/java/com/sliitreserve/api/services/ticket/EscalationService.java`
-- [ ] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/sliitreserve/api/services/ticket/SlaScheduler.java`
-- [ ] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java`
-- [ ] T072 [US4] Implement frontend ticketing, assignment, and comments UI in `frontend/src/features/tickets/`
+- [x] T065 [P] [US4] Implement ticket, comment, attachment, and escalation entities in `backend/src/main/java/com/sliitreserve/api/entities/ticket/`
+- [x] T066 [US4] Implement TicketStateMachine in `backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java`
+- [x] T067 [US4] Implement attachment pipeline (MIME/size/sanitization/thumbnailator) in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketAttachmentService.java`
+- [x] T068 [US4] Implement ticket service and comment visibility rules in `backend/src/main/java/com/sliitreserve/api/services/ticket/TicketService.java`
+- [x] T069 [US4] Implement escalation chain handlers and orchestration in `backend/src/main/java/com/sliitreserve/api/workflow/escalation/` and `backend/src/main/java/com/sliitreserve/api/services/ticket/EscalationService.java`
+- [x] T070 [US4] Implement hourly SLA scheduler in `backend/src/main/java/com/sliitreserve/api/services/ticket/SlaScheduler.java`
+- [x] T071 [US4] Implement ticket controllers with DTO boundaries and RBAC in `backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java`
+- [x] T072 [US4] Implement frontend ticketing, assignment, and comments UI in `frontend/src/features/tickets/`
 
 **Checkpoint**: US4 is independently testable and deployable.
 
@@ -175,7 +175,7 @@
 
 ### Tests for User Story 5
 
-- [ ] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/sliitreserve/api/unit/notification/NotificationServiceTest.java`
+- [x] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/sliitreserve/api/unit/notification/NotificationServiceTest.java`
 - [ ] T074 [P] [US5] Add unit tests for utilization calculation and underutilization detection in `backend/src/test/java/com/sliitreserve/api/unit/analytics/UtilizationServiceTest.java`
  - [x] T074 [P] [US5] Add unit tests for utilization calculation and underutilization detection in `backend/src/test/java/com/sliitreserve/api/unit/analytics/UtilizationServiceTest.java`
 - [ ] T075 [P] [US5] Add contract tests for notification feed and analytics endpoints in `backend/src/test/java/com/sliitreserve/api/contract/analytics/AnalyticsContractTest.java`
@@ -183,12 +183,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
-- [ ] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
-- [ ] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
+- [x] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
+- [x] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
+- [x] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
 - [ ] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/sliitreserve/api/services/analytics/UtilizationSnapshotService.java`
 - [ ] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/sliitreserve/api/services/analytics/RecommendationService.java`
-- [ ] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
+- [x] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
 - [ ] T083 [US5] Implement frontend notification center and utilization dashboard in `frontend/src/features/notifications/` and `frontend/src/features/analytics/`
 
 **Checkpoint**: US5 is independently testable and deployable.
@@ -203,7 +203,7 @@
 - [ ] T085 [P] Add missing service-method unit tests and coverage gate in `backend/pom.xml` and `backend/src/test/java/com/sliitreserve/api/`
 - [ ] T086 Optimize critical DB queries and indexes in `backend/src/main/resources/db/migration/V2__performance_indexes.sql`
 - [ ] T087 Run security hardening for JWT, RBAC, and upload paths in `backend/src/main/java/com/sliitreserve/api/config/security/` and `backend/src/main/java/com/sliitreserve/api/services/storage/`
-- [ ] T088 Validate local Docker persistence and operational runbook in `quickstart.md` and `infra/docker-compose.yml`
+- [X] T088 Validate local Docker persistence and operational runbook in `quickstart.md` and `infra/docker-compose.yml`
 
 ---
 
@@ -212,14 +212,14 @@
 **Purpose**: Ensure full requirement coverage in documentation, clear endpoint ownership, and verifiable individual contributions with GitHub + CI.
 
 - [ ] T089 [P] Create architecture overview and deployment diagram docs in `docs/architecture/overview.md` and `docs/architecture/deployment.md`
-- [ ] T090 [P] Create UML class diagram source and rendered diagram in `docs/architecture/class-diagram.mmd` and `docs/architecture/class-diagram.png`
+- [x] T090 [P] Create UML class diagram source and rendered diagram in `docs/architecture/class-diagram.mmd` and `docs/architecture/class-diagram.png`
 - [ ] T091 [P] Create booking workflow sequence diagram and escalation flow diagram in `docs/architecture/booking-sequence.mmd` and `docs/architecture/escalation-sequence.mmd`
 - [ ] T092 Create endpoint contribution matrix (endpoint -> owner -> tests -> PR links) in `docs/api/endpoint-contributions.md`
 - [ ] T093 [P] Create module ownership and special-function ownership register in `docs/ownership-and-traceability.md`
 - [ ] T094 [P] Document GitHub workflow standards (branch naming, PR template usage, labels, reviews) in `docs/github/workflow.md`
-- [ ] T095 [P] Add CODEOWNERS mapping by module and endpoint groups in `.github/CODEOWNERS`
+- [x] T095 [P] Add CODEOWNERS mapping by module and endpoint groups in `.github/CODEOWNERS`
 - [ ] T096 [P] Add PR template requiring endpoint/test evidence in `.github/pull_request_template.md`
-- [ ] T097 [P] Expand CI with backend unit/contract/integration split and frontend checks in `.github/workflows/ci.yml`
+- [x] T097 [P] Expand CI with backend unit/contract/integration split and frontend checks in `.github/workflows/ci.yml`
 - [ ] T098 Add requirement-to-task traceability matrix for FR/AR/SV coverage in `specs/001-feat-pamali-smart-campus-ops-hub/coverage-matrix.md`
 - [ ] T099 Add release readiness checklist (API docs, diagrams, tests, contribution proof) in `specs/001-feat-pamali-smart-campus-ops-hub/release-checklist.md`
 

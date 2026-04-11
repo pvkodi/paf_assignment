@@ -1,0 +1,37 @@
+package com.sliitreserve.api.dto.ticket;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * Response DTO for ticket attachments.
+ *
+ * <p>Includes file metadata and access URLs.
+ *
+ * @see com.sliitreserve.api.entities.ticket.TicketAttachment for entity structure
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class TicketAttachmentResponseDTO {
+
+  private UUID id;
+  private String fileName;
+  private String mimeType;
+  private Long fileSize;
+  private String checksum;
+
+  private String fileUrl;
+  private String thumbnailUrl;
+
+  private UUID uploadedById;
+  private String uploadedByName;
+
+  private LocalDateTime uploadedAt;
+}

@@ -1,0 +1,487 @@
+%% Smart Campus Operations Hub - UML Class Diagram
+%% Scope: Core domain model with ~60+ entity and service classes
+%% Focus: Auth, Facility, Booking, Ticket, Notification, and Analytics domains
+%% Last Updated: 2026-04-11
+
+classDiagram
+    %% ==================== ENUMERATIONS ====================
+    class Role {
+        &lt;&lt;enum&gt;&gt;
+        USER
+        LECTURER
+        TECHNICIAN
+        FACILITY_MANAGER
+        ADMIN
+    }
+
+    class BookingStatus {
+        &lt;&lt;enum&gt;&gt;
+        PENDING
+        APPROVED
+        REJECTED
+        CANCELLED
+    }
+
+    class TicketStatus {
+        &lt;&lt;enum&gt;&gt;
+        OPEN
+        IN_PROGRESS
+        RESOLVED
+        CLOSED
+        REJECTED
+    }
+
+    class TicketPriority {
+        &lt;&lt;enum&gt;&gt;
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+
+    class TicketCategory {
+        &lt;&lt;enum&gt;&gt;
+        ELECTRICAL
+        PLUMBING
+        HVAC
+        IT_NETWORKING
+        STRUCTURAL
+        CLEANING
+        SAFETY
+        OTHER
+    }
+
+    class NotificationChannel {
+        &lt;&lt;enum&gt;&gt;
+        IN_APP
+        EMAIL
+    }
+
+    %% ==================== AUTH DOMAIN ====================
+    class User {
+        -id: UUID
+        -googleSubject: String
+        -email: String
+        -displayName: String
+        -roles: Set~Role~
+        -active: boolean
+        -suspendedUntil: LocalDateTime
+        -noShowCount: Integer
+        -createdAt: LocalDateTime
+        +isSuspended() boolean
+        +hasRole(role) boolean
+    }
+
+    %% ==================== FACILITY DOMAIN ====================
+    class Facility {
+        -id: UUID
+        -facilityCode: String
+        -name: String
+        -capacity: Integer
+        -location: String
+        -building: String
+        -floor: String
+        -availabilityStart: LocalTime
+        -availabilityEnd: LocalTime
+        -status: String
+        +isAvailable(date, time) boolean
+        +getAvailableSlots(date) List
+    }
+
+    class LectureHall {
+        -avEquipment: String
+        -wheelchairAccessible: boolean
+    }
+
+    class Lab {
+        -labType: String
+        -softwareList: String
+        -safetyEquipment: String
+    }
+
+    class MeetingRoom {
+        -avEnabled: boolean
+        -cateringAllowed: boolean
+    }
+
+    class Auditorium {
+        -stageType: String
+        -soundSystem: String
+    }
+
+    class Equipment {
+        -brand: String
+        -model: String
+        -serialNumber: String
+        -maintenanceSchedule: String
+    }
+
+    class SportsFacility {
+        -sportsType: String
+        -equipmentAvailable: String
+    }
+
+    Facility --|> LectureHall
+    Facility --|> Lab
+    Facility --|> MeetingRoom
+    Facility --|> Auditorium
+    Facility --|> Equipment
+    Facility --|> SportsFacility
+
+    %% ==================== BOOKING DOMAIN ====================
+    class Booking {
+        -id: UUID
+        -facilityId: UUID
+        -requestedByUserId: UUID
+        -bookedForUserId: UUID
+        -bookingDate: LocalDate
+        -startTime: LocalTime
+        -endTime: LocalTime
+        -purpose: String
+        -attendees: Integer
+        -status: BookingStatus
+        -recurrenceRule: String
+        -timezone: String
+        -version: Long
+        +isConflicting(other) boolean
+        +canBeApproved() boolean
+        +cancel() void
+    }
+
+    class ApprovalStep {
+        -id: UUID
+        -bookingId: UUID
+        -stepOrder: Integer
+        -approverRole: String
+        -decision: String
+        -decidedByUserId: UUID
+        -decidedAt: LocalDateTime
+        -note: String
+        +approve(userId) void
+        +reject(userId) void
+    }
+
+    class CheckInRecord {
+        -id: UUID
+        -bookingId: UUID
+        -method: String
+        -checkedInByUserId: UUID
+        -checkedInAt: LocalDateTime
+        +isOnTime(startTime) boolean
+    }
+
+    class SuspensionAppeal {
+        -id: UUID
+        -userId: UUID
+        -reason: String
+        -reviewedByUserId: UUID
+        -reviewedAt: LocalDateTime
+    }
+
+    Booking "*" --> "1" Facility : bookedAt
+    Booking "*" --> "1" User : requestedBy
+    Booking "*" --> "1" User : bookedFor
+    Booking "1" --> "*" ApprovalStep : hasApprovals
+    Booking "1" --> "*" CheckInRecord : hasCheckIns
+    User "1" --> "*" SuspensionAppeal : submitsAppeal
+
+    %% ==================== TICKET DOMAIN ====================
+    class MaintenanceTicket {
+        -id: UUID
+        -facilityId: UUID
+        -createdByUserId: UUID
+        -assignedTechnicianUserId: UUID
+        -category: TicketCategory
+        -priority: TicketPriority
+        -status: TicketStatus
+        -title: String
+        -description: String
+        -slaDueAt: LocalDateTime
+        -escalationLevel: Integer
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        +escalate() void
+        +assign(technicianId) void
+        +isSLABreached() boolean
+    }
+
+    class TicketComment {
+        -id: UUID
+        -ticketId: UUID
+        -authorUserId: UUID
+        -body: String
+        -visibility: String
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+    }
+
+    class TicketAttachment {
+        -id: UUID
+        -ticketId: UUID
+        -originalFilename: String
+        -sanitizedFilename: String
+        -contentType: String
+        -sizeBytes: Long
+        -filePath: String
+        -thumbnailPath: String
+        -createdAt: LocalDateTime
+    }
+
+    class EscalationEvent {
+        -id: UUID
+        -ticketId: UUID
+        -level: Integer
+        -triggeredAt: LocalDateTime
+        -actionSummary: String
+        -incidentReportPath: String
+    }
+
+    MaintenanceTicket "*" --> "1" Facility : reportedFor
+    MaintenanceTicket "*" --> "1" User : createdBy
+    MaintenanceTicket "*" --> "0..1" User : assignedTo
+    MaintenanceTicket "1" --> "*" TicketComment : includes
+    MaintenanceTicket "1" --> "*" TicketAttachment : attachments
+    MaintenanceTicket "1" --> "*" EscalationEvent : escalations
+    TicketComment "*" --> "1" User : writtenBy
+    TicketAttachment "*" --> "1" MaintenanceTicket : attachmentFor
+
+    %% ==================== NOTIFICATION DOMAIN ====================
+    class Notification {
+        -id: UUID
+        -recipientUserId: UUID
+        -type: String
+        -severity: String
+        -channels: Set~NotificationChannel~
+        -title: String
+        -message: String
+        -deliveredAt: LocalDateTime
+        -readAt: LocalDateTime
+        -createdAt: LocalDateTime
+        +markAsRead() void
+        +deliver() void
+    }
+
+    class Observer {
+        &lt;&lt;interface&gt;&gt;
+        +update(event) void
+    }
+
+    class NotificationObserver {
+        -userId: UUID
+        -preferredChannels: Set~NotificationChannel~
+        +update(event) void
+        +sendNotification(notification) void
+    }
+
+    class EventPublisher {
+        -observers: Set~Observer~
+        +subscribe(observer) void
+        +publish(event) void
+    }
+
+    Notification "*" --> "1" User : sentTo
+    NotificationObserver ..|> Observer
+    EventPublisher "1" --> "*" Observer : notifies
+
+    %% ==================== ANALYTICS DOMAIN ====================
+    class UtilizationSnapshot {
+        -id: UUID
+        -facilityId: UUID
+        -snapshotDate: LocalDate
+        -availableHours: BigDecimal
+        -bookedHours: BigDecimal
+        -utilizationPercent: BigDecimal
+        -underutilized: boolean
+        +calculateUtilization() BigDecimal
+        +isUnderutilized(threshold) boolean
+    }
+
+    UtilizationSnapshot "*" --> "1" Facility : calculatesFor
+
+    %% ==================== DTO LAYER ====================
+    class BaseResponseDTO {
+        &lt;&lt;abstract&gt;&gt;
+        -id: UUID
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class UserResponseDTO {
+        -email: String
+        -displayName: String
+        -roles: Set~String~
+        -active: boolean
+    }
+
+    class FacilityResponseDTO {
+        -facilityCode: String
+        -name: String
+        -type: String
+        -capacity: Integer
+        -location: String
+    }
+
+    class BookingResponseDTO {
+        -facilityId: UUID
+        -status: String
+        -bookingDate: LocalDate
+        -startTime: LocalTime
+        -endTime: LocalTime
+    }
+
+    class TicketResponseDTO {
+        -title: String
+        -category: String
+        -priority: String
+        -status: String
+        -slaDueAt: LocalDateTime
+    }
+
+    class NotificationResponseDTO {
+        -title: String
+        -severity: String
+        -channels: Set~String~
+        -readAt: LocalDateTime
+    }
+
+    BaseResponseDTO --|> UserResponseDTO
+    BaseResponseDTO --|> FacilityResponseDTO
+    BaseResponseDTO --|> BookingResponseDTO
+    BaseResponseDTO --|> TicketResponseDTO
+    BaseResponseDTO --|> NotificationResponseDTO
+
+    %% ==================== SERVICE LAYER ====================
+    class BookingService {
+        &lt;&lt;service&gt;&gt;
+        +createBooking(request) Booking
+        +updateBookingStatus(id, status) Booking
+        +checkForConflicts(facility, date, time) boolean
+        +processApprovals(bookingId) void
+    }
+
+    class TicketService {
+        &lt;&lt;service&gt;&gt;
+        +createTicket(request) MaintenanceTicket
+        +updateTicketStatus(id, status) MaintenanceTicket
+        +assignTicket(id, technicianId) void
+        +escalateTicket(id) void
+        +addComment(id, comment) TicketComment
+    }
+
+    class NotificationService {
+        &lt;&lt;service&gt;&gt;
+        +sendNotification(recipient, notification) void
+        +publishEvent(event) void
+        +markAsRead(notificationId) void
+        +getUnreadNotifications(userId) List
+    }
+
+    class UserService {
+        &lt;&lt;service&gt;&gt;
+        +createOrUpdateUser(googleSubject, email) User
+        +suspendUser(userId, duration) void
+        +liftSuspension(userId) void
+        +processAppeal(appealId, approved) void
+    }
+
+    class FacilityService {
+        &lt;&lt;service&gt;&gt;
+        +searchFacilities(criteria) List
+        +getFacilityDetails(id) Facility
+        +getAvailability(id, date) List
+    }
+
+    class AnalyticsService {
+        &lt;&lt;service&gt;&gt;
+        +calculateUtilization(facilityId, date) UtilizationSnapshot
+        +identifyUnderutilizedFacilities() List
+        +suggestAlternatives(booking) List
+    }
+
+    %% ==================== REPOSITORY LAYER ====================
+    class BookingRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findConflictingBookings(facility, date, time) List
+        +findByUserId(userId) List
+        +findByStatus(status) List
+    }
+
+    class TicketRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findByFacilityId(facilityId) List
+        +findBySLABreached() List
+    }
+
+    class UserRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findByEmail(email) User
+        +findByGoogleSubject(subject) User
+        +findBySuspendedStatus(isSuspended) List
+    }
+
+    class FacilityRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findByFacilityCode(code) Facility
+        +findByType(type) List
+        +findAvailableFacilities(date, time) List
+    }
+
+    class NotificationRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findByRecipientId(userId) List
+        +findUnreadNotifications(userId) List
+    }
+
+    class UtilizationSnapshotRepository {
+        &lt;&lt;interface&gt;&gt;
+        +findByFacilityAndDate(facilityId, date) UtilizationSnapshot
+        +findUnderutilizedFacilities(threshold) List
+    }
+
+    %% ==================== CONTROLLER LAYER ====================
+    class BookingController {
+        &lt;&lt;controller&gt;&gt;
+        +createBooking(request) BookingResponseDTO
+        +getBooking(id) BookingResponseDTO
+        +listBookings(filters) Page
+        +cancelBooking(id) void
+    }
+
+    class TicketController {
+        &lt;&lt;controller&gt;&gt;
+        +createTicket(request) TicketResponseDTO
+        +getTicket(id) TicketResponseDTO
+        +listTickets(filters) Page
+        +assignTicket(id, technicianId) void
+        +addComment(id, comment) TicketComment
+    }
+
+    class NotificationController {
+        &lt;&lt;controller&gt;&gt;
+        +listNotifications() List
+        +getNotification(id) NotificationResponseDTO
+        +markAsRead(id) void
+    }
+
+    class AnalyticsController {
+        &lt;&lt;controller&gt;&gt;
+        +getUtilizationReport(facilityId, dates) Report
+        +listUnderutilizedFacilities() List
+    }
+
+    %% ==================== INTEGRATION RELATIONSHIPS ====================
+    BookingService --> BookingRepository
+    BookingService --> FacilityRepository
+    TicketService --> TicketRepository
+    NotificationService --> NotificationRepository
+    NotificationService --> EventPublisher
+    UserService --> UserRepository
+    FacilityService --> FacilityRepository
+    AnalyticsService --> UtilizationSnapshotRepository
+    AnalyticsService --> BookingRepository
+
+    BookingController --> BookingService
+    TicketController --> TicketService
+    NotificationController --> NotificationService
+    AnalyticsController --> AnalyticsService

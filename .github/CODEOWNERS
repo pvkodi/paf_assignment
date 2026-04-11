@@ -1,0 +1,244 @@
+# CODEOWNERS for PAF Smart Campus Operations Hub
+# This file defines code ownership by module and endpoint groups
+# to ensure proper review coverage and traceability of contributions.
+#
+# Format: [pattern] [@owner]
+# Ownership is based on the task assignment breakdown from tasks.md
+#
+# Module Ownership Breakdown:
+# - Member 1 (M1): Facilities + Smart Utilization Analytics
+# - Member 2 (M2): Booking Core + Fair-Usage Quota Policy
+# - Member 3 (M3): Maintenance Ticketing + Intelligent Escalation
+# - Member 4 (M4): Authentication + Approval Workflow + Notifications
+
+# ============================================================================
+# PHASE 1-2: SHARED INFRASTRUCTURE & FOUNDATIONAL
+# ============================================================================
+# These files are owned collaboratively; all members must review key changes
+
+.github/ @member1 @member2 @member3 @member4
+.github/workflows/ @member1 @member2 @member3 @member4
+.github/CODEOWNERS @member3
+.github/pull_request_template.md @member3
+.github/workflows/ci.yml @member3
+
+infra/ @member1 @member2 @member3 @member4
+infra/docker-compose.yml @member1 @member2 @member3 @member4
+
+docs/ownership-and-traceability.md @member3
+docs/github/workflow.md @member3
+
+# ============================================================================
+# USER STORY 1: AUTHENTICATION, AUTHORIZATION & ROLE GOVERNANCE
+# Owner: Member 4 (M4)
+# ============================================================================
+
+backend/src/main/java/com/sliitreserve/api/entities/auth/ @member4
+backend/src/main/java/com/sliitreserve/api/dto/auth/ @member4
+backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java @member4
+backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java @member4
+backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java @member4
+backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java @member4
+backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java @member4
+backend/src/main/java/com/sliitreserve/api/config/SecurityConfig.java @member4
+backend/src/main/java/com/sliitreserve/api/config/security/ @member4
+
+frontend/src/features/auth/ @member4
+frontend/src/routes/ProtectedRoute.jsx @member4
+
+backend/src/test/java/com/sliitreserve/api/unit/auth/ @member4
+backend/src/test/java/com/sliitreserve/api/contract/auth/ @member4
+backend/src/test/java/com/sliitreserve/api/integration/auth/ @member4
+
+# ============================================================================
+# USER STORY 2: FACILITY DISCOVERY & BOOKING MANAGEMENT
+# Backend: Member 1 (Facilities) + Member 2 (Booking Core)
+# ============================================================================
+
+# Facility Module - Member 1
+backend/src/main/java/com/sliitreserve/api/entities/facility/ @member1
+backend/src/main/java/com/sliitreserve/api/repositories/FacilityRepository.java @member1
+backend/src/main/java/com/sliitreserve/api/factories/FacilityFactory.java @member1
+backend/src/main/java/com/sliitreserve/api/services/facility/ @member1
+backend/src/main/java/com/sliitreserve/api/controllers/FacilityController.java @member1
+
+backend/src/test/java/com/sliitreserve/api/unit/facility/ @member1
+backend/src/test/java/com/sliitreserve/api/integration/facility/ @member1
+
+# Booking Module - Member 2
+backend/src/main/java/com/sliitreserve/api/entities/booking/Booking.java @member2
+backend/src/main/java/com/sliitreserve/api/repositories/BookingRepository.java @member2
+backend/src/main/java/com/sliitreserve/api/util/booking/BookingBuilder.java @member2
+backend/src/main/java/com/sliitreserve/api/services/booking/BookingService.java @member2
+backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java @member2
+
+backend/src/test/java/com/sliitreserve/api/unit/booking/ @member2
+backend/src/test/java/com/sliitreserve/api/contract/booking/ @member2
+backend/src/test/java/com/sliitreserve/api/integration/booking/ @member2
+
+frontend/src/features/facilities/ @member1
+frontend/src/features/bookings/ @member2
+
+# ============================================================================
+# USER STORY 3: APPROVAL WORKFLOW, QUOTA ENFORCEMENT & SUSPENSION
+# Booking Service: Member 2 (Fair-Usage + Quota Policy)
+# Approval Workflow: Member 4 (Approval Engine)
+# Suspension/Appeals: Member 3 (Escalation) + Member 4 (Auth Services)
+# ============================================================================
+
+# Quota & Booking Service Integration - Member 2
+backend/src/main/java/com/sliitreserve/api/strategy/quota/ @member2
+backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java @member2
+backend/src/test/java/com/sliitreserve/api/unit/quota/ @member2
+backend/src/test/java/com/sliitreserve/api/integration/quota/ @member2
+
+# Approval Workflow - Member 4
+backend/src/main/java/com/sliitreserve/api/workflow/approval/ @member4
+backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java @member4
+backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java @member4
+backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java @member4
+
+# Check-in & No-Show - Member 2
+backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java @member2
+
+# Appeals - Member 4 (Auth) + Member 3 (Escalation coordination)
+backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java @member4
+backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java @member4
+
+frontend/src/features/approvals/ @member4
+frontend/src/features/appeals/ @member4
+
+# ============================================================================
+# USER STORY 4: MAINTENANCE TICKETING WITH SLA ESCALATION
+# Owner: Member 3 (M3)
+# ============================================================================
+
+backend/src/main/java/com/sliitreserve/api/entities/ticket/ @member3
+backend/src/main/java/com/sliitreserve/api/repositories/TicketRepository.java @member3
+backend/src/main/java/com/sliitreserve/api/state/TicketStateMachine.java @member3
+backend/src/main/java/com/sliitreserve/api/services/ticket/ @member3
+backend/src/main/java/com/sliitreserve/api/workflow/escalation/ @member3
+backend/src/main/java/com/sliitreserve/api/controllers/TicketController.java @member3
+
+backend/src/test/java/com/sliitreserve/api/unit/ticket/ @member3
+backend/src/test/java/com/sliitreserve/api/contract/ticket/ @member3
+backend/src/test/java/com/sliitreserve/api/integration/ticket/ @member3
+
+frontend/src/features/tickets/ @member3
+
+# ============================================================================
+# USER STORY 5: NOTIFICATIONS & ADMIN ANALYTICS
+# Notifications: Member 4 (M4)
+# Analytics & Utilization: Member 1 (M1)
+# ============================================================================
+
+# Notifications - Member 4
+backend/src/main/java/com/sliitreserve/api/observers/impl/ @member4
+backend/src/main/java/com/sliitreserve/api/services/notification/ @member4
+backend/src/main/java/com/sliitreserve/api/config/MailConfig.java @member4
+backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java @member4
+
+backend/src/test/java/com/sliitreserve/api/unit/notification/ @member4
+backend/src/test/java/com/sliitreserve/api/contract/notification/ @member4
+
+frontend/src/features/notifications/ @member4
+
+# Analytics & Utilization - Member 1
+backend/src/main/java/com/sliitreserve/api/services/analytics/ @member1
+backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java @member1
+
+backend/src/test/java/com/sliitreserve/api/unit/analytics/ @member1
+backend/src/test/java/com/sliitreserve/api/contract/analytics/ @member1
+backend/src/test/java/com/sliitreserve/api/integration/analytics/ @member1
+
+frontend/src/features/analytics/ @member1
+
+# ============================================================================
+# SHARED INFRASTRUCTURE & FOUNDATIONAL COMPONENTS
+# ============================================================================
+
+# Core Configuration - Assigned but collaborative review required
+backend/src/main/java/com/sliitreserve/api/config/ @member4
+backend/src/main/java/com/sliitreserve/api/config/FileStorageConfig.java @member3
+backend/src/main/java/com/sliitreserve/api/config/TimePolicyConfig.java @member1
+
+# Storage & File Handling - Member 3
+backend/src/main/java/com/sliitreserve/api/services/storage/ @member3
+
+# Calendar & Timezone - Member 1
+backend/src/main/java/com/sliitreserve/api/services/calendar/ @member1
+
+# Observer Pattern & Events - Assigned but requires contributor buy-in
+backend/src/main/java/com/sliitreserve/api/observer/ @member4
+backend/src/main/java/com/sliitreserve/api/workflow/ @member4
+
+# Repositories & DTOs - Foundational (review by module owner)
+backend/src/main/java/com/sliitreserve/api/repositories/ @member2
+backend/src/main/java/com/sliitreserve/api/dto/ @member2
+
+# Global Exception Handling - Member 4 (Auth context)
+backend/src/main/java/com/sliitreserve/api/controllers/advice/ @member4
+
+# ============================================================================
+# TESTS
+# ============================================================================
+
+# Unit Tests - By module owner
+backend/src/test/java/com/sliitreserve/api/unit/ @member1 @member2 @member3 @member4
+
+# Contract Tests - By endpoint owner
+backend/src/test/java/com/sliitreserve/api/contract/ @member1 @member2 @member3 @member4
+
+# Integration Tests - By module owner
+backend/src/test/java/com/sliitreserve/api/integration/ @member1 @member2 @member3 @member4
+
+# ============================================================================
+# BUILD & DATABASE CONFIGURATION
+# ============================================================================
+
+backend/pom.xml @member2
+backend/src/main/resources/db/migration/ @member2
+backend/src/main/resources/application.yaml @member4
+backend/src/main/resources/messages.properties @member4
+
+# ============================================================================
+# FRONTEND CORE
+# ============================================================================
+
+frontend/package.json @member2
+frontend/src/main.jsx @member4
+frontend/src/App.jsx @member4
+frontend/src/contexts/AuthContext.jsx @member4
+frontend/src/contexts/ @member4
+frontend/src/services/authService.js @member4
+frontend/src/routes/ @member4
+
+# ============================================================================
+# DOCUMENTATION & GOVERNANCE
+# ============================================================================
+
+docs/api/endpoint-contributions.md @member3
+docs/architecture/overview.md @member1
+docs/architecture/deployment.md @member1
+docs/architecture/class-diagram.mmd @member3
+docs/architecture/booking-sequence.mmd @member2
+docs/architecture/escalation-sequence.mmd @member3
+
+specs/001-feat-pamali-smart-campus-ops-hub/coverage-matrix.md @member2
+specs/001-feat-pamali-smart-campus-ops-hub/release-checklist.md @member2
+
+# ============================================================================
+# ROOT CONFIGURATION & RUNBOOKS
+# ============================================================================
+
+README.md @member1 @member2 @member3 @member4
+OAUTH_SETUP_GUIDE.md @member4
+OAUTH_QUICK_START.md @member4
+OAUTH_CHECKLIST.md @member4
+quickstart.md @member3
+
+# ============================================================================
+# DEFAULT: All other files require review from all members
+# ============================================================================
+
+* @member1 @member2 @member3 @member4
