@@ -65,7 +65,6 @@ class NotificationServiceTest {
     @Mock
     private Observer additionalObserver;
 
-    @InjectMocks
     private NotificationServiceImpl notificationService;
 
     private EventEnvelope testEvent;
@@ -80,6 +79,8 @@ class NotificationServiceTest {
                 "Booking Approved",
                 "Your booking has been approved"
         );
+        // Ensure a fresh NotificationServiceImpl for each test to avoid cross-test observer state
+        notificationService = new NotificationServiceImpl();
     }
 
     /**
