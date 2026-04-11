@@ -1,4 +1,8 @@
 import { TicketDashboard, TicketDetailViewDefault } from '../features/tickets'
+import { ApprovalQueue } from '../features/approvals'
+import { AppealCenter } from '../features/appeals'
+import { NotificationCenter } from '../features/notifications'
+import { UtilizationDashboard } from '../features/analytics'
 
 function DashboardPage() {
   return (
@@ -26,4 +30,29 @@ function TicketDetailPage() {
   return <TicketDetailViewDefault />
 }
 
-export { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage }
+function ApprovalsPage() {
+  return <ApprovalQueue />
+}
+
+function AppealsPage() {
+  return <AppealCenter />
+}
+
+function NotificationsPage() {
+  return <NotificationCenter />
+}
+
+function AnalyticsPage() {
+  return <UtilizationDashboard />
+}
+
+export {
+  AnalyticsPage,
+  AppealsPage,
+  ApprovalsPage,
+  DashboardPage,
+  NotFoundPage,
+  NotificationsPage,
+  TicketDetailPage,
+  TicketsPage,
+}

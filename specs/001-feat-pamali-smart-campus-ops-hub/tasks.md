@@ -132,7 +132,7 @@
 - [x] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
 - [x] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
 - [x] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
-- [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
+- [x] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 
 **Checkpoint**: US3 is independently testable and deployable.
 
@@ -185,10 +185,10 @@
 - [x] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
 - [x] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
 - [x] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
-- [ ] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/sliitreserve/api/services/analytics/UtilizationSnapshotService.java`
-- [ ] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/sliitreserve/api/services/analytics/RecommendationService.java`
+- [x] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/sliitreserve/api/services/analytics/UtilizationSnapshotService.java`
+- [x] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/sliitreserve/api/services/analytics/RecommendationService.java`
 - [x] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
-- [ ] T083 [US5] Implement frontend notification center and utilization dashboard in `frontend/src/features/notifications/` and `frontend/src/features/analytics/`
+- [x] T083 [US5] Implement frontend notification center and utilization dashboard in `frontend/src/features/notifications/` and `frontend/src/features/analytics/`
 
 **Checkpoint**: US5 is independently testable and deployable.
 

@@ -2,6 +2,7 @@ package com.sliitreserve.api.services.analytics;
 
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
+import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.repositories.UtilizationSnapshotRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UtilizationAnalyticsService {
 
+    private static final BigDecimal MIN_ANALYSIS_AVAILABLE_HOURS = new BigDecimal("50.00");
+
     @Autowired
     private UtilizationSnapshotRepository snapshotRepository;
 
@@ -57,7 +60,7 @@ public class UtilizationAnalyticsService {
 
         try {
             List<UtilizationSnapshot> snapshots = snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(fromDate, toDate);
-            
+
             if (snapshots.isEmpty()) {
                 log.warn("No utilization snapshots found for period {} to {}", fromDate, toDate);
                 return UtilizationResponse.builder()
@@ -67,8 +70,17 @@ public class UtilizationAnalyticsService {
                     .build();
             }
 
-            List<UtilizationResponse.HeatmapEntry> heatmap = buildHeatmap(snapshots);
-            List<UtilizationResponse.UnderutilizedFacility> underutilized = identifyUnderutilized(snapshots);
+            List<UtilizationSnapshot> eligibleSnapshots = filterEligibleSnapshots(snapshots);
+            if (eligibleSnapshots.isEmpty()) {
+                return UtilizationResponse.builder()
+                    .heatmap(new ArrayList<>())
+                    .underutilizedFacilities(new ArrayList<>())
+                    .recommendations(new ArrayList<>())
+                    .build();
+            }
+
+            List<UtilizationResponse.HeatmapEntry> heatmap = buildHeatmap(eligibleSnapshots);
+            List<UtilizationResponse.UnderutilizedFacility> underutilized = identifyUnderutilized(eligibleSnapshots);
             List<UtilizationResponse.RecommendedAlternative> recommendations = generateRecommendations(underutilized);
 
             return UtilizationResponse.builder()
@@ -80,6 +92,32 @@ public class UtilizationAnalyticsService {
             log.error("Error generating utilization analytics for period {} to {}", fromDate, toDate, e);
             throw new RuntimeException("Failed to generate utilization analytics", e);
         }
+    }
+
+    private List<UtilizationSnapshot> filterEligibleSnapshots(List<UtilizationSnapshot> snapshots) {
+        Map<UUID, BigDecimal> availableHoursByFacility = snapshots.stream()
+            .filter(snapshot -> snapshot.getFacility() != null)
+            .filter(snapshot -> snapshot.getFacility().getStatus() == FacilityStatus.ACTIVE)
+            .collect(
+                Collectors.groupingBy(
+                    snapshot -> snapshot.getFacility().getId(),
+                    Collectors.reducing(
+                        BigDecimal.ZERO,
+                        snapshot -> zeroIfNull(snapshot.getAvailableHours()),
+                        BigDecimal::add
+                    )
+                )
+            );
+
+        Set<UUID> eligibleFacilityIds = availableHoursByFacility.entrySet().stream()
+            .filter(entry -> entry.getValue().compareTo(MIN_ANALYSIS_AVAILABLE_HOURS) >= 0)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet());
+
+        return snapshots.stream()
+            .filter(snapshot -> snapshot.getFacility() != null)
+            .filter(snapshot -> eligibleFacilityIds.contains(snapshot.getFacility().getId()))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -97,7 +135,7 @@ public class UtilizationAnalyticsService {
         snapshots.forEach(snapshot -> {
             // Map LocalDate to day-of-week (0=Monday, 6=Sunday)
             int dayOfWeek = snapshot.getSnapshotDate().getDayOfWeek().getValue() - 1; // Convert to 0-6
-            
+
             UtilizationResponse.HeatmapEntry entry = UtilizationResponse.HeatmapEntry.builder()
                 .facilityId(snapshot.getFacility().getId())
                 .facilityName(snapshot.getFacility().getName())
@@ -105,7 +143,7 @@ public class UtilizationAnalyticsService {
                 .hourOfDay(0) // TODO: Extended to hourly snapshots in future
                 .utilizationPercent(snapshot.getUtilizationPercent())
                 .build();
-            
+
             heatmap.add(entry);
         });
 
@@ -122,22 +160,41 @@ public class UtilizationAnalyticsService {
      * @return List of underutilized facilities
      */
     private List<UtilizationResponse.UnderutilizedFacility> identifyUnderutilized(List<UtilizationSnapshot> snapshots) {
-        return snapshots.stream()
-            .filter(UtilizationSnapshot::isUnderutilized)
-            .map(snapshot -> {
-                String recommendation = snapshot.hasPersistentUnderutilization()
-                    ? "CRITICAL: Underutilized for " + snapshot.getConsecutiveUnderutilizedDays() + " days. Consider removing from schedule or repurposing."
-                    : "Monitor: Utilization trending down. Consider promotional strategies.";
+        Map<UUID, List<UtilizationSnapshot>> byFacility = snapshots.stream()
+            .filter(snapshot -> snapshot.getFacility() != null)
+            .collect(Collectors.groupingBy(snapshot -> snapshot.getFacility().getId()));
 
-                return UtilizationResponse.UnderutilizedFacility.builder()
-                    .facilityId(snapshot.getFacility().getId())
-                    .facilityName(snapshot.getFacility().getName())
-                    .utilizationPercent(snapshot.getUtilizationPercent())
-                    .consecutiveUnderutilizedDays(snapshot.getConsecutiveUnderutilizedDays())
+        List<UtilizationResponse.UnderutilizedFacility> underutilizedFacilities = new ArrayList<>();
+
+        for (List<UtilizationSnapshot> facilitySnapshots : byFacility.values()) {
+            UtilizationSnapshot latestSnapshot = facilitySnapshots.stream()
+                .max(Comparator.comparing(UtilizationSnapshot::getSnapshotDate))
+                .orElse(null);
+
+            if (latestSnapshot == null || !latestSnapshot.isUnderutilized()) {
+                continue;
+            }
+
+            String recommendation = latestSnapshot.hasPersistentUnderutilization()
+                ? "CRITICAL: Underutilized for " + latestSnapshot.getConsecutiveUnderutilizedDays() + " days. Consider repurposing or schedule changes."
+                : "Monitor: Utilization trending down. Consider promotional strategies.";
+
+            underutilizedFacilities.add(
+                UtilizationResponse.UnderutilizedFacility.builder()
+                    .facilityId(latestSnapshot.getFacility().getId())
+                    .facilityName(latestSnapshot.getFacility().getName())
+                    .utilizationPercent(latestSnapshot.getUtilizationPercent())
+                    .consecutiveUnderutilizedDays(latestSnapshot.getConsecutiveUnderutilizedDays())
                     .recommendation(recommendation)
-                    .build();
-            })
-            .collect(Collectors.toList());
+                    .build()
+            );
+        }
+
+        underutilizedFacilities.sort(
+            Comparator.comparing(facility -> zeroIfNull(facility.getUtilizationPercent()))
+        );
+
+        return underutilizedFacilities;
     }
 
     /**
@@ -161,5 +218,9 @@ public class UtilizationAnalyticsService {
             log.warn("Failed to generate recommendations", e);
             return new ArrayList<>();
         }
+    }
+
+    private BigDecimal zeroIfNull(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 }

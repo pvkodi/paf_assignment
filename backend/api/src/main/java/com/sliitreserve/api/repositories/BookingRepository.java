@@ -30,6 +30,19 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
     List<Booking> findByRequestedBy_Id(UUID userId);
 
     /**
+     * Find bookings for a facility on a specific date filtered by booking status.
+     *
+     * @param facilityId Facility identifier
+     * @param bookingDate Booking date
+     * @param statuses Booking statuses to include
+     * @return Matching bookings for utilization aggregation
+     */
+    List<Booking> findByFacility_IdAndBookingDateAndStatusIn(
+           UUID facilityId,
+           LocalDate bookingDate,
+           List<BookingStatus> statuses);
+
+    /**
      * Count bookings for a user within a specific week (campus local timezone).
      * Week is defined as Monday-Sunday (ISO 8601).
      * Counts only APPROVED and PENDING bookings (not REJECTED or CANCELLED).

@@ -2,13 +2,21 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import AppShell from "./app/AppShell";
-import { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage } from "./routes/pages";
+import {
+  AnalyticsPage,
+  AppealsPage,
+  ApprovalsPage,
+  DashboardPage,
+  NotFoundPage,
+  NotificationsPage,
+  TicketDetailPage,
+  TicketsPage,
+} from "./routes/pages";
 
 /**
  * Main App Component
@@ -36,10 +44,44 @@ function App() {
           >
             {/* Dashboard */}
             <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />
             <Route path="tickets/:id" element={<TicketDetailPage />} />
+
+            {/* Notifications */}
+            <Route path="notifications" element={<NotificationsPage />} />
+
+            {/* Admin-only features */}
+            <Route
+              path="approvals"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN"]}>
+                  <ApprovalsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN"]}>
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+
+          {/* Suspended users are allowed to submit appeals */}
+          <Route
+            path="/appeals"
+            element={
+              <ProtectedRoute allowSuspended>
+                <AppShell />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AppealsPage />} />
           </Route>
 
           {/* 404 Not Found */}
