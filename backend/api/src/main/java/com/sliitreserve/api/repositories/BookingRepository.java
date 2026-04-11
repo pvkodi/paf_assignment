@@ -28,4 +28,42 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("statuses") List<BookingStatus> statuses);
     
     List<Booking> findByRequestedBy_Id(UUID userId);
+
+    /**
+     * Count bookings for a user within a specific week (campus local timezone).
+     * Week is defined as Monday-Sunday (ISO 8601).
+     * Counts only APPROVED and PENDING bookings (not REJECTED or CANCELLED).
+     * 
+     * @param bookedForUserId User ID to count bookings for
+     * @param weekStartDate Monday of the week (inclusive)
+     * @param weekEndDate Sunday of the week (inclusive)
+     * @return Number of bookings in the week
+     */
+    @Query("SELECT COUNT(b) FROM Booking b " +
+           "WHERE b.bookedFor.id = :bookedForUserId " +
+           "AND b.bookingDate >= :weekStart AND b.bookingDate <= :weekEnd " +
+           "AND b.status IN ('PENDING', 'APPROVED')")
+    long countWeeklyBookings(
+            @Param("bookedForUserId") UUID bookedForUserId,
+            @Param("weekStart") LocalDate weekStart,
+            @Param("weekEnd") LocalDate weekEnd);
+
+    /**
+     * Count bookings for a user within a specific month (campus local timezone).
+     * Month is defined by calendar month year.
+     * Counts only APPROVED and PENDING bookings (not REJECTED or CANCELLED).
+     * 
+     * @param bookedForUserId User ID to count bookings for
+     * @param monthStartDate First day of the month (inclusive)
+     * @param monthEndDate Last day of the month (inclusive)
+     * @return Number of bookings in the month
+     */
+    @Query("SELECT COUNT(b) FROM Booking b " +
+           "WHERE b.bookedFor.id = :bookedForUserId " +
+           "AND b.bookingDate >= :monthStart AND b.bookingDate <= :monthEnd " +
+           "AND b.status IN ('PENDING', 'APPROVED')")
+    long countMonthlyBookings(
+            @Param("bookedForUserId") UUID bookedForUserId,
+            @Param("monthStart") LocalDate monthStart,
+            @Param("monthEnd") LocalDate monthEnd);
 }

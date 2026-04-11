@@ -26,6 +26,10 @@ export function LoginPage() {
       setError(null);
       setIsProcessing(true);
 
+      // Generate state parameter for CSRF protection
+      const state = Math.random().toString(36).substring(7);
+      sessionStorage.setItem("oauth_state", state);
+
       // Build Google OAuth URL
       const params = new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
@@ -33,6 +37,7 @@ export function LoginPage() {
         response_type: "code",
         scope: "openid email profile",
         access_type: "offline",
+        state: state,
       });
 
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
