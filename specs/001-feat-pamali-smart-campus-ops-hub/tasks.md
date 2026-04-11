@@ -202,7 +202,7 @@
 - [ ] T085 [P] Add missing service-method unit tests and coverage gate in `backend/pom.xml` and `backend/src/test/java/com/sliitreserve/api/`
 - [ ] T086 Optimize critical DB queries and indexes in `backend/src/main/resources/db/migration/V2__performance_indexes.sql`
 - [ ] T087 Run security hardening for JWT, RBAC, and upload paths in `backend/src/main/java/com/sliitreserve/api/config/security/` and `backend/src/main/java/com/sliitreserve/api/services/storage/`
-- [ ] T088 Validate local Docker persistence and operational runbook in `quickstart.md` and `infra/docker-compose.yml`
+- [X] T088 Validate local Docker persistence and operational runbook in `quickstart.md` and `infra/docker-compose.yml`
 
 ---
 
@@ -211,14 +211,14 @@
 **Purpose**: Ensure full requirement coverage in documentation, clear endpoint ownership, and verifiable individual contributions with GitHub + CI.
 
 - [ ] T089 [P] Create architecture overview and deployment diagram docs in `docs/architecture/overview.md` and `docs/architecture/deployment.md`
-- [ ] T090 [P] Create UML class diagram source and rendered diagram in `docs/architecture/class-diagram.mmd` and `docs/architecture/class-diagram.png`
+- [x] T090 [P] Create UML class diagram source and rendered diagram in `docs/architecture/class-diagram.mmd` and `docs/architecture/class-diagram.png`
 - [ ] T091 [P] Create booking workflow sequence diagram and escalation flow diagram in `docs/architecture/booking-sequence.mmd` and `docs/architecture/escalation-sequence.mmd`
 - [ ] T092 Create endpoint contribution matrix (endpoint -> owner -> tests -> PR links) in `docs/api/endpoint-contributions.md`
 - [ ] T093 [P] Create module ownership and special-function ownership register in `docs/ownership-and-traceability.md`
 - [ ] T094 [P] Document GitHub workflow standards (branch naming, PR template usage, labels, reviews) in `docs/github/workflow.md`
-- [ ] T095 [P] Add CODEOWNERS mapping by module and endpoint groups in `.github/CODEOWNERS`
+- [x] T095 [P] Add CODEOWNERS mapping by module and endpoint groups in `.github/CODEOWNERS`
 - [ ] T096 [P] Add PR template requiring endpoint/test evidence in `.github/pull_request_template.md`
-- [ ] T097 [P] Expand CI with backend unit/contract/integration split and frontend checks in `.github/workflows/ci.yml`
+- [x] T097 [P] Expand CI with backend unit/contract/integration split and frontend checks in `.github/workflows/ci.yml`
 - [ ] T098 Add requirement-to-task traceability matrix for FR/AR/SV coverage in `specs/001-feat-pamali-smart-campus-ops-hub/coverage-matrix.md`
 - [ ] T099 Add release readiness checklist (API docs, diagrams, tests, contribution proof) in `specs/001-feat-pamali-smart-campus-ops-hub/release-checklist.md`
 
