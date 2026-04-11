@@ -71,11 +71,11 @@
 - [x] T027 [P] [US1] Implement User and Role entities in `backend/src/main/java/com/sliitreserve/api/entities/auth/`
 - [x] T028 [P] [US1] Implement auth request/response DTOs in `backend/src/main/java/com/sliitreserve/api/dto/auth/`
 - [x] T029 [US1] Implement Google OAuth exchange service in `backend/src/main/java/com/sliitreserve/api/services/auth/OAuthAuthService.java`
-- [ ] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
-- [ ] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
-- [ ] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controllers/AuthController.java`
-- [ ] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
-- [ ] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
+- [x] T030 [US1] Implement JWT issuance and validation service in `backend/src/main/java/com/sliitreserve/api/services/auth/JwtTokenService.java`
+- [x] T031 [US1] Implement suspended-user policy service in `backend/src/main/java/com/sliitreserve/api/services/auth/SuspensionPolicyService.java`
+- [x] T032 [US1] Implement auth/profile controllers with DTO boundaries in `backend/src/main/java/com/sliitreserve/api/controller/AuthController.java`
+- [x] T033 [US1] Enforce endpoint role annotations for auth/profile access in `backend/src/main/java/com/sliitreserve/api/config/security/EndpointAuthorizationConfig.java`
+- [x] T034 [US1] Implement frontend auth state and guarded routes in `frontend/src/features/auth/` and `frontend/src/routes/ProtectedRoute.tsx`
 
 **Checkpoint**: US1 is independently testable and deployable.
 
@@ -91,7 +91,7 @@
 
 - [ ] T035 [P] [US2] Add unit tests for facility search and factory logic in `backend/src/test/java/com/sliitreserve/api/unit/facility/FacilityServiceTest.java`
 - [ ] T036 [P] [US2] Add unit tests for booking builder and booking service rules in `backend/src/test/java/com/sliitreserve/api/unit/booking/BookingServiceTest.java`
-- [ ] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
+- [x] T037 [P] [US2] Add contract tests for facilities and bookings endpoints in `backend/src/test/java/com/sliitreserve/api/contract/booking/BookingContractTest.java`
 - [ ] T038 [P] [US2] Add integration tests for overlap conflict and recurrence holiday skips in `backend/src/test/java/com/sliitreserve/api/integration/booking/BookingConcurrencyIntegrationTest.java`
 
 ### Implementation for User Story 2
@@ -119,17 +119,17 @@
 ### Tests for User Story 3
 
 - [ ] T048 [P] [US3] Add unit tests for quota strategy engine in `backend/src/test/java/com/sliitreserve/api/unit/quota/QuotaPolicyEngineTest.java`
-- [ ] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
+- [x] T049 [P] [US3] Add unit tests for approval workflow chain in `backend/src/test/java/com/sliitreserve/api/unit/workflow/ApprovalWorkflowServiceTest.java`
 - [ ] T050 [P] [US3] Add unit tests for no-show and suspension services in `backend/src/test/java/com/sliitreserve/api/unit/auth/NoShowSuspensionServiceTest.java`
-- [ ] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
+- [x] T051 [P] [US3] Add contract tests for approve/check-in/appeal endpoints in `backend/src/test/java/com/sliitreserve/api/contract/workflow/ApprovalAndAppealContractTest.java`
 - [ ] T052 [P] [US3] Add integration tests for multi-role permissive policy and suspension lifecycle in `backend/src/test/java/com/sliitreserve/api/integration/workflow/QuotaApprovalIntegrationTest.java`
 
 ### Implementation for User Story 3
 
 - [x] T053 [P] [US3] Implement quota strategies (`Student`, `Lecturer`, `Admin`) in `backend/src/main/java/com/sliitreserve/api/strategy/quota/`
 - [x] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
-- [ ] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
-- [ ] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
+- [x] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
+- [x] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
 - [x] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
 - [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
@@ -175,19 +175,19 @@
 
 ### Tests for User Story 5
 
-- [ ] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/sliitreserve/api/unit/notification/NotificationServiceTest.java`
+- [x] T073 [P] [US5] Add unit tests for notification observer routing in `backend/src/test/java/com/sliitreserve/api/unit/notification/NotificationServiceTest.java`
 - [ ] T074 [P] [US5] Add unit tests for utilization calculation and underutilization detection in `backend/src/test/java/com/sliitreserve/api/unit/analytics/UtilizationServiceTest.java`
 - [ ] T075 [P] [US5] Add contract tests for notification feed and analytics endpoints in `backend/src/test/java/com/sliitreserve/api/contract/analytics/AnalyticsContractTest.java`
 - [ ] T076 [P] [US5] Add integration tests for notification channels and daily snapshot jobs in `backend/src/test/java/com/sliitreserve/api/integration/analytics/NotificationAnalyticsIntegrationTest.java`
 
 ### Implementation for User Story 5
 
-- [ ] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
-- [ ] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
-- [ ] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
+- [x] T077 [P] [US5] Implement InAppObserver and EmailObserver in `backend/src/main/java/com/sliitreserve/api/observers/impl/`
+- [x] T078 [US5] Implement NotificationService event routing and templates in `backend/src/main/java/com/sliitreserve/api/services/notification/NotificationService.java`
+- [x] T079 [US5] Implement SMTP adapter configuration for Mailtrap in `backend/src/main/java/com/sliitreserve/api/config/MailConfig.java`
 - [ ] T080 [US5] Implement utilization snapshot service and daily scheduler in `backend/src/main/java/com/sliitreserve/api/services/analytics/UtilizationSnapshotService.java`
 - [ ] T081 [US5] Implement underutilization and alternative-facility recommendation service in `backend/src/main/java/com/sliitreserve/api/services/analytics/RecommendationService.java`
-- [ ] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
+- [x] T082 [US5] Implement analytics and notification controllers in `backend/src/main/java/com/sliitreserve/api/controllers/AnalyticsController.java` and `backend/src/main/java/com/sliitreserve/api/controllers/NotificationController.java`
 - [ ] T083 [US5] Implement frontend notification center and utilization dashboard in `frontend/src/features/notifications/` and `frontend/src/features/analytics/`
 
 **Checkpoint**: US5 is independently testable and deployable.
