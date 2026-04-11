@@ -1,8 +1,8 @@
 package com.sliitreserve.api.observers.impl;
 
-import com.sliitreserve.api.observer.EventEnvelope;
-import com.sliitreserve.api.observer.EventSeverity;
-import com.sliitreserve.api.observer.Observer;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventSeverity;
+import com.sliitreserve.api.observers.Observer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

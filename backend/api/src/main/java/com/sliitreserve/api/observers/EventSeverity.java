@@ -1,4 +1,4 @@
-package com.sliitreserve.api.observer;
+package com.sliitreserve.api.observers;
 
 /**
  * Event Severity Levels.

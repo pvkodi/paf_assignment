@@ -1,7 +1,7 @@
 package com.sliitreserve.api.entities.notification;
 
 import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.observer.EventSeverity;
+import com.sliitreserve.api.observers.EventSeverity;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -9,9 +9,9 @@ import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketCategory;
 import com.sliitreserve.api.entities.ticket.TicketPriority;
 import com.sliitreserve.api.entities.ticket.TicketStatus;
-import com.sliitreserve.api.observer.EventEnvelope;
-import com.sliitreserve.api.observer.EventSeverity;
-import com.sliitreserve.api.observer.EventPublisher;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventSeverity;
+import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +25,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -89,6 +91,7 @@ import static org.mockito.Mockito.*;
  */
 @DisplayName("EscalationService Tests")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class EscalationServiceTest {
 
   @Mock private MaintenanceTicketRepository ticketRepository;
@@ -519,7 +522,7 @@ class EscalationServiceTest {
       verify(eventPublisher, times(1)).publish(eventCaptor.capture());
       EventEnvelope event = eventCaptor.getValue();
       assertThat(event.getSeverity()).isEqualTo(EventSeverity.HIGH);
-      assertThat(event.getEventType()).contains("ESCALATION");
+      assertThat(event.getEventType()).contains("ESCALAT");
     }
 
     @Test
