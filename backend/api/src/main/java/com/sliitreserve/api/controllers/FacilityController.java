@@ -2,7 +2,7 @@ package com.sliitreserve.api.controllers;
 
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
-import com.sliitreserve.api.service.facility.FacilityService;
+import com.sliitreserve.api.services.facility.FacilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

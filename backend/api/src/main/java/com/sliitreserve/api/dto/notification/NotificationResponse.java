@@ -1,6 +1,6 @@
 package com.sliitreserve.api.dto.notification;
 
-import com.sliitreserve.api.observer.EventSeverity;
+import com.sliitreserve.api.observers.EventSeverity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

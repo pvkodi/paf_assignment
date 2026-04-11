@@ -3,7 +3,7 @@ package com.sliitreserve.api.contract.facility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sliitreserve.api.controllers.FacilityController;
 import com.sliitreserve.api.entities.facility.LectureHall;
-import com.sliitreserve.api.service.facility.FacilityService;
+import com.sliitreserve.api.services.facility.FacilityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

@@ -54,7 +54,7 @@ import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
  * invocations. Escalation actions (reassignment, notifications) are idempotent where possible.
  *
  * <p><b>Notification Integration</b>: The handler delegates actual notification dispatch to the
- * {@link com.sliitreserve.api.observer.EventPublisher} for HIGH/STANDARD severity routing (FR-034,
+ * {@link com.sliitreserve.api.observers.EventPublisher} for HIGH/STANDARD severity routing (FR-034,
  * FR-035).
  *
  * @see EscalationResult for the escalation result

@@ -85,6 +85,9 @@ services:
       retries: 3
       start_period: 10s
 
+  # Flyway migrations are performed by the backend application at startup (Spring Flyway)
+  # If you need to run Flyway separately, use the Flyway Docker image or the Maven plugin.
+
   backend:
     build:
       context: ../backend/api

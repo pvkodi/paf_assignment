@@ -3,7 +3,7 @@ package com.sliitreserve.api.unit.facility;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.LectureHall;
 import com.sliitreserve.api.repositories.FacilityRepository;
-import com.sliitreserve.api.service.facility.FacilityService;
+import com.sliitreserve.api.services.facility.FacilityService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,9 +1,9 @@
 package com.sliitreserve.api.services.notification;
 
-import com.sliitreserve.api.observer.EventEnvelope;
-import com.sliitreserve.api.observer.EventPublisher;
-import com.sliitreserve.api.observer.EventSeverity;
-import com.sliitreserve.api.observer.Observer;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventPublisher;
+import com.sliitreserve.api.observers.EventSeverity;
+import com.sliitreserve.api.observers.Observer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
