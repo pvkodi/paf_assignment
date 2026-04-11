@@ -1,7 +1,7 @@
 package com.sliitreserve.api.contract.facility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sliitreserve.api.controller.FacilityController;
+import com.sliitreserve.api.controllers.FacilityController;
 import com.sliitreserve.api.entities.facility.LectureHall;
 import com.sliitreserve.api.service.facility.FacilityService;
 import org.junit.jupiter.api.BeforeEach;
