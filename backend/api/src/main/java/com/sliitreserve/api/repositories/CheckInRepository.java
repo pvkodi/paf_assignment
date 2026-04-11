@@ -28,8 +28,8 @@ public interface CheckInRepository extends BaseRepository<CheckInRecord, UUID> {
      * @param bookingId Booking ID
      * @return Optional containing the most recent check-in, or empty if none exists
      */
-    @Query("SELECT c FROM CheckInRecord c WHERE c.booking.id = :bookingId ORDER BY c.checkedInAt DESC LIMIT 1")
-    Optional<CheckInRecord> findLatestByBookingId(@Param("bookingId") UUID bookingId);
+    @Query("SELECT c FROM CheckInRecord c WHERE c.booking.id = :bookingId ORDER BY c.checkedInAt DESC")
+    List<CheckInRecord> findAllByBookingIdOrderByCheckInDesc(@Param("bookingId") UUID bookingId);
     
     /**
      * Check if a check-in record exists for a booking.
