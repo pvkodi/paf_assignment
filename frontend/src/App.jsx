@@ -7,7 +7,8 @@ import {
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
-import Dashboard from "./pages/Dashboard";
+import AppShell from "./app/AppShell";
+import { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage } from "./routes/pages";
 
 /**
  * Main App Component
@@ -26,16 +27,20 @@ function App() {
 
           {/* Protected Routes */}
           <Route
-            path="/dashboard"
+            path="/"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <AppShell />
               </ProtectedRoute>
             }
-          />
+          >
+            {/* Dashboard */}
+            <Route index element={<DashboardPage />} />
 
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Tickets */}
+            <Route path="tickets" element={<TicketsPage />} />
+            <Route path="tickets/:id" element={<TicketDetailPage />} />
+          </Route>
 
           {/* 404 Not Found */}
           <Route
