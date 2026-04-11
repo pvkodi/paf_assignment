@@ -96,17 +96,41 @@
 
 ### Implementation for User Story 2
 
-- [ ] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
-- [ ] T040 [P] [US2] Implement FacilityFactory in `backend/src/main/java/com/sliitreserve/api/factories/FacilityFactory.java`
-- [ ] T041 [US2] Implement facility query service and repository specifications in `backend/src/main/java/com/sliitreserve/api/services/facility/FacilityService.java`
-- [ ] T042 [US2] Implement facilities search controller with DTO output in `backend/src/main/java/com/sliitreserve/api/controllers/FacilityController.java`
+- [x] T039 [P] [US2] Implement facility subtypes and metadata fields in `backend/src/main/java/com/sliitreserve/api/entities/facility/`
+- [x] T040 [P] [US2] Implement FacilityFactory in `backend/src/main/java/com/sliitreserve/api/factories/FacilityFactory.java`
+- [x] T041 [US2] Implement facility query service and repository specifications in `backend/src/main/java/com/sliitreserve/api/services/facility/FacilityService.java`
+- [x] T042 [US2] Implement facilities search controller with DTO output in `backend/src/main/java/com/sliitreserve/api/controllers/FacilityController.java`
 - [x] T043 [P] [US2] Implement Booking entity with `@Version` and recurrence fields in `backend/src/main/java/com/sliitreserve/api/entities/booking/Booking.java`
 - [x] T044 [P] [US2] Implement BookingBuilder in `backend/src/main/java/com/sliitreserve/api/util/booking/BookingBuilder.java`
 - [x] T045 [US2] Implement booking service (capacity, overlap, 409 conflicts, recurrence skips, timezone) in `backend/src/main/java/com/sliitreserve/api/services/booking/BookingService.java`
-- [x] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java`
-- [ ] T047 [US2] Implement frontend facility search and booking forms in `frontend/src/features/facilities/` and `frontend/src/features/bookings/`
+- [x] T046 [US2] Implement booking controller including admin `bookedFor` support in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java` - DONE
+  - [x] Subtask: POST /bookings (create booking) - DONE
+  - [x] Subtask (T046a): GET /bookings (approval queue for lecturers/admins) - DONE
+  - [x] Subtask (T046b): GET /bookings/{id} (view single booking details) - DONE
+- [x] T046a [US2] Implement GET /bookings endpoint for approval queue in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java` - DONE
+  - Returns paginated pending bookings filtered by approver role (LECTURER, ADMIN, FACILITY_MANAGER)
+  - Query params: page (default 0), size (default 20, max 100)
+- [x] T046b [US2] Implement GET /bookings/{id} endpoint to view single booking details in `backend/src/main/java/com/sliitreserve/api/controllers/BookingController.java` - DONE
+  - Retrieve full booking details including facility info, approval chain, and status
+  - Check authorization: owner, staff, or approvers can view
+  - Return enriched BookingResponseDTO with all related data
+- [x] T047 [US2] Implement frontend facility search and booking forms in `frontend/src/features/facilities/` and `frontend/src/features/bookings/` - DONE
+  - FacilitySearch component with advanced filtering (type, capacity, location, building)
+  - BookingForm component with validation (date, time, attendees, recurrence, admin bookedFor)
+  - BookingList component for approval queue with pagination
+  - BookingDetail component with approval/check-in workflow
+  - BookingPage and PendingBookingsPage routing
+  - Integration with backend endpoints and AuthContext
 
 **Checkpoint**: US2 is independently testable and deployable.
+
+**CRITICAL GAPS FOR BOOKING FLOW COMPLETENESS:**
+
+- T042: Must implement facility search (GET /facilities) - blockers user ability to browse facilities
+- T046a: Must implement approval queue (GET /bookings/pending) - without this, approvers cannot see bookings needing approval
+- T046b: Must implement booking details view (GET /bookings/{id}) - needed for approvers and users to inspect booking before approving
+- T057: Must implement check-in endpoint - completes booking lifecycle (approval → check-in → no-show evaluation)
+  These gaps prevent the **end-to-end booking flow** from working (create → approve → check-in).
 
 ---
 
@@ -130,7 +154,12 @@
 - [ ] T054 [US3] Implement QuotaPolicyEngine and effective-role resolver in `backend/src/main/java/com/sliitreserve/api/services/booking/QuotaPolicyEngine.java`
 - [x] T055 [US3] Implement booking approval chain handlers in `backend/src/main/java/com/sliitreserve/api/workflow/approval/`
 - [x] T056 [US3] Implement approval orchestration service in `backend/src/main/java/com/sliitreserve/api/services/booking/ApprovalWorkflowService.java`
-- [ ] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java`
+- [x] T057 [US3] Implement check-in service (QR/manual) and no-show evaluator in `backend/src/main/java/com/sliitreserve/api/services/booking/CheckInService.java` - DONE
+  - [x] Subtask: POST /bookings/{id}/check-in endpoint with CheckInRequest DTO - DONE
+  - [x] Subtask: Booking status transitions (CHECKED_IN / NO_SHOW) - DONE
+  - [x] Subtask: Check-in timestamp and no-show detection (15-min grace period) - DONE
+  - [x] Subtask: Database migration for check-in_at and checked_in_by fields - DONE (V3\_\_add_checked_in_by_user.sql)
+  - [x] Subtask: No-show evaluation logic (marks booking as NO_SHOW if check-in outside grace period) - DONE
 - [ ] T058 [US3] Implement suspension and appeal services/controllers in `backend/src/main/java/com/sliitreserve/api/services/auth/AppealService.java` and `backend/src/main/java/com/sliitreserve/api/controllers/AppealController.java`
 - [ ] T059 [US3] Implement frontend approval queue and appeal screens in `frontend/src/features/approvals/` and `frontend/src/features/appeals/`
 

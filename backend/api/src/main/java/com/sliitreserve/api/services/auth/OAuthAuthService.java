@@ -101,6 +101,11 @@ public class OAuthAuthService {
             // This implements RFC 6749 Section 4.1.3 - Authorization Code Exchange
             log.info("Calling Google Token Endpoint with redirect URI: {}", request.getRedirectUri());
             
+            log.debug("Token Request Details: code={}, redirectUri={}, clientId={}", 
+                request.getCode().substring(0, Math.min(20, request.getCode().length())) + "...",
+                request.getRedirectUri(),
+                googleClientId);
+            
             GoogleAuthorizationCodeTokenRequest tokenRequest = new GoogleAuthorizationCodeTokenRequest(
                     new NetHttpTransport(),
                     new GsonFactory(),
@@ -178,6 +183,11 @@ public class OAuthAuthService {
             throw new IllegalArgumentException("Invalid authorization code: token verification failed", e);
         } catch (IOException e) {
             log.error("Error exchanging authorization code with Google: {} | Cause: {}", e.getMessage(), e.getCause() != null ? e.getCause().getMessage() : "unknown", e);
+            
+            // Check for common OAuth errors
+            if (e.getMessage() != null && e.getMessage().contains("invalid_grant")) {
+                log.error("OAuth invalid_grant error - Check: 1) Redirect URI matches Google Console, 2) Code not expired (10 min), 3) Code not reused, 4) Client secret is correct");
+            }
             throw e;
         }
     }

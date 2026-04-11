@@ -28,4 +28,11 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("statuses") List<BookingStatus> statuses);
     
     List<Booking> findByRequestedBy_Id(UUID userId);
+    
+    /**
+     * Find all bookings by status.
+     * @param status The booking status to filter by
+     * @return List of bookings with the given status
+     */
+    List<Booking> findByStatus(BookingStatus status);
 }

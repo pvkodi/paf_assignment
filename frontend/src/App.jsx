@@ -8,6 +8,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import Dashboard from "./pages/Dashboard";
+import BookingPage from "./pages/BookingPage";
+import PendingBookingsPage from "./pages/PendingBookingsPage";
 
 /**
  * Main App Component
@@ -30,6 +32,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <BookingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/approvals"
+            element={
+              <ProtectedRoute>
+                <PendingBookingsPage />
               </ProtectedRoute>
             }
           />

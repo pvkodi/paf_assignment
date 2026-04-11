@@ -17,16 +17,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OAuthCodeExchangeRequest'
+              $ref: "#/components/schemas/OAuthCodeExchangeRequest"
       responses:
-        '200':
+        "200":
           description: Authenticated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /facilities:
     get:
@@ -35,7 +35,7 @@ paths:
         - in: query
           name: type
           schema:
-            $ref: '#/components/schemas/FacilityType'
+            $ref: "#/components/schemas/FacilityType"
         - in: query
           name: minCapacity
           schema:
@@ -49,18 +49,52 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Facility list
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FacilityResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: "#/components/schemas/FacilityResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /bookings:
+    get:
+      summary: Get pending bookings for current user's approval role
+      description: Returns bookings pending approval based on approver's role (LECTURER, ADMIN, FACILITY_MANAGER).
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of pending bookings for approval
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookingResponse"
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  number:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       summary: Create booking request
       description: Applies quota, role policy, overlap checks, and approval workflow creation.
@@ -69,24 +103,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateBookingRequest'
+              $ref: "#/components/schemas/CreateBookingRequest"
       responses:
-        '201':
+        "201":
           description: Booking created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookingResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
+                $ref: "#/components/schemas/BookingResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
           description: Optimistic lock or overlap conflict
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConflictErrorResponse'
+                $ref: "#/components/schemas/ConflictErrorResponse"
 
   /bookings/{bookingId}/approve:
     post:
@@ -99,16 +133,16 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Approval applied
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookingResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/BookingResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /bookings/{bookingId}/check-in:
     post:
@@ -125,12 +159,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CheckInRequest'
+              $ref: "#/components/schemas/CheckInRequest"
       responses:
-        '200':
+        "200":
           description: Check-in recorded
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /appeals:
     post:
@@ -140,12 +174,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AppealRequest'
+              $ref: "#/components/schemas/AppealRequest"
       responses:
-        '201':
+        "201":
           description: Appeal submitted
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /tickets:
     post:
@@ -155,16 +189,16 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateTicketRequest'
+              $ref: "#/components/schemas/CreateTicketRequest"
       responses:
-        '201':
+        "201":
           description: Ticket created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/TicketResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /tickets/{ticketId}/comments:
     post:
@@ -181,12 +215,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCommentRequest'
+              $ref: "#/components/schemas/CreateCommentRequest"
       responses:
-        '201':
+        "201":
           description: Comment created
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /tickets/{ticketId}/assign:
     post:
@@ -203,12 +237,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignTechnicianRequest'
+              $ref: "#/components/schemas/AssignTechnicianRequest"
       responses:
-        '200':
+        "200":
           description: Assignment updated
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /analytics/utilization:
     get:
@@ -227,14 +261,14 @@ paths:
             type: string
             format: date
       responses:
-        '200':
+        "200":
           description: Utilization analytics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UtilizationResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/UtilizationResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
 components:
   securitySchemes:
@@ -249,25 +283,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: Authentication failed
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     Forbidden:
       description: RBAC denied or suspended account policy
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     OAuthCodeExchangeRequest:
@@ -290,7 +324,7 @@ components:
           type: string
           format: date-time
         user:
-          $ref: '#/components/schemas/UserProfile'
+          $ref: "#/components/schemas/UserProfile"
 
     UserProfile:
       type: object
@@ -307,13 +341,14 @@ components:
         roles:
           type: array
           items:
-            $ref: '#/components/schemas/Role'
+            $ref: "#/components/schemas/Role"
         suspended:
           type: boolean
 
     CreateBookingRequest:
       type: object
-      required: [facilityId, bookingDate, startTime, endTime, purpose, attendees]
+      required:
+        [facilityId, bookingDate, startTime, endTime, purpose, attendees]
       properties:
         facilityId:
           type: string
@@ -350,7 +385,7 @@ components:
           type: string
           enum: [PENDING, APPROVED, REJECTED, CANCELLED]
         facility:
-          $ref: '#/components/schemas/FacilityResponse'
+          $ref: "#/components/schemas/FacilityResponse"
         startDateTime:
           type: string
           format: date-time
@@ -370,7 +405,7 @@ components:
         name:
           type: string
         type:
-          $ref: '#/components/schemas/FacilityType'
+          $ref: "#/components/schemas/FacilityType"
         capacity:
           type: integer
         location:
@@ -391,9 +426,9 @@ components:
           type: string
           format: uuid
         category:
-          $ref: '#/components/schemas/TicketCategory'
+          $ref: "#/components/schemas/TicketCategory"
         priority:
-          $ref: '#/components/schemas/TicketPriority'
+          $ref: "#/components/schemas/TicketPriority"
         description:
           type: string
           minLength: 5
@@ -415,9 +450,9 @@ components:
           type: string
           enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED, REJECTED]
         category:
-          $ref: '#/components/schemas/TicketCategory'
+          $ref: "#/components/schemas/TicketCategory"
         priority:
-          $ref: '#/components/schemas/TicketPriority'
+          $ref: "#/components/schemas/TicketPriority"
         slaDueAt:
           type: string
           format: date-time
@@ -505,7 +540,7 @@ components:
 
     ConflictErrorResponse:
       allOf:
-        - $ref: '#/components/schemas/ErrorResponse'
+        - $ref: "#/components/schemas/ErrorResponse"
         - type: object
           properties:
             currentVersion:
@@ -520,11 +555,29 @@ components:
 
     FacilityType:
       type: string
-      enum: [LECTURE_HALL, LAB, MEETING_ROOM, AUDITORIUM, EQUIPMENT, SPORTS_FACILITY]
+      enum:
+        [
+          LECTURE_HALL,
+          LAB,
+          MEETING_ROOM,
+          AUDITORIUM,
+          EQUIPMENT,
+          SPORTS_FACILITY,
+        ]
 
     TicketCategory:
       type: string
-      enum: [ELECTRICAL, PLUMBING, HVAC, IT_NETWORKING, STRUCTURAL, CLEANING, SAFETY, OTHER]
+      enum:
+        [
+          ELECTRICAL,
+          PLUMBING,
+          HVAC,
+          IT_NETWORKING,
+          STRUCTURAL,
+          CLEANING,
+          SAFETY,
+          OTHER,
+        ]
 
     TicketPriority:
       type: string

@@ -127,6 +127,16 @@ public class Booking {
   @Builder.Default
   private BookingStatus status = BookingStatus.PENDING;
 
+  @Column(name = "check_in_method", length = 50)
+  private String checkInMethod;
+
+  @Column(name = "checked_in_at")
+  private LocalDateTime checkedInAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "checked_in_by_user_id")
+  private User checkedInBy;
+
   @Column(name = "recurrence_rule", length = 500)
   private String recurrenceRule;
 
@@ -170,14 +180,16 @@ public class Booking {
   }
 
   /**
-   * Check if this booking is in a terminal state (APPROVED, REJECTED, or CANCELLED).
+   * Check if this booking is in a terminal state (APPROVED, REJECTED, CANCELLED, CHECKED_IN, or NO_SHOW).
    *
    * @return true if terminal
    */
   public boolean isTerminal() {
     return status == BookingStatus.APPROVED
         || status == BookingStatus.REJECTED
-        || status == BookingStatus.CANCELLED;
+        || status == BookingStatus.CANCELLED
+        || status == BookingStatus.CHECKED_IN
+        || status == BookingStatus.NO_SHOW;
   }
 
   /**
