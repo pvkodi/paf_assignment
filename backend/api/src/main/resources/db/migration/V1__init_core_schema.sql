@@ -233,7 +233,8 @@ CREATE TABLE public."user" (
     id uuid NOT NULL,
     display_name character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
-    google_subject character varying(255) NOT NULL
+    google_subject character varying(255),
+    password_hash character varying(255)
 );
 
 
