@@ -344,6 +344,95 @@ const isSuspended = () => {
   return user?.suspended === true;
 };
 
+/**
+ * Login with email and password
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise} Response with accessToken, refreshToken, and user
+ */
+const loginWithEmailPassword = async (email, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Login failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Email/password login error:", error);
+    throw {
+      type: "LOGIN_FAILED",
+      message: error.message || "Failed to login",
+      ...error,
+    };
+  }
+};
+
+/**
+ * Register new user with email and password
+ * @param {string} email - User email
+ * @param {string} displayName - User display name
+ * @param {string} password - User password
+ * @param {string} confirmPassword - Password confirmation
+ * @returns {Promise} Response with accessToken, refreshToken, and user
+ */
+const registerWithEmailPassword = async (
+  email,
+  displayName,
+  password,
+  confirmPassword
+) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        displayName,
+        password,
+        confirmPassword,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Registration failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw {
+      type: "REGISTRATION_FAILED",
+      message: error.message || "Failed to register",
+      ...error,
+    };
+  }
+};
+
 export const authService = {
   // Token management
   getAccessToken,
@@ -366,6 +455,10 @@ export const authService = {
   // OAuth
   exchangeGoogleToken,
   handleOAuthCallback,
+
+  // Email/Password authentication
+  loginWithEmailPassword,
+  registerWithEmailPassword,
 
   // Logout
   logout,
