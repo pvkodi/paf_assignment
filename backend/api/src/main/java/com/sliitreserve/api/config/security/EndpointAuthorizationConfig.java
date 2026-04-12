@@ -82,6 +82,10 @@ public class EndpointAuthorizationConfig {
         // FR-001: OAuth endpoints are public (no auth required)
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/oauth/google/callback", new HashSet<>());
 
+        // Email/Password authentication: public endpoints
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/register", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/login", new HashSet<>());
+
         // FR-003: Profile and logout are whitelisted for suspended users
         ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/auth/profile",
                 new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));

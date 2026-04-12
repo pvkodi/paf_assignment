@@ -21,7 +21,7 @@ services:
     image: postgres:15.17
     container_name: smartcampus-postgres
     restart: unless-stopped
-    
+
     # Environment configuration for database initialization
     environment:
       POSTGRES_DB: smartcampus
@@ -30,19 +30,19 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
       # Timezone for database (UTC - application handles timezone conversion)
       TZ: UTC
-    
+
     # Port mapping: HOST:CONTAINER
     # External: localhost:5432 -> Internal: postgres:5432
     ports:
       - "5432:5432"
-    
+
     # Data persistence - named volume managed by Docker
     # Data survives container stop/start and removal
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Optional: Mount SQL migration scripts
       # - ../backend/api/src/main/resources/db/migration:/docker-entrypoint-initdb.d
-    
+
     # Health check configuration
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U smartcampus -d smartcampus"]
@@ -50,7 +50,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    
+
     # Resource limits (optional - uncomment if needed)
     # deploy:
     #   resources:
@@ -65,18 +65,18 @@ services:
     image: maildev/maildev:2.1.0
     container_name: smartcampus-mailtrap
     restart: unless-stopped
-    
+
     # Port mapping
     # 1025: SMTP server (for application email sending)
     # 1080: Web UI (http://localhost:1080 for viewing emails)
     ports:
       - "1025:1025"
       - "1080:1080"
-    
+
     # Environment
     environment:
       TZ: UTC
-    
+
     # Health check for email service
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:1080/api/config"]

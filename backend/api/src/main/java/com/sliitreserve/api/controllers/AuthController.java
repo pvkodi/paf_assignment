@@ -3,10 +3,13 @@ package com.sliitreserve.api.controllers;
 import com.sliitreserve.api.dto.auth.AuthResponse;
 import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
 import com.sliitreserve.api.dto.auth.UserProfileResponse;
+import com.sliitreserve.api.dto.auth.EmailPasswordLoginRequest;
+import com.sliitreserve.api.dto.auth.RegisterRequest;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.exception.UnauthorizedException;
 import com.sliitreserve.api.repositories.UserRepository;
 import com.sliitreserve.api.services.auth.OAuthAuthService;
+import com.sliitreserve.api.services.auth.EmailPasswordAuthService;
 import com.sliitreserve.api.services.auth.JwtTokenService;
 import com.sliitreserve.api.services.auth.SuspensionPolicyService;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +27,19 @@ import java.time.LocalDateTime;
 /**
  * Authentication Controller.
  *
- * <p><b>Purpose</b>: Handles user authentication flow via OAuth and manages user session/profile endpoints.
- * Enforces suspension policy on protected endpoints per FR-003.
+ * <p><b>Purpose</b>: Handles user authentication flows (OAuth and email/password) and manages
+ * user session/profile endpoints. Enforces suspension policy on protected endpoints per FR-003.
  *
  * <p><b>Endpoints</b>:
  * <ul>
  *   <li><b>POST /auth/oauth/google/callback</b> [PUBLIC]
  *     - Exchange Google authorization code for JWT
+ *     - Returns: AuthResponse (token, expiresAt, user profile)
+ *   <li><b>POST /auth/register</b> [PUBLIC]
+ *     - Register new user with email and password
+ *     - Returns: AuthResponse (token, expiresAt, user profile)
+ *   <li><b>POST /auth/login</b> [PUBLIC]
+ *     - Authenticate user with email and password
  *     - Returns: AuthResponse (token, expiresAt, user profile)
  *   <li><b>GET /auth/profile</b> [PROTECTED - Allows suspended users]
  *     - Get current authenticated user's profile
@@ -42,20 +51,23 @@ import java.time.LocalDateTime;
  *
  * <p><b>Security</b>:
  * <ul>
- *   <li>OAuth callback is public (no Bearer auth required)
- *   <li>Profile and logout endpoints are protected but allow suspended users (whitelist)
- *   <li>JWT Bearer token extracted from Authorization header for protected endpoints
+ *   <li>OAuth callback, registration, and login are public (no Bearer auth required)</li>
+ *   <li>Profile and logout endpoints are protected but allow suspended users (whitelist)</li>
+ *   <li>Passwords are hashed with BCrypt (strength 12) and never logged</li>
+ *   <li>JWT Bearer token extracted from Authorization header for protected endpoints</li>
  * </ul>
  *
  * <p><b>Integration</b>:
  * <ul>
  *   <li>OAuthAuthService: Exchanges OAuth code for JWT and user profile
+ *   <li>EmailPasswordAuthService: Handles registration and email/password authentication
  *   <li>JwtTokenService: Validates tokens and extracts user email
  *   <li>UserRepository: Looks up user profile for protected endpoints
  *   <li>SuspensionPolicyService: Enforces suspension on non-whitelisted operations
  * </ul>
  *
  * @see OAuthAuthService for OAuth flow implementation
+ * @see EmailPasswordAuthService for email/password authentication
  * @see JwtTokenService for JWT operations
  * @see SuspensionPolicyService for suspension enforcement
  */
@@ -67,6 +79,9 @@ public class AuthController {
 
     @Autowired
     private OAuthAuthService oauthAuthService;
+
+    @Autowired
+    private EmailPasswordAuthService emailPasswordAuthService;
 
     @Autowired
     private JwtTokenService jwtTokenService;
@@ -115,6 +130,7 @@ public class AuthController {
             // Build response with contract-compliant fields
             AuthResponse authResponse = new AuthResponse();
             authResponse.setToken(tokenResponse.getAccessToken());
+            authResponse.setRefreshToken(tokenResponse.getRefreshToken());
             authResponse.setExpiresAt(tokenResponse.getExpiresAt());
             authResponse.setUser(tokenResponse.getUser());
 
@@ -140,6 +156,129 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("Unexpected error during OAuth authentication: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("AUTH_ERROR", "Authentication failed"));
+        }
+    }
+
+    /**
+     * User Registration Endpoint (Email/Password).
+     *
+     * <p>Creates a new user account with email and password authentication.
+     * Email must be unique and not already registered.
+     * Passwords must be at least 8 characters and must match.
+     *
+     * <p><b>Request</b>: RegisterRequest
+     * - email: Institutional email (must be unique)
+     * - displayName: User's display name
+     * - password: Password (min 8 chars)
+     * - confirmPassword: Password confirmation (must match password)
+     *
+     * <p><b>Response</b>: AuthResponse (HTTP 201)
+     * - token: JWT access token for subsequent API calls
+     * - expiresAt: Token expiration timestamp (ISO 8601)
+     * - user: UserProfileResponse with id, email, roles, suspension status
+     *
+     * <p><b>Error Responses</b>:
+     * - HTTP 400: Validation failed (invalid email, passwords don't match, email already registered)
+     * - HTTP 500: Unexpected error during registration
+     *
+     * <p><b>Security</b>: Public endpoint (no authentication required).
+     * Passwords are hashed with BCrypt before storage.
+     *
+     * @param request Registration request (email, name, passwords)
+     * @return ResponseEntity with AuthResponse (201 Created) or error
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
+        log.info("Registration request for email: {}", request.getEmail());
+
+        try {
+            // Register user and generate JWT
+            OAuthAuthService.OAuthTokenResponse tokenResponse = emailPasswordAuthService.registerUser(request);
+
+            // Build response with contract-compliant fields
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(tokenResponse.getAccessToken());
+            authResponse.setRefreshToken(tokenResponse.getRefreshToken());
+            authResponse.setExpiresAt(tokenResponse.getExpiresAt());
+            authResponse.setUser(tokenResponse.getUser());
+
+            log.info("User registered successfully: {}", tokenResponse.getUser().getEmail());
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(authResponse);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Registration validation failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(createErrorResponse("VALIDATION_ERROR", e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("Unexpected error during registration: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("REGISTRATION_ERROR", "Registration failed"));
+        }
+    }
+
+    /**
+     * Email/Password Login Endpoint.
+     *
+     * <p>Authenticates user with email and password credentials.
+     * Verifies password against stored hash and returns JWT on success.
+     *
+     * <p><b>Request</b>: EmailPasswordLoginRequest
+     * - email: User's institutional email
+     * - password: User's password
+     *
+     * <p><b>Response</b>: AuthResponse (HTTP 200)
+     * - token: JWT access token for subsequent API calls
+     * - expiresAt: Token expiration timestamp (ISO 8601)
+     * - user: UserProfileResponse with id, email, roles, suspension status
+     *
+     * <p><b>Error Responses</b>:
+     * - HTTP 400: Validation failed (missing email or password)
+     * - HTTP 401: Invalid credentials or inactive account
+     * - HTTP 500: Unexpected error during authentication
+     *
+     * <p><b>Security</b>: Public endpoint (no authentication required).
+     * Passwords are verified using BCrypt constant-time comparison.
+     * Failed attempts are logged; rate limiting recommended at load balancer level.
+     *
+     * @param request Login request (email and password)
+     * @return ResponseEntity with AuthResponse (200 OK) or error
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@Valid @RequestBody EmailPasswordLoginRequest request) {
+        log.info("Login request for email: {}", request.getEmail());
+
+        try {
+            // Authenticate user and generate JWT
+            OAuthAuthService.OAuthTokenResponse tokenResponse = emailPasswordAuthService.authenticateUser(request);
+
+            // Build response with contract-compliant fields
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(tokenResponse.getAccessToken());
+            authResponse.setRefreshToken(tokenResponse.getRefreshToken());
+            authResponse.setExpiresAt(tokenResponse.getExpiresAt());
+            authResponse.setUser(tokenResponse.getUser());
+
+            log.info("User authenticated successfully: {}", tokenResponse.getUser().getEmail());
+
+            return ResponseEntity.ok(authResponse);
+
+        } catch (UnauthorizedException e) {
+            log.warn("Authentication failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(createErrorResponse("INVALID_CREDENTIALS", e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication: {}", e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("AUTH_ERROR", "Authentication failed"));

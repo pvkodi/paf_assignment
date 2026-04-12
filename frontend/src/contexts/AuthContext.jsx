@@ -91,11 +91,12 @@ export function AuthProvider({ children }) {
 
       const response = await authService.exchangeGoogleToken(googleToken);
 
-      // Store tokens and user
+      // Store tokens and user with expiration from backend
       authService.setAuthTokens(
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
+        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state
@@ -113,6 +114,84 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  /**
+   * Handle login with email and password
+   * Authenticates user and stores auth state
+   */
+  const loginWithEmailPassword = useCallback(async (email, password) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await authService.loginWithEmailPassword(email, password);
+
+      // Store tokens and user with expiration from backend
+      authService.setAuthTokens(
+        response.token || response.accessToken,
+        response.refreshToken,
+        response.user,
+        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+      );
+
+      // Update state
+      setUser(response.user);
+      setIsAuthenticated(true);
+
+      return response.user;
+    } catch (err) {
+      console.error("Email/password login error:", err);
+      setError(err.message || "Login failed");
+      setIsAuthenticated(false);
+      setUser(null);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Handle user registration with email and password
+   * Creates new user account and stores auth state
+   */
+  const registerWithEmailPassword = useCallback(
+    async (email, displayName, password, confirmPassword) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await authService.registerWithEmailPassword(
+          email,
+          displayName,
+          password,
+          confirmPassword
+        );
+
+        // Store tokens and user with expiration from backend
+        authService.setAuthTokens(
+          response.token || response.accessToken,
+          response.refreshToken,
+          response.user,
+          response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+        );
+
+        // Update state
+        setUser(response.user);
+        setIsAuthenticated(true);
+
+        return response.user;
+      } catch (err) {
+        console.error("Registration error:", err);
+        setError(err.message || "Registration failed");
+        setIsAuthenticated(false);
+        setUser(null);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   /**
    * Handle logout
@@ -172,6 +251,8 @@ export function AuthProvider({ children }) {
 
     // Methods
     login,
+    loginWithEmailPassword,
+    registerWithEmailPassword,
     logout,
     refreshProfile,
     hasRole,

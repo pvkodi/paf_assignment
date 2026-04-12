@@ -17,16 +17,17 @@ import java.util.*;
 /**
  * User entity representing a campus platform user.
  *
- * <p><b>Purpose</b>: Store user identity, authentication Subject (OAuth), roles, and suspension
- * state. Supports multi-role assignment and per-user no-show tracking for suspension lifecycle
- * (FR-022: 3 no-shows → 1-week suspension).
+ * <p><b>Purpose</b>: Store user identity, authentication credentials (OAuth or email/password),
+ * roles, and suspension state. Supports multi-role assignment and per-user no-show tracking for
+ * suspension lifecycle (FR-022: 3 no-shows → 1-week suspension).
  *
  * <p><b>Key Fields</b> (from data-model):
  * <ul>
  *   <li><b>id</b>: UUID primary key
- *   <li><b>googleSubject</b>: Google OAuth 2.0 Subject identifier (unique, immutable)
+ *   <li><b>googleSubject</b>: Google OAuth 2.0 Subject identifier (unique, nullable - for OAuth users only)
  *   <li><b>email</b>: Institutional email (unique)
  *   <li><b>displayName</b>: User's display name
+ *   <li><b>passwordHash</b>: Bcrypt-hashed password (nullable - for email/password users only)
  *   <li><b>roles</b>: Set of assigned roles from {USER, LECTURER, TECHNICIAN, FACILITY_MANAGER,
  *       ADMIN}
  *   <li><b>active</b>: Account enabled flag
@@ -34,6 +35,12 @@ import java.util.*;
  *   <li><b>noShowCount</b>: Cumulative no-show counter; incremented on check-in failure within
  *       15min grace
  *   <li><b>createdAt, updatedAt</b>: Audit timestamps
+ * </ul>
+ *
+ * <p><b>Authentication Methods</b>:
+ * <ul>
+ *   <li><b>OAuth</b>: googleSubject is set, passwordHash is null
+ *   <li><b>Email/Password</b>: passwordHash is set, googleSubject is null
  * </ul>
  *
  * <p><b>Suspension Logic</b> (FR-022, FR-023):
@@ -52,7 +59,6 @@ import java.util.*;
 @Table(
     name = "\"user\"",
     uniqueConstraints = {
-      @UniqueConstraint(columnNames = "google_subject", name = "uk_user_google_subject"),
       @UniqueConstraint(columnNames = "email", name = "uk_user_email")
     }
 )
@@ -66,8 +72,7 @@ public class User {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @NotBlank(message = "Google Subject is required")
-  @Column(name = "google_subject", nullable = false, unique = true, length = 255)
+  @Column(name = "google_subject", unique = true, length = 255)
   private String googleSubject;
 
   @Email(message = "Email must be valid")
@@ -78,6 +83,9 @@ public class User {
   @NotBlank(message = "Display name is required")
   @Column(name = "display_name", nullable = false, length = 255)
   private String displayName;
+
+  @Column(name = "password_hash", length = 255)
+  private String passwordHash;
 
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
