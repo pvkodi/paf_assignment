@@ -1,9 +1,9 @@
 package com.sliitreserve.api.workflow.escalation;
 
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
-import com.sliitreserve.api.observer.EventEnvelope;
-import com.sliitreserve.api.observer.EventPublisher;
-import com.sliitreserve.api.observer.EventSeverity;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventPublisher;
+import com.sliitreserve.api.observers.EventSeverity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

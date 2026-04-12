@@ -9,11 +9,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import com.sliitreserve.api.observer.EventEnvelope;
-import com.sliitreserve.api.observer.EventPublisher;
-import com.sliitreserve.api.observer.EventSeverity;
-import com.sliitreserve.api.observer.Observer;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventPublisher;
+import com.sliitreserve.api.observers.EventSeverity;
+import com.sliitreserve.api.observers.Observer;
 
 import java.time.ZonedDateTime;
 import java.util.HashSet;
@@ -50,6 +52,7 @@ import static org.mockito.Mockito.*;
  * - Clean channel fan-out and extensibility for additional channels
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("NotificationService Observer Routing Tests")
 class NotificationServiceTest {
 
@@ -62,7 +65,6 @@ class NotificationServiceTest {
     @Mock
     private Observer additionalObserver;
 
-    @InjectMocks
     private NotificationServiceImpl notificationService;
 
     private EventEnvelope testEvent;
@@ -77,6 +79,8 @@ class NotificationServiceTest {
                 "Booking Approved",
                 "Your booking has been approved"
         );
+        // Ensure a fresh NotificationServiceImpl for each test to avoid cross-test observer state
+        notificationService = new NotificationServiceImpl();
     }
 
     /**

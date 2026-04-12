@@ -14,7 +14,7 @@ import java.util.List;
  * - Prioritize by capacity fit, facility type, location
  * - Provide reasoning for recommendations
  *
- * Implementation: T081 (not yet implemented)
+ * Implementation: T081
  * Contract: Used by UtilizationAnalyticsService
  */
 public interface RecommendationService {

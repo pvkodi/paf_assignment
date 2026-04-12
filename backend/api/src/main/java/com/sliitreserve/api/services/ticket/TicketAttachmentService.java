@@ -4,7 +4,7 @@ import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketAttachment;
 import com.sliitreserve.api.repositories.ticket.TicketAttachmentRepository;
-import com.sliitreserve.api.service.storage.LocalFileStorageService;
+import com.sliitreserve.api.services.storage.LocalFileStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.sliitreserve.api.service.calendar;
+package com.sliitreserve.api.services.calendar;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

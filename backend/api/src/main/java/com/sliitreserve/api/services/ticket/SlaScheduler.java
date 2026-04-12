@@ -68,7 +68,7 @@ import org.springframework.stereotype.Service;
  * <ul>
  *   <li>{@link EscalationService}: Core escalation orchestration
  *   <li>{@link com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository}: SLA deadline queries
- *   <li>{@link com.sliitreserve.api.observer.EventPublisher}: Event distribution to observers
+ *   <li>{@link com.sliitreserve.api.observers.EventPublisher}: Event distribution to observers
  * </ul>
  *
  * <p><b>Usage</b>:
@@ -77,7 +77,7 @@ import org.springframework.stereotype.Service;
  *
  * @see EscalationService for escalation handler chain implementation
  * @see com.sliitreserve.api.workflow.escalation.EscalationHandler for handler contract
- * @see com.sliitreserve.api.observer.EventEnvelope for event structure
+ * @see com.sliitreserve.api.observers.EventEnvelope for event structure
  */
 @Slf4j
 @Service

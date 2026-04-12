@@ -14,8 +14,7 @@ export function LoginPage() {
   const [error, setError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const GOOGLE_CLIENT_ID =
-    import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
   /**
@@ -25,6 +24,19 @@ export function LoginPage() {
     try {
       setError(null);
       setIsProcessing(true);
+
+      if (
+        !GOOGLE_CLIENT_ID ||
+        GOOGLE_CLIENT_ID.trim() === "" ||
+        GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID" ||
+        GOOGLE_CLIENT_ID === "replace-me"
+      ) {
+        setError(
+          "Google OAuth is not configured. Set VITE_GOOGLE_CLIENT_ID in frontend/.env and restart the frontend.",
+        );
+        setIsProcessing(false);
+        return;
+      }
 
       // Generate state parameter for CSRF protection
       const state = Math.random().toString(36).substring(7);

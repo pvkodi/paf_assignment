@@ -145,7 +145,6 @@ class NoShowSuspensionServiceTest {
         void testRecordFirstNoShow() {
             // Arrange
             when(userRepository.save(any(User.class))).thenReturn(testUser);
-            testUser.setNoShowCount(1); // Simulate update
 
             // Act
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(testUser);
@@ -162,7 +161,6 @@ class NoShowSuspensionServiceTest {
         void testRecordSecondNoShow() {
             // Arrange
             when(userRepository.save(any(User.class))).thenReturn(userWithOneNoShow);
-            userWithOneNoShow.setNoShowCount(2); // Simulate update
 
             // Act
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(userWithOneNoShow);
@@ -183,8 +181,6 @@ class NoShowSuspensionServiceTest {
                 User savedUser = invocation.getArgument(0);
                 return savedUser;
             });
-
-            userWithTwoNoShows.setNoShowCount(3); // Simulate increment to 3
 
             // Act
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(userWithTwoNoShows);
@@ -211,13 +207,10 @@ class NoShowSuspensionServiceTest {
         @DisplayName("Should increment no-show counter even if user already suspended")
         void testRecordNoShowForAlreadySuspendedUser() {
             // Arrange
-            int currentNoShowCount = suspendedUser.getNoShowCount();
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
                 User savedUser = invocation.getArgument(0);
                 return savedUser;
             });
-
-            suspendedUser.setNoShowCount(currentNoShowCount + 1); // Simulate increment
 
             // Act
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(suspendedUser);
@@ -248,7 +241,6 @@ class NoShowSuspensionServiceTest {
             // Arrange
             testUser.setNoShowCount(null); // Explicitly set to null
             when(userRepository.save(any(User.class))).thenReturn(testUser);
-            testUser.setNoShowCount(1); // Simulate increment from null
 
             // Act
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(testUser);
@@ -714,7 +706,6 @@ class NoShowSuspensionServiceTest {
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act - First no-show
-            user.setNoShowCount(1);
             User after1 = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(user);
 
             // Assert - Not suspended yet
@@ -722,7 +713,6 @@ class NoShowSuspensionServiceTest {
             assertNull(after1.getSuspendedUntil());
 
             // Act - Second no-show
-            user.setNoShowCount(2);
             User after2 = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(user);
 
             // Assert - Still not suspended
@@ -730,7 +720,6 @@ class NoShowSuspensionServiceTest {
             assertNull(after2.getSuspendedUntil());
 
             // Act - Third no-show (triggers suspension)
-            user.setNoShowCount(3);
             User after3 = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(user);
 
             // Assert - Now suspended
@@ -760,7 +749,6 @@ class NoShowSuspensionServiceTest {
             user.setSuspendedUntil(suspensionTime);
 
             // Act - Record another no-show
-            user.setNoShowCount(3);
             User result = suspensionPolicyService.recordNoShowAndApplySuspensionIfNeeded(user);
 
             // Assert - Both suspension and no-show count updated

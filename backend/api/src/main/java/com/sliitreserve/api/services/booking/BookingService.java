@@ -11,7 +11,7 @@ import com.sliitreserve.api.exception.ResourceNotFoundException;
 import com.sliitreserve.api.repositories.BookingRepository;
 import com.sliitreserve.api.repositories.FacilityRepository;
 import com.sliitreserve.api.repositories.UserRepository;
-import com.sliitreserve.api.service.calendar.PublicHolidayService;
+import com.sliitreserve.api.services.calendar.PublicHolidayService;
 import com.sliitreserve.api.util.booking.BookingBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
