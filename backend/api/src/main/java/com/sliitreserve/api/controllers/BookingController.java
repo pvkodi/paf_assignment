@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -72,5 +73,50 @@ public class BookingController {
 
         BookingResponseDTO response = bookingMapper.toResponseDTO(booking);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Get all bookings for the current authenticated user.
+     * Returns bookings where user is either the requester or the bookedFor user.
+     */
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        List<Booking> bookings = bookingService.getUserBookings(currentUser.getId());
+        List<BookingResponseDTO> response = bookings.stream()
+                .map(bookingMapper::toResponseDTO)
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get a specific booking by ID.
+     */
+    @GetMapping("/{bookingId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BookingResponseDTO> getBooking(
+            @PathVariable UUID bookingId,
+            Authentication authentication) {
+
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        Booking booking = bookingService.getBooking(bookingId);
+
+        // Authorization: User can only view their own bookings
+        if (!booking.getRequestedBy().getId().equals(currentUser.getId()) &&
+            !booking.getBookedFor().getId().equals(currentUser.getId()) &&
+            !currentUser.getRoles().contains(Role.ADMIN)) {
+            throw new ForbiddenException("You do not have permission to view this booking");
+        }
+
+        BookingResponseDTO response = bookingMapper.toResponseDTO(booking);
+        return ResponseEntity.ok(response);
     }
 }

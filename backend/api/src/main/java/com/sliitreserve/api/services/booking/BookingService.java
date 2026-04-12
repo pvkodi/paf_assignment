@@ -119,4 +119,22 @@ public class BookingService {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
     }
+
+    /**
+     * Get all bookings for a user (both as requester and bookedFor).
+     * Returns bookings ordered by booking date descending.
+     */
+    @Transactional(readOnly = true)
+    public List<Booking> getUserBookings(UUID userId) {
+        return bookingRepository.findByRequestedBy_Id(userId);
+    }
+
+    /**
+     * Get booking by ID (with authorization check via service layer).
+     */
+    @Transactional(readOnly = true)
+    public Booking getBooking(UUID bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+    }
 }

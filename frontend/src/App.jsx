@@ -1,8 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
@@ -17,6 +13,7 @@ import {
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
+  BookingsPage,
 } from "./routes/pages";
 
 /**
@@ -49,6 +46,7 @@ function App() {
 
             {/* Facilities & Bookings */}
             <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
+            <Route path="my-bookings" element={<BookingsPage />} />
             <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
 
             {/* Tickets */}

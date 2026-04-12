@@ -18,6 +18,7 @@ import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketComment;
 import com.sliitreserve.api.entities.ticket.TicketAttachment;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
+import com.sliitreserve.api.repositories.UserRepository;
 import com.sliitreserve.api.repositories.FacilityRepository;
 import com.sliitreserve.api.services.ticket.TicketService;
 import com.sliitreserve.api.services.ticket.TicketAttachmentService;
@@ -174,6 +175,7 @@ public class TicketController {
   private final EscalationService escalationService;
   private final MaintenanceTicketRepository ticketRepository;
   private final FacilityRepository facilityRepository;
+  private final UserRepository userRepository;
 
   @Autowired
   public TicketController(
@@ -181,12 +183,14 @@ public class TicketController {
       TicketAttachmentService attachmentService,
       EscalationService escalationService,
       MaintenanceTicketRepository ticketRepository,
-      FacilityRepository facilityRepository) {
+      FacilityRepository facilityRepository,
+      UserRepository userRepository) {
     this.ticketService = ticketService;
     this.attachmentService = attachmentService;
     this.escalationService = escalationService;
     this.ticketRepository = ticketRepository;
     this.facilityRepository = facilityRepository;
+    this.userRepository = userRepository;
   }
 
   /**
@@ -674,10 +678,13 @@ public class TicketController {
    * The principal should be the authenticated User entity from JWT token.
    */
   private User getCurrentUser(Authentication auth) {
-    if (auth == null || !(auth.getPrincipal() instanceof User)) {
+    if (auth == null || auth.getPrincipal() == null) {
       throw new IllegalStateException("User must be authenticated");
     }
-    return (User) auth.getPrincipal();
+    
+    String email = (String) auth.getPrincipal();
+    return userRepository.findByEmail(email)
+        .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database: " + email));
   }
 
   /**
@@ -743,6 +750,7 @@ public class TicketController {
    */
   private TicketDetailResponseDTO mapToDetailResponseDTO(MaintenanceTicket ticket, User currentUser) {
     List<TicketComment> visibleComments = ticketService.getVisibleComments(ticket, currentUser);
+    List<TicketAttachment> attachments = attachmentService.getAttachmentsForTicket(ticket);
 
     return TicketDetailResponseDTO.builder()
         .id(ticket.getId())
@@ -763,7 +771,7 @@ public class TicketController {
         .assignedTechnicianId(ticket.getAssignedTechnician() != null ? ticket.getAssignedTechnician().getId() : null)
         .assignedTechnicianName(ticket.getAssignedTechnician() != null ? ticket.getAssignedTechnician().getDisplayName() : null)
         .comments(visibleComments.stream().map(this::mapCommentToResponseDTO).collect(Collectors.toList()))
-        .attachments(new java.util.ArrayList<>()) // TODO: Map from ticket attachments
+        .attachments(attachments.stream().map(this::mapAttachmentToResponseDTO).collect(Collectors.toList()))
         .escalationHistory(new java.util.ArrayList<>()) // TODO: Map from escalation service
         .build();
   }

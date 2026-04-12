@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { apiClient } from '../../services/apiClient';
+import React, { useState, useEffect } from "react";
+import { apiClient } from "../../services/apiClient";
 
 /**
  * FacilitySearch Component
@@ -7,22 +7,22 @@ import { apiClient } from '../../services/apiClient';
  * Implements FR-004, FR-005, FR-006 from the specification.
  */
 export default function FacilitySearch({ onFacilitySelect }) {
-  const [type, setType] = useState('');
-  const [minCapacity, setMinCapacity] = useState('');
-  const [location, setLocation] = useState('');
-  const [building, setBuilding] = useState('');
+  const [type, setType] = useState("");
+  const [minCapacity, setMinCapacity] = useState("");
+  const [location, setLocation] = useState("");
+  const [building, setBuilding] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   const facilityTypes = [
-    'LECTURE_HALL',
-    'LAB',
-    'MEETING_ROOM',
-    'AUDITORIUM',
-    'EQUIPMENT',
-    'SPORTS_FACILITY'
+    "LECTURE_HALL",
+    "LAB",
+    "MEETING_ROOM",
+    "AUDITORIUM",
+    "EQUIPMENT",
+    "SPORTS_FACILITY",
   ];
 
   const search = async (e) => {
@@ -31,9 +31,9 @@ export default function FacilitySearch({ onFacilitySelect }) {
     setHasSearched(true);
 
     // Validate minCapacity
-    const minCap = minCapacity === '' ? null : Number(minCapacity);
+    const minCap = minCapacity === "" ? null : Number(minCapacity);
     if (minCap !== null && (isNaN(minCap) || minCap < 1)) {
-      setError('Minimum capacity must be a positive number');
+      setError("Minimum capacity must be a positive number");
       setResults([]);
       return;
     }
@@ -41,21 +41,24 @@ export default function FacilitySearch({ onFacilitySelect }) {
     try {
       setLoading(true);
       const params = {};
-      
+
       if (type) params.type = type;
       if (minCap !== null) params.minCapacity = minCap;
       if (location) params.location = location;
       if (building) params.building = building;
 
-      const res = await apiClient.get('/v1/facilities', { params });
+      const res = await apiClient.get("/v1/facilities", { params });
       setResults(Array.isArray(res.data) ? res.data : []);
-      
+
       if (Array.isArray(res.data) && res.data.length === 0) {
-        setError('No facilities found matching your criteria');
+        setError("No facilities found matching your criteria");
       }
     } catch (requestError) {
-      console.error('Facility search error:', requestError);
-      setError(requestError.response?.data?.message || 'Failed to search facilities. Please try again.');
+      console.error("Facility search error:", requestError);
+      setError(
+        requestError.response?.data?.message ||
+          "Failed to search facilities. Please try again.",
+      );
       setResults([]);
     } finally {
       setLoading(false);
@@ -69,10 +72,10 @@ export default function FacilitySearch({ onFacilitySelect }) {
   };
 
   const handleClear = () => {
-    setType('');
-    setMinCapacity('');
-    setLocation('');
-    setBuilding('');
+    setType("");
+    setMinCapacity("");
+    setLocation("");
+    setBuilding("");
     setResults([]);
     setError(null);
     setHasSearched(false);
@@ -82,8 +85,10 @@ export default function FacilitySearch({ onFacilitySelect }) {
     <div className="space-y-6">
       {/* Search Form */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4 text-slate-900">Search Facilities</h2>
-        
+        <h2 className="text-2xl font-bold mb-4 text-slate-900">
+          Search Facilities
+        </h2>
+
         <form onSubmit={search} className="space-y-4">
           {/* Filter Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,7 +105,7 @@ export default function FacilitySearch({ onFacilitySelect }) {
                 <option value="">All Types</option>
                 {facilityTypes.map((t) => (
                   <option key={t} value={t}>
-                    {t.replace(/_/g, ' ')}
+                    {t.replace(/_/g, " ")}
                   </option>
                 ))}
               </select>
@@ -164,7 +169,7 @@ export default function FacilitySearch({ onFacilitySelect }) {
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? "Searching..." : "Search"}
             </button>
             <button
               type="button"
@@ -180,49 +185,62 @@ export default function FacilitySearch({ onFacilitySelect }) {
       {/* Search Results */}
       {hasSearched && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold mb-4 text-slate-900">
+          <h3 className="text-xl font-bold mb-2 text-slate-900">
             Results ({results.length})
           </h3>
 
+          {results.length > 0 && (
+            <p className="text-sm text-slate-600 mb-4">
+              Click the <span className="font-medium">"Select"</span> button for
+              a facility to proceed with booking on the right.
+            </p>
+          )}
+
           {results.length === 0 ? (
-            <p className="text-slate-600">No facilities found matching your criteria.</p>
+            <p className="text-slate-600">
+              No facilities found matching your criteria.
+            </p>
           ) : (
             <div className="space-y-3">
               {results.map((facility) => (
                 <div
                   key={facility.id}
-                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleSelectFacility(facility)}
+                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
                       <h4 className="text-lg font-semibold text-slate-900">
                         {facility.name}
                       </h4>
-                      
+
                       <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-slate-600">
                         <div>
-                          <span className="font-medium">Type:</span> {facility.type?.replace(/_/g, ' ')}
+                          <span className="font-medium">Type:</span>{" "}
+                          {facility.type?.replace(/_/g, " ")}
                         </div>
                         <div>
-                          <span className="font-medium">Capacity:</span> {facility.capacity}
+                          <span className="font-medium">Capacity:</span>{" "}
+                          {facility.capacity}
                         </div>
                         <div>
-                          <span className="font-medium">Building:</span> {facility.building}
+                          <span className="font-medium">Building:</span>{" "}
+                          {facility.building}
                         </div>
                         <div>
-                          <span className="font-medium">Floor:</span> {facility.floor}
+                          <span className="font-medium">Floor:</span>{" "}
+                          {facility.floor}
                         </div>
                         <div>
-                          <span className="font-medium">Location:</span> {facility.location}
+                          <span className="font-medium">Location:</span>{" "}
+                          {facility.location}
                         </div>
                         <div>
-                          <span className="font-medium">Status:</span>{' '}
+                          <span className="font-medium">Status:</span>{" "}
                           <span
                             className={
-                              facility.status === 'ACTIVE'
-                                ? 'text-green-600 font-medium'
-                                : 'text-red-600 font-medium'
+                              facility.status === "ACTIVE"
+                                ? "text-green-600 font-medium"
+                                : "text-red-600 font-medium"
                             }
                           >
                             {facility.status}
@@ -230,6 +248,15 @@ export default function FacilitySearch({ onFacilitySelect }) {
                         </div>
                       </div>
                     </div>
+
+                    {/* Select Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectFacility(facility)}
+                      className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap self-center"
+                    >
+                      Select
+                    </button>
                   </div>
                 </div>
               ))}
