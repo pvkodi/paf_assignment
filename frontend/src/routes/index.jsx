@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import AppShell from '../app/AppShell'
-import { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage } from './pages'
+import { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage, FacilitiesAndBookingsPage } from './pages'
 
 const router = createBrowserRouter([
   {
@@ -10,6 +10,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
+      },
+      {
+        path: 'bookings',
+        element: <FacilitiesAndBookingsPage />,
       },
       {
         path: 'tickets',

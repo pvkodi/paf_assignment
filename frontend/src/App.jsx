@@ -12,7 +12,7 @@ import {
   AppealsPage,
   ApprovalsPage,
   DashboardPage,
-  FacilitiesPage,
+  FacilitiesAndBookingsPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
@@ -47,8 +47,9 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
 
-            {/* Facilities */}
-            <Route path="facilities" element={<FacilitiesPage />} />
+            {/* Facilities & Bookings */}
+            <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
+            <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />

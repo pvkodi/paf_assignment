@@ -119,6 +119,23 @@ services:
       - ../frontend/.env
     depends_on:
       - backend
+    
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartcampus-pgadmin
+    restart: unless-stopped
+    
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@campus.edu
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    
+    ports:
+      - "5050:80"
+    
+    depends_on:
+      - postgres 
 
 # Named volumes - persist data across container lifecycle
 # Docker automatically manages volume location on host machine

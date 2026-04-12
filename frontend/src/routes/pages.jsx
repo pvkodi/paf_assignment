@@ -1,9 +1,11 @@
+import React, { useState } from 'react'
 import { TicketDashboard, TicketDetailViewDefault } from '../features/tickets'
 import { ApprovalQueue } from '../features/approvals'
 import { AppealCenter } from '../features/appeals'
 import { NotificationCenter } from '../features/notifications'
 import { UtilizationDashboard } from '../features/analytics'
 import FacilitySearch from '../features/facilities/FacilitySearch'
+import BookingForm from '../features/bookings/BookingForm'
 
 function DashboardPage() {
   return (
@@ -47,8 +49,29 @@ function AnalyticsPage() {
   return <UtilizationDashboard />
 }
 
-function FacilitiesPage() {
-  return <FacilitySearch />
+function FacilitiesAndBookingsPage() {
+  const [selectedFacility, setSelectedFacility] = useState(null)
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Facility Booking System</h1>
+        <p className="text-slate-600">Search for facilities and create booking requests</p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Facility Search */}
+        <div className="lg:col-span-2">
+          <FacilitySearch onFacilitySelect={setSelectedFacility} />
+        </div>
+        
+        {/* Booking Form */}
+        <div className="lg:col-span-1">
+          <BookingForm facility={selectedFacility} />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export {
@@ -56,7 +79,7 @@ export {
   AppealsPage,
   ApprovalsPage,
   DashboardPage,
-  FacilitiesPage,
+  FacilitiesAndBookingsPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
