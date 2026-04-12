@@ -158,6 +158,7 @@ public class OAuthAuthService {
 
             // Step 6: Generate JWT session token
             String accessToken = jwtUtil.generateToken(email, displayName, picture);
+            String refreshToken = jwtUtil.generateRefreshToken(email);
             long expirationMs = 86400000; // 24 hours (matches JWT config)
             LocalDateTime expiresAt = LocalDateTime.now(ZoneId.systemDefault())
                     .plusSeconds(expirationMs / 1000);
@@ -171,7 +172,7 @@ public class OAuthAuthService {
                     user.getSuspendedUntil() != null && user.getSuspendedUntil().isAfter(LocalDateTime.now())
             );
 
-            return new OAuthTokenResponse(accessToken, expiresAt, userProfile);
+            return new OAuthTokenResponse(accessToken, refreshToken, expiresAt, userProfile);
 
         } catch (GeneralSecurityException e) {
             log.warn("ID token verification failed: {}", e.getMessage(), e);
@@ -215,21 +216,27 @@ public class OAuthAuthService {
     /**
      * Response DTO for OAuth authorization code exchange.
      *
-     * <p>Wraps the JWT token and user profile for the API response.
+     * <p>Wraps the JWT tokens and user profile for the API response.
      */
     public static class OAuthTokenResponse {
         private final String accessToken;
+        private final String refreshToken;
         private final LocalDateTime expiresAt;
         private final UserProfileResponse user;
 
-        public OAuthTokenResponse(String accessToken, LocalDateTime expiresAt, UserProfileResponse user) {
+        public OAuthTokenResponse(String accessToken, String refreshToken, LocalDateTime expiresAt, UserProfileResponse user) {
             this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
             this.expiresAt = expiresAt;
             this.user = user;
         }
 
         public String getAccessToken() {
             return accessToken;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
         }
 
         public LocalDateTime getExpiresAt() {

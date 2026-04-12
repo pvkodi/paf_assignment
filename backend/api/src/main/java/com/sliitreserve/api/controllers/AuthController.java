@@ -115,6 +115,7 @@ public class AuthController {
             // Build response with contract-compliant fields
             AuthResponse authResponse = new AuthResponse();
             authResponse.setToken(tokenResponse.getAccessToken());
+            authResponse.setRefreshToken(tokenResponse.getRefreshToken());
             authResponse.setExpiresAt(tokenResponse.getExpiresAt());
             authResponse.setUser(tokenResponse.getUser());
 

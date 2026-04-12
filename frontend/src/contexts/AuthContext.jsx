@@ -91,11 +91,12 @@ export function AuthProvider({ children }) {
 
       const response = await authService.exchangeGoogleToken(googleToken);
 
-      // Store tokens and user
+      // Store tokens and user with expiration from backend
       authService.setAuthTokens(
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
+        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state

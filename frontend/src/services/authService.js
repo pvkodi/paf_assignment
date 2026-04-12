@@ -104,7 +104,7 @@ const exchangeGoogleToken = async (googleToken) => {
  * @param {string} accessToken - JWT access token
  * @param {string} refreshToken - JWT refresh token (optional)
  * @param {object} user - User profile data
- * @param {number} expiresIn - Token expiry in seconds (default 24h = 86400s)
+ * @param {number} expiresIn - Token expiry in seconds OR ISO timestamp string from backend
  */
 const setAuthTokens = (accessToken, refreshToken, user, expiresIn = 86400) => {
   // Store tokens
@@ -118,8 +118,15 @@ const setAuthTokens = (accessToken, refreshToken, user, expiresIn = 86400) => {
     localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(user));
   }
 
-  // Store expiry time
-  const expiryTime = Date.now() + expiresIn * 1000;
+  // Store expiry time - handle both epoch seconds and ISO timestamp from backend
+  let expiryTime;
+  if (typeof expiresIn === 'string') {
+    // expiresIn is an ISO timestamp from backend (e.g., "2025-08-15T10:30:00")
+    expiryTime = new Date(expiresIn).getTime();
+  } else {
+    // expiresIn is in seconds (legacy)
+    expiryTime = Date.now() + expiresIn * 1000;
+  }
   localStorage.setItem(TOKEN_KEYS.TOKEN_EXPIRY, expiryTime.toString());
 };
 
