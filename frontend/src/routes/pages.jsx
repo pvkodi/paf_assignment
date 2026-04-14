@@ -17,9 +17,7 @@ function DashboardPage() {
   return (
     <section className="space-y-2">
       <h2 className="text-lg font-medium">Dashboard</h2>
-      <p className="text-slate-600">
-        Route skeleton ready for upcoming feature modules.
-      </p>
+      <p className="text-slate-600">Route skeleton ready for upcoming feature modules.</p>
     </section>
   );
 }
@@ -55,7 +53,6 @@ function NotificationsPage() {
 
 function AnalyticsPage() {
   return <UtilizationDashboard />;
-<<<<<<< HEAD
 }
 
 function FacilitiesPage() {
@@ -63,69 +60,64 @@ function FacilitiesPage() {
 }
 
 function FacilityDetailRoutePage() {
-  function AnalyticsPage() {
-    return <UtilizationDashboard />;
-  }
+  return <FacilityDetailsPage />;
+}
 
-  function FacilitiesPage() {
-    return <FacilityManagementDashboard />;
-  }
+function UnderutilizedPage() {
+  return <UnderutilizedFacilitiesView />;
+}
 
-  function FacilityDetailRoutePage() {
-    return <FacilityDetailsPage />;
-  }
+function FacilitySuggestionsPage() {
+  return <FacilitySuggestionsView />;
+}
 
-  function UnderutilizedPage() {
-    return <UnderutilizedFacilitiesView />;
-  }
+function BookingRecommendationsPage() {
+  return <BookingRecommendations />;
+}
 
-  function FacilitySuggestionsPage() {
-    return <FacilitySuggestionsView />;
-  }
+function BookingsPage() {
+  return <BookingsList />;
+}
 
-  function BookingRecommendationsPage() {
-    return <BookingRecommendations />;
-  }
+function FacilitiesAndBookingsPage() {
+  const [selectedFacility, setSelectedFacility] = useState(null);
 
-  function BookingsPage() {
-    return <BookingsList />;
-  }
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Facility Booking System</h1>
+        <p className="text-slate-600">Search for facilities and create booking requests</p>
+      </div>
 
-  function FacilitiesAndBookingsPage() {
-    const [selectedFacility, setSelectedFacility] = useState(null);
-
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Facility Booking System
-          </h1>
-          <p className="text-slate-600">
-            Search for facilities and create booking requests
-          </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Facility Search */}
+        <div className="lg:col-span-2">
+          <FacilitySearch onFacilitySelect={setSelectedFacility} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Facility Search */}
-          <div className="lg:col-span-2">
-            <FacilitySearch onFacilitySelect={setSelectedFacility} />
-          </div>
-
-          {/* Booking Form */}
-          <div className="lg:col-span-1">
-            <BookingForm facility={selectedFacility} />
-          </div>
+        {/* Booking Form */}
+        <div className="lg:col-span-1">
+          <BookingForm facility={selectedFacility} />
         </div>
       </div>
-    );
-  }
-  BookingRecommendationsPage,
+    </div>
+  );
+}
+
+export {
+  DashboardPage,
   NotFoundPage,
-  NotificationsPage,
-  TicketDetailPage,
   TicketsPage,
-<<<<<<< HEAD
+  TicketDetailPage,
+  ApprovalsPage,
+  AppealsPage,
+  NotificationsPage,
+  AnalyticsPage,
+  FacilitiesPage,
+  FacilityDetailRoutePage,
   UnderutilizedPage,
-=======
->>>>>>> origin/014-feat-adi-booking-and-ticket-flow
+  FacilitySuggestionsPage,
+  BookingRecommendationsPage,
+  BookingsPage,
+  FacilitiesAndBookingsPage,
 };
