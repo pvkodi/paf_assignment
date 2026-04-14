@@ -1,6 +1,9 @@
 import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
+import RecurrenceSelector from "./RecurrenceSelector";
+import QuotaPolicySummary from "./QuotaPolicySummary";
+import AdminBookForUserSelector from "./AdminBookForUserSelector";
 
 /**
  * BookingForm Component
@@ -21,7 +24,6 @@ export default function BookingForm({
   const [attendees, setAttendees] = useState("");
   const [bookedForUserId, setBookedForUserId] = useState("");
   const [recurrenceRule, setRecurrenceRule] = useState("");
-  const [useRecurrence, setUseRecurrence] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,8 +37,11 @@ export default function BookingForm({
 
   // Check if user can book for others (has admin or similar role)
   const canBookForOthers = user?.roles?.some((r) =>
-    ["ADMIN", "FACILITY_MANAGER", "LECTURER"].includes(r),
+    ["ADMIN", "FACILITY_MANAGER"].includes(r),
   );
+
+  // Get user role for quota display
+  const userRole = user?.roles?.[0] || "USER";
 
   const validateForm = () => {
     const errors = {};
@@ -100,7 +105,7 @@ export default function BookingForm({
         bookingPayload.booked_for_user_id = bookedForUserId;
       }
 
-      if (useRecurrence && recurrenceRule) {
+      if (recurrenceRule) {
         bookingPayload.recurrence_rule = recurrenceRule;
       }
 
@@ -119,7 +124,6 @@ export default function BookingForm({
         setStartTime("");
         setEndTime("");
         setPurpose("");
-        setAttendees("");
         setBookedForUserId("");
         setRecurrenceRule("");
         setUseRecurrence(false);
@@ -167,7 +171,6 @@ export default function BookingForm({
     setBookedForUserId("");
     setRecurrenceRule("");
     setUseRecurrence(false);
-    setError(null);
     setValidationErrors({});
   };
 
@@ -213,95 +216,113 @@ export default function BookingForm({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Booking Date */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Booking Date *
-                </label>
-                <input
-                  type="date"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.bookingDate
-                      ? "border-red-300 bg-red-50"
-                      : "border-slate-300"
-                  }`}
-                />
-                {validationErrors.bookingDate && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {validationErrors.bookingDate}
-                  </p>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Quota Policy Summary */}
+              <div className="md:col-span-1">
+                <QuotaPolicySummary userRole={userRole} compact={true} />
               </div>
 
-              {/* Attendees */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Number of Attendees * (Max: {facility.capacity})
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max={facility.capacity}
-                  value={attendees}
-                  onChange={(e) => setAttendees(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.attendees
-                      ? "border-red-300 bg-red-50"
-                      : "border-slate-300"
-                  }`}
-                />
-                {validationErrors.attendees && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {validationErrors.attendees}
-                  </p>
-                )}
-              </div>
+              {/* Admin Book For User Selector */}
+              {canBookForOthers && (
+                <div className="md:col-span-1">
+                  <AdminBookForUserSelector
+                    onUserSelect={setBookedForUserId}
+                    userRole={userRole}
+                  />
+                </div>
+              )}
 
-              {/* Start Time */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Start Time *
-                </label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.startTime
-                      ? "border-red-300 bg-red-50"
-                      : "border-slate-300"
-                  }`}
-                />
-                {validationErrors.startTime && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {validationErrors.startTime}
-                  </p>
-                )}
-              </div>
+              {/* Date/Time Inputs Group */}
+              <div className={canBookForOthers ? "md:col-span-1" : "md:col-span-2"}>
+                {/* Booking Date */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Booking Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      validationErrors.bookingDate
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {validationErrors.bookingDate && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {validationErrors.bookingDate}
+                    </p>
+                  )}
+                </div>
 
-              {/* End Time */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  End Time *
-                </label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    validationErrors.endTime
-                      ? "border-red-300 bg-red-50"
-                      : "border-slate-300"
-                  }`}
-                />
-                {validationErrors.endTime && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {validationErrors.endTime}
-                  </p>
-                )}
+                {/* Attendees */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Number of Attendees * (Max: {facility.capacity})
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={facility.capacity}
+                    value={attendees}
+                    onChange={(e) => setAttendees(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      validationErrors.attendees
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {validationErrors.attendees && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {validationErrors.attendees}
+                    </p>
+                  )}
+                </div>
+
+                {/* Start Time */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Start Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      validationErrors.startTime
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {validationErrors.startTime && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {validationErrors.startTime}
+                    </p>
+                  )}
+                </div>
+
+                {/* End Time */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    End Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      validationErrors.endTime
+                        ? "border-red-300 bg-red-50"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {validationErrors.endTime && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {validationErrors.endTime}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -339,51 +360,21 @@ export default function BookingForm({
 
             {/* Admin Booking For Another User */}
             {canBookForOthers && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Book for Another User (Optional - Admin/Lecturer only)
-                </label>
-                <input
-                  type="text"
-                  value={bookedForUserId}
-                  onChange={(e) => setBookedForUserId(e.target.value)}
-                  placeholder="Enter user ID (leave blank to book for yourself)"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <AdminBookForUserSelector
+                onUserSelect={setBookedForUserId}
+                userRole={userRole}
+              />
             )}
 
             {/* Recurrence Section */}
             <div className="border-t-2 border-slate-200 pt-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={useRecurrence}
-                  onChange={(e) => setUseRecurrence(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-                />
-                <span className="ml-2 text-sm font-medium text-slate-700">
-                  This is a recurring booking
-                </span>
-              </label>
-
-              {useRecurrence && (
-                <div className="mt-3">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Recurrence Rule (iCal RRULE format)
-                  </label>
-                  <input
-                    type="text"
-                    value={recurrenceRule}
-                    onChange={(e) => setRecurrenceRule(e.target.value)}
-                    placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Format: FREQ=DAILY|WEEKLY|MONTHLY;...
-                  </p>
-                </div>
-              )}
+              <h3 className="text-sm font-semibold text-slate-900 mb-4">
+                🔄 Recurrence Options
+              </h3>
+              <RecurrenceSelector
+                onRuleChange={setRecurrenceRule}
+                maxOccurrences={52}
+              />
             </div>
 
             {/* Form Actions */}

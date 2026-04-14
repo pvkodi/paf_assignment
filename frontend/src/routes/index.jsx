@@ -7,6 +7,9 @@ import {
   TicketDetailPage,
   FacilitiesAndBookingsPage,
   BookingsPage,
+  ApprovalsPage,
+  AppealsPage,
+  BookingApprovalsPage,
 } from "./pages";
 
 const router = createBrowserRouter([
@@ -25,6 +28,10 @@ const router = createBrowserRouter([
       {
         path: "my-bookings",
         element: <BookingsPage />,
+      },
+      {
+        path: "approvals/bookings",
+        element: <BookingApprovalsPage />,
       },
       {
         path: "tickets",
