@@ -7,6 +7,7 @@ import {
   AnalyticsPage,
   AppealsPage,
   ApprovalsPage,
+  BookingApprovalsPage,
   DashboardPage,
   FacilitiesAndBookingsPage,
   NotFoundPage,
@@ -48,6 +49,16 @@ function App() {
             <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
             <Route path="my-bookings" element={<BookingsPage />} />
             <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
+
+            {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
+            <Route
+              path="approvals/bookings"
+              element={
+                <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
+                  <BookingApprovalsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />

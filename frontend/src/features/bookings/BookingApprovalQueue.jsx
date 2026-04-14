@@ -15,24 +15,54 @@ export default function BookingApprovalQueue() {
   const [approvalNotes, setApprovalNotes] = useState({});
   const [expandedId, setExpandedId] = useState(null);
 
+  // DEBUG: Log component mount and user info
+  useEffect(() => {
+    console.log("🔍 BookingApprovalQueue MOUNTED");
+    console.log("👤 User:", user);
+    console.log("📋 User email:", user?.email);
+    console.log("🔐 User roles:", user?.roles);
+    console.log("✅ hasRole function available:", typeof hasRole === 'function');
+  }, []);
+
   const canApprove = hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
+  
+  // DEBUG: Log role checks
+  useEffect(() => {
+    console.log("🎭 Role Check Results:");
+    console.log("  - hasRole('LECTURER'):", hasRole("LECTURER"));
+    console.log("  - hasRole('FACILITY_MANAGER'):", hasRole("FACILITY_MANAGER"));
+    console.log("  - hasRole('ADMIN'):", hasRole("ADMIN"));
+    console.log("  - canApprove:", canApprove);
+  }, [canApprove]);
 
   useEffect(() => {
+    console.log("⚡ useEffect triggered - canApprove:", canApprove);
     if (canApprove) {
+      console.log("✅ User can approve - fetching pending bookings...");
       fetchPendingBookings();
     } else {
+      console.log("❌ User cannot approve - setting loading to false");
       setLoading(false);
     }
   }, [canApprove]);
 
   const fetchPendingBookings = async () => {
     try {
+      console.log("📡 Fetching pending approvals from /v1/bookings/pending-approvals");
       setLoading(true);
       setError(null);
       const response = await apiClient.get("/v1/bookings/pending-approvals");
+      console.log("✅ API Response received:", response);
+      console.log("📊 Data:", response.data);
+      console.log("📦 Is array?", Array.isArray(response.data));
       setPendingBookings(Array.isArray(response.data) ? response.data : []);
+      console.log("✅ State updated with", Array.isArray(response.data) ? response.data.length : 0, "bookings");
     } catch (err) {
-      console.error("Failed to fetch pending approvals:", err);
+      console.error("❌ Failed to fetch pending approvals");
+      console.error("Error object:", err);
+      console.error("Response status:", err.response?.status);
+      console.error("Response data:", err.response?.data);
+      console.error("Error message:", err.message);
       setError(err.response?.data?.message || "Failed to load pending approvals");
       setPendingBookings([]);
     } finally {
@@ -41,19 +71,28 @@ export default function BookingApprovalQueue() {
   };
 
   const handleApprove = async (bookingId) => {
+    console.log("✅ APPROVE clicked for booking:", bookingId);
     try {
       setActionLoading(bookingId);
       setError(null);
 
       const note = (approvalNotes[bookingId] || "").trim();
-      await apiClient.post(`/v1/bookings/${bookingId}/approve`, {
-        note: note.length > 0 ? note : null,
-      });
+      console.log("📝 Note:", note);
+      const params = new URLSearchParams();
+      if (note.length > 0) {
+        params.append("note", note);
+      }
+      
+      const url = `/v1/bookings/${bookingId}/approve${params.toString() ? "?" + params.toString() : ""}`;
+      console.log("📡 POST request to:", url);
+      await apiClient.post(url);
+      console.log("✅ Approve successful");
 
       // Refresh list
       await fetchPendingBookings();
     } catch (err) {
-      console.error("Failed to approve booking:", err);
+      console.error("❌ Failed to approve booking:", err);
+      console.error("Response:", err.response?.data);
       setError(err.response?.data?.message || "Failed to approve booking");
     } finally {
       setActionLoading(null);
@@ -61,7 +100,9 @@ export default function BookingApprovalQueue() {
   };
 
   const handleReject = async (bookingId) => {
+    console.log("❌ REJECT clicked for booking:", bookingId);
     if (!window.confirm("Are you sure you want to reject this booking?")) {
+      console.log("❌ Reject cancelled by user");
       return;
     }
 
@@ -70,14 +111,22 @@ export default function BookingApprovalQueue() {
       setError(null);
 
       const note = (approvalNotes[bookingId] || "").trim();
-      await apiClient.post(`/v1/bookings/${bookingId}/reject`, {
-        note: note.length > 0 ? note : null,
-      });
+      console.log("📝 Rejection note:", note);
+      const params = new URLSearchParams();
+      if (note.length > 0) {
+        params.append("note", note);
+      }
+      
+      const url = `/v1/bookings/${bookingId}/reject${params.toString() ? "?" + params.toString() : ""}`;
+      console.log("📡 POST request to:", url);
+      await apiClient.post(url);
+      console.log("✅ Reject successful");
 
       // Refresh list
       await fetchPendingBookings();
     } catch (err) {
-      console.error("Failed to reject booking:", err);
+      console.error("❌ Failed to reject booking:", err);
+      console.error("Response:", err.response?.data);
       setError(err.response?.data?.message || "Failed to reject booking");
     } finally {
       setActionLoading(null);
@@ -95,17 +144,22 @@ export default function BookingApprovalQueue() {
   };
 
   if (!canApprove) {
+    console.warn("🚫 User lacks approval permissions - rendering no-permission message");
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <p className="text-slate-600">
           You do not have permission to approve bookings. Only LECTURER, FACILITY_MANAGER, and
           ADMIN roles can approve.
         </p>
+        <p className="text-sm text-slate-500 mt-2">
+          DEBUG: Your roles: {user?.roles?.join(", ") || "None"}
+        </p>
       </div>
     );
   }
 
   if (loading) {
+    console.log("⏳ Still loading...");
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <p className="text-slate-600">Loading pending approvals...</p>
@@ -113,8 +167,24 @@ export default function BookingApprovalQueue() {
     );
   }
 
+  console.log("🎨 Rendering BookingApprovalQueue - pendingBookings:", pendingBookings);
+
   return (
     <div className="space-y-6">
+      {/* DEBUG INFO */}
+      <div className="bg-blue-50 rounded-lg shadow-md p-4 border border-blue-200">
+        <h3 className="font-semibold text-blue-900 mb-2">🔍 Debug Info</h3>
+        <div className="text-xs text-blue-800 space-y-1 font-mono bg-white p-2 rounded border border-blue-100">
+          <div>✅ canApprove: {String(canApprove)}</div>
+          <div>👤 User email: {user?.email || "NOT SET"}</div>
+          <div>🔐 User roles: {user?.roles?.join(", ") || "NONE"}</div>
+          <div>📋 Pending bookings: {pendingBookings.length}</div>
+          <div>⏳ Loading: {String(loading)}</div>
+          <div>❌ Error: {error || "NONE"}</div>
+        </div>
+        <p className="text-xs text-blue-600 mt-2">Check browser console (F12) for detailed logs</p>
+      </div>
+
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">

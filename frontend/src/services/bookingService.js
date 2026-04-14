@@ -41,7 +41,10 @@ export const bookingService = {
    * Approve a booking step
    */
   approveBooking: async (bookingId, note = null) => {
-    const response = await apiClient.post(`/v1/bookings/${bookingId}/approve`, { note });
+    const params = new URLSearchParams();
+    if (note) params.append("note", note);
+    const url = `/v1/bookings/${bookingId}/approve${params.toString() ? "?" + params.toString() : ""}`;
+    const response = await apiClient.post(url);
     return response.data;
   },
 
@@ -49,7 +52,10 @@ export const bookingService = {
    * Reject a booking
    */
   rejectBooking: async (bookingId, note = null) => {
-    const response = await apiClient.post(`/v1/bookings/${bookingId}/reject`, { note });
+    const params = new URLSearchParams();
+    if (note) params.append("note", note);
+    const url = `/v1/bookings/${bookingId}/reject${params.toString() ? "?" + params.toString() : ""}`;
+    const response = await apiClient.post(url);
     return response.data;
   },
 
