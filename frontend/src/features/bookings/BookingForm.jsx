@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { apiClient } from '../../services/apiClient';
 
@@ -8,7 +8,7 @@ import { apiClient } from '../../services/apiClient';
  * and optional recurrence rules. Supports admin booking on behalf of another user.
  * Implements FR-007, FR-008, FR-009, FR-010, FR-012, FR-013 from the specification.
  */
-export default function BookingForm({ facility: initialFacility, onBookingComplete }) {
+export default function BookingForm({ facility: initialFacility, onBookingComplete, isModal, onClose }) {
   const { user } = useContext(AuthContext);
   const [facility, setFacility] = useState(initialFacility || null);
   const [bookingDate, setBookingDate] = useState('');
@@ -19,11 +19,21 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
   const [bookedForUserId, setBookedForUserId] = useState('');
   const [recurrenceRule, setRecurrenceRule] = useState('');
   const [useRecurrence, setUseRecurrence] = useState(false);
+  const [recurrencePreset, setRecurrencePreset] = useState('');
+  const [recurrenceCount, setRecurrenceCount] = useState('4');
+  const [recurrenceCustom, setRecurrenceCustom] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [skippedNotification, setSkippedNotification] = useState(null);
+  const [pollingNotifications, setPollingNotifications] = useState(false);
+
+  // Keep local facility state in sync when parent changes the selected facility
+  useEffect(() => {
+    setFacility(initialFacility || null);
+  }, [initialFacility]);
 
   // Check if user can book for others (has admin or similar role)
   const canBookForOthers = user?.roles?.some(r => 
@@ -76,6 +86,8 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
     try {
       setLoading(true);
 
+      const isRecurringRequest = useRecurrence && recurrenceRule;
+
       const bookingPayload = {
         facilityId: facility.id,
         bookingDate,
@@ -97,7 +109,9 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
       const response = await apiClient.post('/v1/bookings', bookingPayload);
 
       setSuccess('Booking created successfully! Your booking is pending approval.');
-      
+      const createdBookingId = response?.data?.id;
+      const wasRecurringRequest = isRecurringRequest;
+
       // Reset form
       setFacility(null);
       setBookingDate('');
@@ -111,6 +125,42 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
 
       if (onBookingComplete) {
         onBookingComplete(response.data);
+      }
+
+      // Close modal after successful booking
+      if (isModal && onClose) {
+        setTimeout(() => onClose(), 1500);
+      }
+
+      // If this was a recurring booking, poll notifications for any "BOOKING_RECURRING_SKIPPED" message
+      if (wasRecurringRequest && createdBookingId) {
+        setPollingNotifications(true);
+        const maxAttempts = 6;
+        const delayMs = 500;
+
+        const findNotification = async () => {
+          for (let i = 0; i < maxAttempts; i++) {
+            try {
+              const notifResp = await apiClient.get('/v1/notifications', { params: { page: 0, size: 10 } });
+              const page = notifResp?.data || {};
+              const content = Array.isArray(page?.content) ? page.content : (Array.isArray(page) ? page : []);
+              const match = content.find(n => n.entityReference === `booking:${createdBookingId}` && n.eventType === 'BOOKING_RECURRING_SKIPPED');
+              if (match) {
+                setSkippedNotification(match);
+                break;
+              }
+            } catch {
+              // ignore transient errors and retry
+            }
+
+            // wait before next attempt
+            await new Promise(res => setTimeout(res, delayMs));
+          }
+
+          setPollingNotifications(false);
+        };
+
+        void findNotification();
       }
     } catch (err) {
       console.error('Booking submission error:', err);
@@ -146,39 +196,64 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
 
   if (!facility) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-md shadow p-4 border border-slate-100">
         <p className="text-slate-600">Please select a facility to create a booking.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-4 text-slate-900">Create Booking</h2>
+    <div className="bg-white rounded-md shadow p-4 border border-slate-100">
+      <h2 className="text-xl font-semibold mb-1 text-slate-900">Create Booking</h2>
+      <p className="text-slate-600 mb-4 text-sm">Fill the details below to request this facility.</p>
 
-      {/* Success Message */}
+      <div className="mb-4">
+        <p className="text-sm text-slate-700 font-semibold">Selected facility</p>
+        <p className="text-lg font-bold text-slate-900">{facility?.name || '—' } {facility?.facilityCode ? `— ${facility.facilityCode}` : ''}</p>
+      </div>
+
       {success && (
-        <div className="rounded-md bg-green-50 p-4 mb-4">
-          <p className="text-sm font-medium text-green-800">{success}</p>
+        <div className="rounded-md bg-green-50 border border-green-100 p-4 mb-4">
+          <p className="font-semibold text-green-800">{success}</p>
+          <p className="text-sm text-green-700 mt-1">Your booking is pending approval.</p>
         </div>
       )}
 
-      {/* Error Message */}
+      {pollingNotifications && (
+        <div className="rounded-md bg-blue-50 border border-blue-100 p-4 mb-4 text-sm text-blue-800">
+          Checking for recurring booking notifications...
+        </div>
+      )}
+
+      {skippedNotification && (
+        <div className="rounded-md bg-yellow-50 border border-yellow-100 p-4 mb-4">
+          <h4 className="font-semibold text-yellow-900">{skippedNotification.title}</h4>
+          <p className="mt-1 text-sm text-yellow-800">{skippedNotification.message}</p>
+          {skippedNotification.actionUrl && (
+            <a href={skippedNotification.actionUrl} className="inline-block mt-2 text-yellow-700 font-medium hover:underline text-sm">
+              {skippedNotification.actionLabel || 'View booking details'}
+            </a>
+          )}
+        </div>
+      )}
+
       {error && (
-        <div className="rounded-md bg-red-50 p-4 mb-4">
-          <p className="text-sm font-medium text-red-800">{error}</p>
+        <div className="rounded-md bg-red-50 border border-red-100 p-4 mb-4">
+          <p className="font-semibold text-red-800">Booking error</p>
+          <p className="text-sm text-red-700 mt-1">{error}</p>
         </div>
       )}
 
-      {/* Selected Facility Display */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="font-semibold text-slate-900">Selected Facility</h3>
-        <p className="text-slate-700 mt-1">
-          <strong>{facility.name}</strong> - Capacity: {facility.capacity}
-        </p>
-        <p className="text-slate-600 text-sm">
-          {facility.location}, {facility.building} (Floor: {facility.floor})
-        </p>
+      <div className="mb-4 p-4 bg-slate-50 rounded-md border border-slate-100 flex justify-between items-center gap-4">
+        <div className="min-w-0">
+          <p className="text-sm text-slate-500 font-medium">Selected facility</p>
+          <p className="text-sm font-semibold text-slate-900 line-clamp-1">{facility.name}</p>
+          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{facility.location}, {facility.building} • Floor {facility.floor}</p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-lg font-bold text-indigo-600">{facility.capacity}</div>
+          <div className="text-xs text-slate-500">Capacity</div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -325,37 +400,156 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
           </label>
 
           {useRecurrence && (
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Recurrence Rule (iCal RRULE format)
-              </label>
-              <input
-                type="text"
-                value={recurrenceRule}
-                onChange={(e) => setRecurrenceRule(e.target.value)}
-                placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Format: FREQ=DAILY|WEEKLY|MONTHLY;...
-              </p>
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              {/* Recurrence Presets */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Recurrence Pattern
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecurrencePreset('daily');
+                      setRecurrenceCustom(false);
+                      setRecurrenceRule(`FREQ=DAILY;COUNT=${recurrenceCount}`);
+                    }}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      recurrencePreset === 'daily'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecurrencePreset('weekly');
+                      setRecurrenceCustom(false);
+                      setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${recurrenceCount}`);
+                    }}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      recurrencePreset === 'weekly'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Weekly (M/W/F)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecurrencePreset('biweekly');
+                      setRecurrenceCustom(false);
+                      setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${recurrenceCount}`);
+                    }}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      recurrencePreset === 'biweekly'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Bi-Weekly
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecurrencePreset('monthly');
+                      setRecurrenceCustom(false);
+                      setRecurrenceRule(`FREQ=MONTHLY;COUNT=${recurrenceCount}`);
+                    }}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      recurrencePreset === 'monthly'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
+              {/* Recurrence Count */}
+              {recurrencePreset && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Number of Occurrences
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={recurrenceCount}
+                    onChange={(e) => {
+                      setRecurrenceCount(e.target.value);
+                      if (recurrencePreset === 'daily') {
+                        setRecurrenceRule(`FREQ=DAILY;COUNT=${e.target.value}`);
+                      } else if (recurrencePreset === 'weekly') {
+                        setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${e.target.value}`);
+                      } else if (recurrencePreset === 'biweekly') {
+                        setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${e.target.value}`);
+                      } else if (recurrencePreset === 'monthly') {
+                        setRecurrenceRule(`FREQ=MONTHLY;COUNT=${e.target.value}`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              {/* Custom Rule Option */}
+              <div className="mb-3">
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={recurrenceCustom}
+                    onChange={(e) => setRecurrenceCustom(e.target.checked)}
+                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-slate-300 rounded"
+                  />
+                  <span className="ml-2 text-slate-700 font-medium">
+                    Advanced: Custom iCal RRULE
+                  </span>
+                </label>
+              </div>
+
+              {recurrenceCustom && (
+                <div>
+                  <input
+                    type="text"
+                    value={recurrenceRule}
+                    onChange={(e) => setRecurrenceRule(e.target.value)}
+                    placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    See <a href="https://datatracker.ietf.org/doc/html/rfc5545" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">RFC 5545</a> for RRULE format
+                  </p>
+                </div>
+              )}
+
+              {recurrenceRule && (
+                <div className="mt-3 p-2 bg-white rounded border border-blue-200 text-xs text-slate-600">
+                  <strong>Rule:</strong> <code className="text-slate-700">{recurrenceRule}</code>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Form Actions */}
-        <div className="flex gap-2 pt-4">
+        <div className="flex gap-3 pt-4 border-t border-slate-200">
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {loading ? 'Submitting...' : 'Submit Booking'}
+            {loading ? 'Submitting...' : 'Create Booking'}
           </button>
           <button
             type="button"
             onClick={handleClear}
-            className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-md hover:bg-slate-300 transition-colors"
+            className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition"
           >
             Clear
           </button>

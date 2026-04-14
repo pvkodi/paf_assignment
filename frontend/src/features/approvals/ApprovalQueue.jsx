@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../services/apiClient";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -46,7 +46,7 @@ export function ApprovalQueue() {
     [appeals],
   );
 
-  const fetchAppeals = async () => {
+  const fetchAppeals = useCallback(async () => {
     if (!isAdmin) {
       setLoading(false);
       return;
@@ -65,11 +65,11 @@ export function ApprovalQueue() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin]);
 
   useEffect(() => {
     fetchAppeals();
-  }, [isAdmin]);
+  }, [fetchAppeals]);
 
   const handleNoteChange = (appealId, value) => {
     setDecisionNotes((prev) => ({

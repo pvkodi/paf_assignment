@@ -58,6 +58,16 @@ function AppShell() {
                   Facilities
                 </Link>
                 <Link
+                  to="/facilities/suggestions"
+                  className={`pb-2 text-sm font-medium transition ${
+                    isActive('/facilities/suggestions')
+                      ? 'border-b-2 border-indigo-600 text-indigo-600'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Suggestions
+                </Link>
+                <Link
                   to="/appeals"
                   className={`pb-2 text-sm font-medium transition ${
                     isActive('/appeals')
@@ -87,6 +97,18 @@ function AppShell() {
                     }`}
                   >
                     Approval Queue
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    to="/facilities/underutilized"
+                    className={`pb-2 text-sm font-medium transition ${
+                      isActive('/facilities/underutilized')
+                        ? 'border-b-2 border-indigo-600 text-indigo-600'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Underutilized
                   </Link>
                 )}
                 {isAdmin && (

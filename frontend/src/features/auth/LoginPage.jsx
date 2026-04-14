@@ -12,7 +12,6 @@ import { useAuth } from "../../contexts/AuthContext";
 export function LoginPage() {
   const navigate = useNavigate();
   const {
-    login,
     loginWithEmailPassword,
     registerWithEmailPassword,
     loading,
@@ -161,9 +160,9 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -292,7 +291,7 @@ export function LoginPage() {
                 onClick={() => switchMode("oauth")}
                 className="w-full mt-4 py-2 px-4 text-center text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition"
               >
-                ← Back
+                Back
               </button>
             </div>
           )}
@@ -381,7 +380,7 @@ export function LoginPage() {
                 onClick={() => switchMode("oauth")}
                 className="w-full mt-4 py-2 px-4 text-center text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition"
               >
-                ← Back
+                Back
               </button>
             </div>
           )}

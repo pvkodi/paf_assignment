@@ -1,11 +1,16 @@
-import React, { useState } from 'react'
-import { TicketDashboard, TicketDetailViewDefault } from '../features/tickets'
-import { ApprovalQueue } from '../features/approvals'
-import { AppealCenter } from '../features/appeals'
-import { NotificationCenter } from '../features/notifications'
-import { UtilizationDashboard } from '../features/analytics'
-import FacilitySearch from '../features/facilities/FacilitySearch'
-import BookingForm from '../features/bookings/BookingForm'
+import React from "react";
+import { TicketDashboard, TicketDetailViewDefault } from "../features/tickets";
+import { ApprovalQueue } from "../features/approvals";
+import { AppealCenter } from "../features/appeals";
+import { NotificationCenter } from "../features/notifications";
+import { UtilizationDashboard } from "../features/analytics";
+import {
+  FacilityDetailsPage,
+  FacilityManagementDashboard,
+  FacilitySuggestionsView,
+  UnderutilizedFacilitiesView,
+} from "../features/facilities";
+import { BookingRecommendations } from "../features/bookings";
 
 function DashboardPage() {
   return (
@@ -13,7 +18,7 @@ function DashboardPage() {
       <h2 className="text-lg font-medium">Dashboard</h2>
       <p className="text-slate-600">Route skeleton ready for upcoming feature modules.</p>
     </section>
-  )
+  );
 }
 
 function NotFoundPage() {
@@ -22,56 +27,51 @@ function NotFoundPage() {
       <h2 className="text-lg font-medium">Page Not Found</h2>
       <p className="text-slate-600">The requested route does not exist.</p>
     </section>
-  )
+  );
 }
 
 function TicketsPage() {
-  return <TicketDashboard />
+  return <TicketDashboard />;
 }
 
 function TicketDetailPage() {
-  return <TicketDetailViewDefault />
+  return <TicketDetailViewDefault />;
 }
 
 function ApprovalsPage() {
-  return <ApprovalQueue />
+  return <ApprovalQueue />;
 }
 
 function AppealsPage() {
-  return <AppealCenter />
+  return <AppealCenter />;
 }
 
 function NotificationsPage() {
-  return <NotificationCenter />
+  return <NotificationCenter />;
 }
 
 function AnalyticsPage() {
-  return <UtilizationDashboard />
+  return <UtilizationDashboard />;
 }
 
-function FacilitiesAndBookingsPage() {
-  const [selectedFacility, setSelectedFacility] = useState(null)
+function FacilitiesPage() {
+  return <FacilityManagementDashboard />;
+}
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Facility Booking System</h1>
-        <p className="text-slate-600">Search for facilities and create booking requests</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Facility Search */}
-        <div className="lg:col-span-2">
-          <FacilitySearch onFacilitySelect={setSelectedFacility} />
-        </div>
-        
-        {/* Booking Form */}
-        <div className="lg:col-span-1">
-          <BookingForm facility={selectedFacility} />
-        </div>
-      </div>
-    </div>
-  )
+function FacilityDetailRoutePage() {
+  return <FacilityDetailsPage />;
+}
+
+function UnderutilizedPage() {
+  return <UnderutilizedFacilitiesView />;
+}
+
+function FacilitySuggestionsPage() {
+  return <FacilitySuggestionsView />;
+}
+
+function BookingRecommendationsPage() {
+  return <BookingRecommendations />;
 }
 
 export {
@@ -79,9 +79,13 @@ export {
   AppealsPage,
   ApprovalsPage,
   DashboardPage,
-  FacilitiesAndBookingsPage,
+  FacilitiesPage,
+  FacilityDetailRoutePage,
+  FacilitySuggestionsPage,
+  BookingRecommendationsPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
-}
+  UnderutilizedPage,
+};

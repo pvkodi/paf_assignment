@@ -12,11 +12,14 @@ import {
   AppealsPage,
   ApprovalsPage,
   DashboardPage,
-  FacilitiesAndBookingsPage,
+  FacilitiesPage,
+  FacilityDetailRoutePage,
+  FacilitySuggestionsPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
+  UnderutilizedPage,
 } from "./routes/pages";
 
 /**
@@ -48,8 +51,11 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
 
             {/* Facilities & Bookings */}
-            <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
-            <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
+            <Route path="bookings" element={<FacilitySuggestionsPage />} />
+            <Route path="facilities" element={<FacilitiesPage />} />
+            <Route path="facilities/:id" element={<FacilityDetailRoutePage />} />
+            <Route path="facilities/underutilized" element={<UnderutilizedPage />} />
+            <Route path="facilities/suggestions" element={<FacilitySuggestionsPage />} />
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />
