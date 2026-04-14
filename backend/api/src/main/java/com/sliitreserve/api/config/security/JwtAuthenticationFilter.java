@@ -1,6 +1,6 @@
 package com.sliitreserve.api.config.security;
 
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
