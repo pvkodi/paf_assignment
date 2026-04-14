@@ -1,24 +1,28 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 function AppShell() {
-  const { user, isAuthenticated, logout } = useAuth()
-  const location = useLocation()
-  const userRoles = user?.roles || []
-  const isAdmin = userRoles.includes('ADMIN')
+  const { user, isAuthenticated, logout } = useAuth();
+  const location = useLocation();
+  const userRoles = user?.roles || [];
+  const isAdmin = userRoles.includes("ADMIN");
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
-  const isDashboardActive = location.pathname === '/' || isActive('/dashboard')
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+  const isDashboardActive = location.pathname === "/" || isActive("/dashboard");
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-4">
           <div className="py-4 mb-4">
-            <h1 className="text-xl font-semibold mb-2">Smart Campus Operations Hub</h1>
+            <h1 className="text-xl font-semibold mb-2">
+              Smart Campus Operations Hub
+            </h1>
             {isAuthenticated && (
               <p className="text-xs text-slate-600">
-                Logged in as {user?.displayName || user?.email} • Roles: {user?.roles?.join(', ') || 'No roles'}
+                Logged in as {user?.displayName || user?.email} • Roles:{" "}
+                {user?.roles?.join(", ") || "No roles"}
               </p>
             )}
           </div>
@@ -31,8 +35,8 @@ function AppShell() {
                   to="/dashboard"
                   className={`pb-2 text-sm font-medium transition ${
                     isDashboardActive
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   Dashboard
@@ -40,22 +44,32 @@ function AppShell() {
                 <Link
                   to="/tickets"
                   className={`pb-2 text-sm font-medium transition ${
-                    isActive('/tickets')
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
+                    isActive("/tickets")
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   Tickets
                 </Link>
                 <Link
-                  to="/facilities"
+                  to="/bookings"
                   className={`pb-2 text-sm font-medium transition ${
-                    isActive('/facilities')
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
+                    isActive("/bookings")
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  Facilities
+                  Create Booking
+                </Link>
+                <Link
+                  to="/my-bookings"
+                  className={`pb-2 text-sm font-medium transition ${
+                    isActive("/my-bookings")
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  My Bookings
                 </Link>
                 <Link
                   to="/facilities/suggestions"
@@ -70,9 +84,9 @@ function AppShell() {
                 <Link
                   to="/appeals"
                   className={`pb-2 text-sm font-medium transition ${
-                    isActive('/appeals')
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
+                    isActive("/appeals")
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   Appeals
@@ -80,9 +94,9 @@ function AppShell() {
                 <Link
                   to="/notifications"
                   className={`pb-2 text-sm font-medium transition ${
-                    isActive('/notifications')
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
+                    isActive("/notifications")
+                      ? "border-b-2 border-indigo-600 text-indigo-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   Notifications
@@ -91,9 +105,9 @@ function AppShell() {
                   <Link
                     to="/approvals"
                     className={`pb-2 text-sm font-medium transition ${
-                      isActive('/approvals')
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-slate-600 hover:text-slate-900'
+                      isActive("/approvals")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     Approval Queue
@@ -115,9 +129,9 @@ function AppShell() {
                   <Link
                     to="/analytics"
                     className={`pb-2 text-sm font-medium transition ${
-                      isActive('/analytics')
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-slate-600 hover:text-slate-900'
+                      isActive("/analytics")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     Utilization
@@ -138,7 +152,7 @@ function AppShell() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }
 
-export default AppShell
+export default AppShell;

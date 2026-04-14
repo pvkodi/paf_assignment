@@ -1,15 +1,11 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import AppShell from "./app/AppShell";
 import {
-  AnalyticsPage,
-  AppealsPage,
+  BookingsPage,
+  FacilitiesAndBookingsPage,
   ApprovalsPage,
   DashboardPage,
   FacilitiesPage,
@@ -19,7 +15,11 @@ import {
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
+<<<<<<< HEAD
   UnderutilizedPage,
+=======
+  BookingsPage,
+>>>>>>> origin/014-feat-adi-booking-and-ticket-flow
 } from "./routes/pages";
 
 /**
@@ -51,11 +51,17 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
 
             {/* Facilities & Bookings */}
+<<<<<<< HEAD
             <Route path="bookings" element={<FacilitySuggestionsPage />} />
             <Route path="facilities" element={<FacilitiesPage />} />
             <Route path="facilities/:id" element={<FacilityDetailRoutePage />} />
             <Route path="facilities/underutilized" element={<UnderutilizedPage />} />
             <Route path="facilities/suggestions" element={<FacilitySuggestionsPage />} />
+=======
+            <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
+            <Route path="my-bookings" element={<BookingsPage />} />
+            <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
+>>>>>>> origin/014-feat-adi-booking-and-ticket-flow
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />

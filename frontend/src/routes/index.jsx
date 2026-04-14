@@ -1,38 +1,45 @@
-import { createBrowserRouter } from 'react-router-dom'
-import AppShell from '../app/AppShell'
-import { DashboardPage, NotFoundPage, TicketsPage, TicketDetailPage, FacilitiesPage } from './pages'
+import { createBrowserRouter } from "react-router-dom";
+import AppShell from "../app/AppShell";
+import {
+  DashboardPage,
+  NotFoundPage,
+  TicketsPage,
+  TicketDetailPage,
+  FacilitiesAndBookingsPage,
+  BookingsPage,
+  BookingRecommendationsPage,
+} from "./pages";
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <AppShell />,
     children: [
       {
         index: true,
         element: <DashboardPage />,
       },
+            { path: "bookings", element: <BookingsPage /> },
+            { path: "bookings/recommendations", element: <BookingRecommendationsPage /> },
+            { path: "facilities", element: <FacilitiesAndBookingsPage /> },
       {
-        path: 'bookings',
-        element: <FacilitiesPage />,
+        path: "my-bookings",
+        element: <BookingsPage />,
       },
       {
-        path: 'bookings/recommendations',
-        element: <BookingRecommendationsPage />,
-      },
-      {
-        path: 'tickets',
+        path: "tickets",
         element: <TicketsPage />,
       },
       {
-        path: 'tickets/:id',
+        path: "tickets/:id",
         element: <TicketDetailPage />,
       },
     ],
   },
   {
-    path: '*',
+    path: "*",
     element: <NotFoundPage />,
   },
-])
+]);
 
-export default router
+export default router;
