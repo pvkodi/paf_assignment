@@ -1,4 +1,4 @@
-package com.sliitreserve.api.controllers;
+package com.sliitreserve.api.controllers.health;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

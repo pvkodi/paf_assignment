@@ -1,13 +1,13 @@
-package com.sliitreserve.api.controllers;
+package com.sliitreserve.api.controllers.bookings;
 
-import com.sliitreserve.api.dto.BookingRequestDTO;
-import com.sliitreserve.api.dto.BookingResponseDTO;
+import com.sliitreserve.api.dto.bookings.BookingRequestDTO;
+import com.sliitreserve.api.dto.bookings.BookingResponseDTO;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.booking.Booking;
 import com.sliitreserve.api.exception.ForbiddenException;
 import com.sliitreserve.api.exception.ResourceNotFoundException;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.booking.BookingService;
 import com.sliitreserve.api.util.mapping.BookingMapper;
 import jakarta.validation.Valid;
@@ -20,9 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/**
- * Controller for facility booking endpoints.
- */
 @RestController
 @RequestMapping("/api/v1/bookings")
 @RequiredArgsConstructor
@@ -32,10 +29,6 @@ public class BookingController {
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
 
-    /**
-     * Create a new booking with capacity checks and overlap validation.
-     * Supports admin bookedFor substitution.
-     */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> createBooking(
@@ -49,7 +42,6 @@ public class BookingController {
         UUID requestedBy = currentUser.getId();
         UUID bookedFor = requestedBy;
 
-        // Admin on-behalf booking check
         if (request.getBookedForUserId() != null && !request.getBookedForUserId().equals(requestedBy)) {
             boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
             if (!isAdmin) {
