@@ -114,25 +114,31 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
     private Map<String, Object> extractSubtypeAttributes(Facility facility) {
         Map<String, Object> attributes = new HashMap<>();
 
-        if (facility instanceof LectureHall lectureHall) {
+        if (facility instanceof LectureHall) {
+            LectureHall lectureHall = (LectureHall) facility;
             attributes.put("avEquipment", lectureHall.getAvEquipment());
             attributes.put("wheelchairAccessible", lectureHall.getWheelchairAccessible());
-        } else if (facility instanceof Lab lab) {
+        } else if (facility instanceof Lab) {
+            Lab lab = (Lab) facility;
             attributes.put("labType", lab.getLabType());
             attributes.put("softwareList", lab.getSoftwareList());
             attributes.put("safetyEquipment", lab.getSafetyEquipment());
-        } else if (facility instanceof MeetingRoom meetingRoom) {
+        } else if (facility instanceof MeetingRoom) {
+            MeetingRoom meetingRoom = (MeetingRoom) facility;
             attributes.put("avEnabled", meetingRoom.getAvEnabled());
             attributes.put("cateringAllowed", meetingRoom.getCateringAllowed());
-        } else if (facility instanceof Auditorium auditorium) {
+        } else if (facility instanceof Auditorium) {
+            Auditorium auditorium = (Auditorium) facility;
             attributes.put("stageType", auditorium.getStageType());
             attributes.put("soundSystem", auditorium.getSoundSystem());
-        } else if (facility instanceof Equipment equipment) {
+        } else if (facility instanceof Equipment) {
+            Equipment equipment = (Equipment) facility;
             attributes.put("brand", equipment.getBrand());
             attributes.put("model", equipment.getModel());
             attributes.put("serialNumber", equipment.getSerialNumber());
             attributes.put("maintenanceSchedule", equipment.getMaintenanceSchedule());
-        } else if (facility instanceof SportsFacility sportsFacility) {
+        } else if (facility instanceof SportsFacility) {
+            SportsFacility sportsFacility = (SportsFacility) facility;
             attributes.put("sportsType", sportsFacility.getSportsType());
             attributes.put("equipmentAvailable", sportsFacility.getEquipmentAvailable());
         }
