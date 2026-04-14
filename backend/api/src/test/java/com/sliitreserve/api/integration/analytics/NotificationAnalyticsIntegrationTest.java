@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -148,8 +149,8 @@ class NotificationAnalyticsIntegrationTest {
         activeFacility.setAvailabilityEnd(LocalTime.of(18, 0));
 
         when(facilityRepository.findByStatus(FacilityStatus.ACTIVE)).thenReturn(List.of(activeFacility));
-        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(), any())).thenReturn(false);
-        when(bookingIntegrationService.getBookedHours(eq(facilityId), any(), any())).thenReturn(2.5);
+        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(false);
+        when(bookingIntegrationService.getBookedHours(eq(facilityId), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(2.5);
         when(snapshotRepository.findByFacility_IdAndSnapshotDateBetweenOrderBySnapshotDateAsc(any(UUID.class), any(LocalDate.class), any(LocalDate.class)))
             .thenReturn(List.of());
         when(snapshotRepository.findByFacility_IdAndSnapshotDate(facilityId, snapshotDate)).thenReturn(Optional.empty());
@@ -183,7 +184,7 @@ class NotificationAnalyticsIntegrationTest {
         invalidFacility.setAvailabilityEnd(LocalTime.of(10, 0));
 
         when(facilityRepository.findByStatus(FacilityStatus.ACTIVE)).thenReturn(List.of(invalidFacility));
-        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(), any())).thenReturn(false);
+        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(false);
 
         int processedCount = utilizationSnapshotService.generateDailySnapshots(snapshotDate);
 
