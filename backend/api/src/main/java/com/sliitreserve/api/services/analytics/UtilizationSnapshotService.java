@@ -218,6 +218,21 @@ public class UtilizationSnapshotService {
         return value == null ? 0 : value;
     }
 
-    private record UnderutilizationResult(boolean underutilized, int consecutiveDays) {
+    private static final class UnderutilizationResult {
+        private final boolean underutilized;
+        private final int consecutiveDays;
+
+        UnderutilizationResult(boolean underutilized, int consecutiveDays) {
+            this.underutilized = underutilized;
+            this.consecutiveDays = consecutiveDays;
+        }
+
+        public boolean underutilized() {
+            return underutilized;
+        }
+
+        public int consecutiveDays() {
+            return consecutiveDays;
+        }
     }
 }
