@@ -157,3 +157,5 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
         </div>
       )}
     </div>
+  );
+}
