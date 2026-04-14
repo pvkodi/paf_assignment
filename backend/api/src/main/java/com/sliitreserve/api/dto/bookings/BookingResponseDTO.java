@@ -1,4 +1,4 @@
-package com.sliitreserve.api.dto;
+package com.sliitreserve.api.dto.bookings;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class BookingResponseDTO extends BaseResponseDTO {
+public class BookingResponseDTO extends com.sliitreserve.api.dto.BaseResponseDTO {
 
     @JsonProperty("id")
     private UUID id;

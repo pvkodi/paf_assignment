@@ -1,4 +1,4 @@
-package com.sliitreserve.api.dto;
+package com.sliitreserve.api.dto.bookings;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class BookingRequestDTO extends BaseRequestDTO {
+public class BookingRequestDTO extends com.sliitreserve.api.dto.BaseRequestDTO {
 
     @NotNull(message = "Facility ID is required")
     @JsonProperty("facility_id")
