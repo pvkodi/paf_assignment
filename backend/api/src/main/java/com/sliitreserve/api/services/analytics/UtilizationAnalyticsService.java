@@ -3,7 +3,7 @@ package com.sliitreserve.api.services.analytics;
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
-import com.sliitreserve.api.repositories.UtilizationSnapshotRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

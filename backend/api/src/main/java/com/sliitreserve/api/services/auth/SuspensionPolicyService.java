@@ -2,7 +2,7 @@ package com.sliitreserve.api.services.auth;
 
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.exception.ForbiddenException;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

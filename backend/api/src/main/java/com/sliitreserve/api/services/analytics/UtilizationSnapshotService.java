@@ -1,13 +1,12 @@
 package com.sliitreserve.api.services.analytics;
 
-import com.sliitreserve.api.entities.booking.Booking;
-import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
-import com.sliitreserve.api.repositories.BookingRepository;
-import com.sliitreserve.api.repositories.FacilityRepository;
-import com.sliitreserve.api.repositories.UtilizationSnapshotRepository;
+import com.sliitreserve.api.repositories.facility.FacilityRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
+import com.sliitreserve.api.services.integration.BookingIntegrationService;
+import com.sliitreserve.api.services.integration.MaintenanceIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -43,8 +43,9 @@ public class UtilizationSnapshotService {
     private static final int ROLLING_WINDOW_DAYS = 30;
 
     private final FacilityRepository facilityRepository;
-    private final BookingRepository bookingRepository;
     private final UtilizationSnapshotRepository snapshotRepository;
+    private final BookingIntegrationService bookingIntegrationService;
+    private final MaintenanceIntegrationService maintenanceIntegrationService;
     private final ZoneId campusZoneId;
 
     /**
@@ -74,13 +75,21 @@ public class UtilizationSnapshotService {
         int processedCount = 0;
 
         for (Facility facility : activeFacilities) {
+            LocalDateTime rangeStart = snapshotDate.atStartOfDay();
+            LocalDateTime rangeEnd = snapshotDate.plusDays(1L).atStartOfDay();
+
+            if (maintenanceIntegrationService.isFacilityUnderMaintenance(facility.getId(), rangeStart, rangeEnd)) {
+                log.debug("Skipping facility {} due to maintenance window", facility.getId());
+                continue;
+            }
+
             BigDecimal availableHours = calculateDailyAvailableHours(facility);
             if (availableHours.compareTo(BigDecimal.ZERO) <= 0) {
                 log.debug("Skipping facility {} due to zero available hours", facility.getId());
                 continue;
             }
 
-            BigDecimal bookedHours = calculateDailyBookedHours(facility.getId(), snapshotDate);
+            BigDecimal bookedHours = calculateDailyBookedHours(facility.getId(), rangeStart, rangeEnd);
             BigDecimal utilizationPercent = toScaledBigDecimal(
                 UtilizationCalculator.calculateUtilizationPercent(
                     availableHours.doubleValue(),
@@ -127,25 +136,12 @@ public class UtilizationSnapshotService {
         return minutesToHours(minutes);
     }
 
-    private BigDecimal calculateDailyBookedHours(UUID facilityId, LocalDate snapshotDate) {
-        List<Booking> approvedBookings = bookingRepository.findByFacility_IdAndBookingDateAndStatusIn(
-            facilityId,
-            snapshotDate,
-            List.of(BookingStatus.APPROVED)
-        );
-
-        long totalMinutes = approvedBookings.stream()
-            .mapToLong(this::bookingDurationMinutes)
-            .sum();
-
-        return minutesToHours(totalMinutes);
-    }
-
-    private long bookingDurationMinutes(Booking booking) {
-        if (booking.getStartTime() == null || booking.getEndTime() == null || !booking.getEndTime().isAfter(booking.getStartTime())) {
-            return 0L;
+    private BigDecimal calculateDailyBookedHours(UUID facilityId, LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+        double bookedHours = bookingIntegrationService.getBookedHours(facilityId, rangeStart, rangeEnd);
+        if (bookedHours <= 0.0) {
+            return BigDecimal.ZERO;
         }
-        return Duration.between(booking.getStartTime(), booking.getEndTime()).toMinutes();
+        return toScaledBigDecimal(bookedHours);
     }
 
     private UnderutilizationResult calculateUnderutilization(
