@@ -1,12 +1,12 @@
 package com.sliitreserve.api.contract.workflow;
 
-import com.sliitreserve.api.controllers.AppealController;
+import com.sliitreserve.api.controllers.appeals.AppealController;
 import com.sliitreserve.api.controllers.advice.GlobalExceptionHandler;
 import com.sliitreserve.api.dto.auth.AppealResponse;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.SuspensionAppealStatus;
 import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.auth.AppealService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

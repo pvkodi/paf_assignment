@@ -120,7 +120,7 @@ const setAuthTokens = (accessToken, refreshToken, user, expiresIn = 86400) => {
 
   // Store expiry time - handle both epoch seconds and ISO timestamp from backend
   let expiryTime;
-  if (typeof expiresIn === 'string') {
+  if (typeof expiresIn === "string") {
     // expiresIn is an ISO timestamp from backend (e.g., "2025-08-15T10:30:00")
     expiryTime = new Date(expiresIn).getTime();
   } else {
@@ -270,7 +270,6 @@ const handleOAuthCallback = async () => {
   try {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
-    const state = params.get("state");
 
     if (!code) {
       throw new Error("No authorization code in callback");
@@ -396,7 +395,7 @@ const registerWithEmailPassword = async (
   email,
   displayName,
   password,
-  confirmPassword
+  confirmPassword,
 ) => {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {

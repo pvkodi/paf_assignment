@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../../services/apiClient";
-import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Ticket Dashboard Component
@@ -11,7 +10,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export function TicketDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,10 +35,6 @@ export function TicketDashboard() {
   }, []);
 
   // Apply filters whenever search or filter values change
-  useEffect(() => {
-    applyFilters();
-  }, [tickets, searchTerm, statusFilter, priorityFilter]);
-
   const fetchTickets = async () => {
     try {
       setLoading(true);
@@ -55,7 +49,7 @@ export function TicketDashboard() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = tickets;
 
     // Apply search filter
@@ -80,7 +74,11 @@ export function TicketDashboard() {
     }
 
     setFilteredTickets(filtered);
-  };
+  }, [tickets, searchTerm, statusFilter, priorityFilter]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const getStatusColor = (status) => {
     const colors = {

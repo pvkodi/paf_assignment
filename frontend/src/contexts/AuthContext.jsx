@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
   useContext,
@@ -52,11 +53,11 @@ export function AuthProvider({ children }) {
         } else if (token && authService.isTokenExpired()) {
           // Token expired, try to refresh
           try {
-            const newToken = await authService.refreshAccessToken();
+            await authService.refreshAccessToken();
             const currentUser = authService.getCurrentUser();
             setUser(currentUser);
             setIsAuthenticated(true);
-          } catch (err) {
+          } catch {
             // Refresh failed, logout
             authService.logout();
             setIsAuthenticated(false);

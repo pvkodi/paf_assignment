@@ -2,7 +2,7 @@ package com.sliitreserve.api.services.booking;
 
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.auth.Role;
-import com.sliitreserve.api.repositories.BookingRepository;
+import com.sliitreserve.api.repositories.bookings.BookingRepository;
 import com.sliitreserve.api.strategy.quota.QuotaStrategy;
 import com.sliitreserve.api.strategy.quota.QuotaPolicyViolationException;
 import com.sliitreserve.api.strategy.quota.RolePolicyResolver;

@@ -1,9 +1,18 @@
 package com.sliitreserve.api.util.mapping;
 
-import com.sliitreserve.api.dto.FacilityRequestDTO;
-import com.sliitreserve.api.dto.FacilityResponseDTO;
+import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
+import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
+import com.sliitreserve.api.entities.facility.Auditorium;
+import com.sliitreserve.api.entities.facility.Equipment;
 import com.sliitreserve.api.entities.facility.Facility;
+import com.sliitreserve.api.entities.facility.Lab;
+import com.sliitreserve.api.entities.facility.LectureHall;
+import com.sliitreserve.api.entities.facility.MeetingRoom;
+import com.sliitreserve.api.entities.facility.SportsFacility;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Mapper for converting between Facility entities and DTOs.
@@ -28,14 +37,15 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         dto.setId(facility.getId());
         dto.setFacilityCode(facility.getFacilityCode());
         dto.setName(facility.getName());
-        dto.setType(facility.getType() != null ? facility.getType().toString() : null);
+        dto.setType(facility.getType());
         dto.setCapacity(facility.getCapacity());
-        dto.setLocation(facility.getLocation());
         dto.setBuilding(facility.getBuilding());
         dto.setFloor(facility.getFloor());
-        dto.setStatus(facility.getStatus() != null ? facility.getStatus().toString() : null);
-        dto.setAvailabilityStart(facility.getAvailabilityStart());
-        dto.setAvailabilityEnd(facility.getAvailabilityEnd());
+        dto.setLocationDescription(facility.getLocationDescription());
+        dto.setStatus(facility.getStatus());
+        dto.setAvailabilityStartTime(facility.getAvailabilityStartTime());
+        dto.setAvailabilityEndTime(facility.getAvailabilityEndTime());
+        dto.setSubtypeAttributes(extractSubtypeAttributes(facility));
         dto.setCreatedAt(facility.getCreatedAt());
         dto.setUpdatedAt(facility.getUpdatedAt());
 
@@ -58,30 +68,14 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         Facility facility = new Facility();
         facility.setFacilityCode(requestDTO.getFacilityCode());
         facility.setName(requestDTO.getName());
-        
-        if (requestDTO.getType() != null) {
-            try {
-                facility.setType(Facility.FacilityType.valueOf(requestDTO.getType()));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid facility type: " + requestDTO.getType());
-            }
-        }
-        
+        facility.setType(requestDTO.getType());
         facility.setCapacity(requestDTO.getCapacity());
-        facility.setLocation(requestDTO.getLocation());
+        facility.setLocationDescription(requestDTO.getLocationDescription());
         facility.setBuilding(requestDTO.getBuilding());
         facility.setFloor(requestDTO.getFloor());
-        
-        if (requestDTO.getStatus() != null) {
-            try {
-                facility.setStatus(Facility.FacilityStatus.valueOf(requestDTO.getStatus()));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid facility status: " + requestDTO.getStatus());
-            }
-        }
-        
-        facility.setAvailabilityStart(requestDTO.getAvailabilityStart());
-        facility.setAvailabilityEnd(requestDTO.getAvailabilityEnd());
+        facility.setStatus(requestDTO.getStatus());
+        facility.setAvailabilityStartTime(requestDTO.getAvailabilityStartTime());
+        facility.setAvailabilityEndTime(requestDTO.getAvailabilityEndTime());
 
         return facility;
     }
@@ -104,42 +98,51 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         if (requestDTO.getFacilityCode() != null) {
             existingFacility.setFacilityCode(requestDTO.getFacilityCode());
         }
-        if (requestDTO.getName() != null) {
-            existingFacility.setName(requestDTO.getName());
-        }
-        if (requestDTO.getType() != null) {
-            try {
-                existingFacility.setType(Facility.FacilityType.valueOf(requestDTO.getType()));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid facility type: " + requestDTO.getType());
-            }
-        }
-        if (requestDTO.getCapacity() != null) {
-            existingFacility.setCapacity(requestDTO.getCapacity());
-        }
-        if (requestDTO.getLocation() != null) {
-            existingFacility.setLocation(requestDTO.getLocation());
-        }
-        if (requestDTO.getBuilding() != null) {
-            existingFacility.setBuilding(requestDTO.getBuilding());
-        }
-        if (requestDTO.getFloor() != null) {
-            existingFacility.setFloor(requestDTO.getFloor());
-        }
-        if (requestDTO.getStatus() != null) {
-            try {
-                existingFacility.setStatus(Facility.FacilityStatus.valueOf(requestDTO.getStatus()));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid facility status: " + requestDTO.getStatus());
-            }
-        }
-        if (requestDTO.getAvailabilityStart() != null) {
-            existingFacility.setAvailabilityStart(requestDTO.getAvailabilityStart());
-        }
-        if (requestDTO.getAvailabilityEnd() != null) {
-            existingFacility.setAvailabilityEnd(requestDTO.getAvailabilityEnd());
-        }
+        existingFacility.setName(requestDTO.getName());
+        existingFacility.setType(requestDTO.getType());
+        existingFacility.setCapacity(requestDTO.getCapacity());
+        existingFacility.setLocationDescription(requestDTO.getLocationDescription());
+        existingFacility.setBuilding(requestDTO.getBuilding());
+        existingFacility.setFloor(requestDTO.getFloor());
+        existingFacility.setStatus(requestDTO.getStatus());
+        existingFacility.setAvailabilityStartTime(requestDTO.getAvailabilityStartTime());
+        existingFacility.setAvailabilityEndTime(requestDTO.getAvailabilityEndTime());
 
         return existingFacility;
+    }
+
+    private Map<String, Object> extractSubtypeAttributes(Facility facility) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        if (facility instanceof LectureHall) {
+            LectureHall lectureHall = (LectureHall) facility;
+            attributes.put("avEquipment", lectureHall.getAvEquipment());
+            attributes.put("wheelchairAccessible", lectureHall.getWheelchairAccessible());
+        } else if (facility instanceof Lab) {
+            Lab lab = (Lab) facility;
+            attributes.put("labType", lab.getLabType());
+            attributes.put("softwareList", lab.getSoftwareList());
+            attributes.put("safetyEquipment", lab.getSafetyEquipment());
+        } else if (facility instanceof MeetingRoom) {
+            MeetingRoom meetingRoom = (MeetingRoom) facility;
+            attributes.put("avEnabled", meetingRoom.getAvEnabled());
+            attributes.put("cateringAllowed", meetingRoom.getCateringAllowed());
+        } else if (facility instanceof Auditorium) {
+            Auditorium auditorium = (Auditorium) facility;
+            attributes.put("stageType", auditorium.getStageType());
+            attributes.put("soundSystem", auditorium.getSoundSystem());
+        } else if (facility instanceof Equipment) {
+            Equipment equipment = (Equipment) facility;
+            attributes.put("brand", equipment.getBrand());
+            attributes.put("model", equipment.getModel());
+            attributes.put("serialNumber", equipment.getSerialNumber());
+            attributes.put("maintenanceSchedule", equipment.getMaintenanceSchedule());
+        } else if (facility instanceof SportsFacility) {
+            SportsFacility sportsFacility = (SportsFacility) facility;
+            attributes.put("sportsType", sportsFacility.getSportsType());
+            attributes.put("equipmentAvailable", sportsFacility.getEquipmentAvailable());
+        }
+
+        return attributes;
     }
 }
