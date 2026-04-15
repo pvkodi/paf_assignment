@@ -125,4 +125,23 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("bookingDate") LocalDate bookingDate,
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime);
+
+    /**
+     * Find bookings that should be evaluated for no-show status.
+     * 
+     * Criteria:
+     * - Status is APPROVED or PENDING
+     * - Booking start time is in the past (more than graceMinutes ago)
+     * - No check-in record exists for the booking
+     * 
+     * Used by NoShowScheduler to periodically evaluate no-shows.
+     * 
+     * @param cutoffDateTime Cutoff date/time (bookings before this should be evaluated)
+     * @return List of bookings needing no-show evaluation
+     */
+    @Query("SELECT b FROM Booking b " +
+           "WHERE b.status IN (com.sliitreserve.api.entities.booking.BookingStatus.PENDING, com.sliitreserve.api.entities.booking.BookingStatus.APPROVED) " +
+           "AND b.bookingDate < CURRENT_DATE OR (b.bookingDate = CURRENT_DATE AND b.startTime < CAST(:cutoffTime AS java.time.LocalTime)) " +
+           "AND NOT EXISTS (SELECT 1 FROM CheckInRecord c WHERE c.booking.id = b.id)")
+    List<Booking> findBookingsForNoShowEvaluation(@Param("cutoffTime") LocalTime cutoffTime);
 }

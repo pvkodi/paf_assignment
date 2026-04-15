@@ -298,4 +298,29 @@ public class SuspensionPolicyService {
     public int getSuspensionDurationDays() {
         return SUSPENSION_DAYS;
     }
+
+    /**
+     * Apply suspension if user has reached the no-show threshold (3 no-shows).
+     *
+     * <p>Called by NoShowScheduler after a no-show has been recorded and no-show count incremented.
+     * Checks if the count has reached 3, and if so, applies a 7-day suspension.
+     *
+     * <p>Used in the context where the user's no-show count has already been incremented.
+     *
+     * @param user User entity that may be eligible for suspension
+     * @return User with suspension applied if threshold reached, unchanged otherwise
+     */
+    @Transactional
+    public User applySuspensionIfThresholdReached(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        if (hasReachedNoShowThreshold(user)) {
+            applySuspension(user);
+            return userRepository.save(user);
+        }
+
+        return user;
+    }
 }
