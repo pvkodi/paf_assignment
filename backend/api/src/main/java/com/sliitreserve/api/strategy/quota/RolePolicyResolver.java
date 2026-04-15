@@ -23,13 +23,13 @@ import java.util.Set;
  * - User with only STUDENT role gets STUDENT policy
  * 
  * Strategy lookup:
- * - Strategies are registered with role keys (e.g., "STUDENT", "LECTURER", "ADMIN")
+ * - Strategies are registered with role keys (e.g., "USER", "LECTURER", "ADMIN")
  * - Registry is populated at application startup (T053 will implement concrete strategies)
  * - Unknown roles are rejected with clear error messaging
  * 
  * Usage:
  * <pre>
- * Set<String> userRoles = user.getRoles(); // e.g., {"STUDENT", "LECTURER"}
+ * Set<String> userRoles = user.getRoles(); // e.g., {"USER", "LECTURER"}
  * QuotaStrategy strategy = resolver.resolveStrategy(userRoles);
  * 
  * // Now use strategy for quota enforcement
@@ -48,7 +48,7 @@ public class RolePolicyResolver {
      * Register a quota strategy for a role.
      * Called at application startup by T053 (quota strategy implementations).
      * 
-     * @param roleName Role identifier (e.g., "STUDENT", "LECTURER", "ADMIN")
+     * @param roleName Role identifier (e.g., "USER", "LECTURER", "ADMIN")
      * @param strategy Strategy implementation for the role
      */
     public void registerStrategy(String roleName, QuotaStrategy strategy) {
@@ -65,8 +65,8 @@ public class RolePolicyResolver {
      * 3. Return the strategy with the highest priority
      * 
      * Example:
-     * - Input roles: {"STUDENT", "LECTURER"}
-     * - STUDENT strategy priority: 1
+     * - Input roles: {"USER", "LECTURER"}
+     * - USER strategy priority: 1
      * - LECTURER strategy priority: 2
      * - Returns LECTURER strategy (priority 2 > 1)
      * 

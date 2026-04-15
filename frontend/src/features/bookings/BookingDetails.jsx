@@ -135,7 +135,7 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
   const isApproved = booking.status === "APPROVED";
   const isPending = booking.status === "PENDING";
   const isTerminal = ["REJECTED", "CANCELLED"].includes(booking.status);
-  const canCancel = isApproved;
+  const canCancel = (isApproved || isPending) && !isTerminal;
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">

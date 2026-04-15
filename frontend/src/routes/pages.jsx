@@ -16,6 +16,7 @@ import {
   BookingsList,
   BookingRecommendations,
   BookingApprovalQueue,
+  AdminBookingsView,
   QuotaPolicySummary,
 } from "../features/bookings";
 
@@ -112,6 +113,10 @@ function BookingApprovalsPage() {
   );
 }
 
+function AdminBookingsPage() {
+  return <AdminBookingsView />;
+}
+
 function FacilitiesAndBookingsPage() {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -179,5 +184,6 @@ export {
   BookingRecommendationsPage,
   BookingsPage,
   BookingApprovalsPage,
+  AdminBookingsPage,
   FacilitiesAndBookingsPage,
 };

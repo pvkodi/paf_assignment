@@ -26,10 +26,88 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
   const [validationErrors, setValidationErrors] = useState({});
   const [skippedNotification, setSkippedNotification] = useState(null);
   const [pollingNotifications, setPollingNotifications] = useState(false);
+  
+  // Availability tracking
+  const [bookedTimes, setBookedTimes] = useState([]);
+  const [freeSlots, setFreeSlots] = useState([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   useEffect(() => {
     setFacility(initialFacility || null);
   }, [initialFacility]);
+
+  // Fetch booked times when date or facility changes
+  useEffect(() => {
+    if (bookingDate && facility?.id) {
+      fetchBookedTimes();
+    } else {
+      setBookedTimes([]);
+    }
+  }, [bookingDate, facility?.id]);
+
+  const fetchBookedTimes = async () => {
+    try {
+      setLoadingAvailability(true);
+      // Use the dedicated availability endpoint for better performance
+      const response = await apiClient.get(`/v1/bookings/availability/${facility.id}`, {
+        params: { date: bookingDate }
+      });
+      
+      console.log("Availability response:", response.data);
+      
+      let booked = [];
+      let available = [];
+      
+      // Handle structured response from backend with bookedSlots and freeSlots
+      if (response.data && typeof response.data === 'object') {
+        // Extract bookedSlots (times that are blocked)
+        if (response.data.bookedSlots && Array.isArray(response.data.bookedSlots)) {
+          booked = response.data.bookedSlots;
+        }
+        // Extract freeSlots (times that are available)
+        if (response.data.freeSlots && Array.isArray(response.data.freeSlots)) {
+          available = response.data.freeSlots;
+        }
+        // Fallback: if response is an array itself
+      } else if (Array.isArray(response.data)) {
+        booked = response.data.filter(slot => slot.status === "booked" || slot.booked === true);
+      }
+      
+      console.log("Availability debug:", {
+        facilityId: facility.id,
+        date: bookingDate,
+        bookedSlots: booked.length,
+        freeSlots: available.length,
+        sampleBooked: booked[0],
+        sampleFree: available[0]
+      });
+      
+      setBookedTimes(booked);
+      setFreeSlots(available);
+    } catch (err) {
+      console.error("Failed to fetch availability:", err);
+      // Fallback: fetch all bookings and filter manually
+      try {
+        const response = await apiClient.get("/v1/bookings");
+        const allBookings = Array.isArray(response.data) ? response.data : [];
+        
+        const conflicts = allBookings.filter(b => 
+          b.facility?.id === facility.id && 
+          b.bookingDate === bookingDate &&
+          (b.status === "APPROVED" || b.status === "PENDING")
+        );
+        
+        setBookedTimes(conflicts);
+        setFreeSlots([]);
+      } catch (fallbackErr) {
+        console.error("Failed to fetch bookings fallback:", fallbackErr);
+        setBookedTimes([]);
+        setFreeSlots([]);
+      }
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
 
   const canBookForOthers = user?.roles?.some((r) =>
     ["ADMIN", "FACILITY_MANAGER"].includes(r),
@@ -56,6 +134,27 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
 
     if (facility && attendees && Number(attendees) > facility.capacity) {
       errors.attendees = `Attendees (${attendees}) cannot exceed facility capacity (${facility.capacity})`;
+    }
+
+    // Check for time conflicts with existing bookings
+    if (startTime && endTime && bookedTimes.length > 0) {
+      const userStart = startTime;
+      const userEnd = endTime;
+      
+      const hasConflict = bookedTimes.some(booking => {
+        // Check if times overlap
+        // Times overlap if: userStart < bookingEnd AND userEnd > bookingStart
+        const bookingStart = booking.startTime;
+        const bookingEnd = booking.endTime;
+        
+        if (!bookingStart || !bookingEnd) return false;
+        
+        return userStart < bookingEnd && userEnd > bookingStart;
+      });
+      
+      if (hasConflict) {
+        errors.timeRange = "Your selected time conflicts with an existing booking. Please choose a different time.";
+      }
     }
 
     if (bookingDate) {
@@ -123,6 +222,8 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
         setRecurrenceCount("4");
         setRecurrenceCustom(false);
         setSuccess(null);
+        setBookedTimes([]);
+        setFreeSlots([]);
       }, 2500);
 
       if (onBookingComplete) onBookingComplete(response.data);
@@ -158,7 +259,10 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
     } catch (err) {
       console.error("Booking submission error:", err);
       if (err.response?.status === 409) {
-        setError("Booking conflict detected. This time slot may have been booked by another user. Please try again.");
+        setError(
+          "⚠️ Booking conflict detected. This time slot is already booked by another user. " +
+          "Try selecting a different time or date. Use the Timeslot Picker above to see available times."
+        );
       } else if (err.response?.status === 400) {
         setError(err.response?.data?.message || "Invalid booking details. Please check your input.");
       } else if (err.response?.status === 403) {
@@ -186,6 +290,8 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
     setRecurrenceCustom(false);
     setError(null);
     setValidationErrors({});
+    setBookedTimes([]);
+    setFreeSlots([]);
   };
 
   if (!facility && !success) {
@@ -264,7 +370,59 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
                   <input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
                   {validationErrors.bookingDate && <p className="text-sm text-red-600 mt-1">{validationErrors.bookingDate}</p>}
                 </div>
+              </div>
 
+              {/* Availability Info - Show available and booked times */}
+              {bookingDate && facility && (
+                <div className={`rounded-lg border p-4 ${freeSlots.length === 0 ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50'}`}>
+                  <h3 className={`text-sm font-semibold mb-3 ${freeSlots.length === 0 ? 'text-red-900' : 'text-green-900'}`}>
+                    🔍 Availability for {new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </h3>
+                  {loadingAvailability ? (
+                    <p className="text-sm text-slate-700">Loading availability...</p>
+                  ) : freeSlots.length === 0 ? (
+                    <div>
+                      <p className="text-sm text-red-700 font-medium">❌ No available slots on this date</p>
+                      {bookedTimes.length > 0 && (
+                        <div className="mt-2 text-xs text-red-600">
+                          All {bookedTimes.length} possible slots are booked. Please choose a different date.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-green-800 mb-2 font-medium">✓ Available time slots ({freeSlots.length}):</p>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {freeSlots.map((slot, idx) => (
+                            <div key={idx} className="text-sm text-green-800 bg-white bg-opacity-80 px-3 py-2 rounded border border-green-300 font-medium">
+                              {slot.startTime} - {slot.endTime}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {bookedTimes && bookedTimes.length > 0 && (
+                        <div className="pt-2 border-t border-green-200">
+                          <p className="text-xs text-slate-700 mb-1 font-medium">Blocked by:</p>
+                          <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {bookedTimes.map((booking, idx) => (
+                              <div key={idx} className="text-xs text-slate-600 bg-white bg-opacity-50 px-2 py-1 rounded">
+                                <span className="font-medium">{booking.startTime} - {booking.endTime}</span>
+                                {booking.purpose && <span className="text-slate-500 ml-2">({booking.purpose})</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <p className="text-xs text-green-700 mt-2 italic">💡 Select any available slot above for your booking</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Number of Attendees * (Max: {facility.capacity})</label>
                   <input type="number" min="1" max={facility.capacity} value={attendees} onChange={(e) => setAttendees(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.attendees ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />

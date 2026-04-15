@@ -144,4 +144,44 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
            "AND b.bookingDate < CURRENT_DATE OR (b.bookingDate = CURRENT_DATE AND b.startTime < CAST(:cutoffTime AS java.time.LocalTime)) " +
            "AND NOT EXISTS (SELECT 1 FROM CheckInRecord c WHERE c.booking.id = b.id)")
     List<Booking> findBookingsForNoShowEvaluation(@Param("cutoffTime") LocalTime cutoffTime);
+
+    /**
+     * Get all confirmed bookings for a facility on a specific date.
+     * Used to show available timeslots in booking form.
+     * Only returns APPROVED and PENDING bookings (confirmed/blocked slots).
+     * 
+     * @param facilityId Facility ID
+     * @param bookingDate Date to check
+     * @return List of bookings sorted by start time
+     */
+    @Query("SELECT b FROM Booking b " +
+           "WHERE b.facility.id = :facilityId " +
+           "AND b.bookingDate = :bookingDate " +
+           "AND b.status IN (com.sliitreserve.api.entities.booking.BookingStatus.PENDING, com.sliitreserve.api.entities.booking.BookingStatus.APPROVED) " +
+           "ORDER BY b.startTime ASC")
+    List<Booking> findConfirmedBookingsByFacilityAndDate(
+            @Param("facilityId") UUID facilityId,
+            @Param("bookingDate") LocalDate bookingDate);
+
+    /**
+     * Get all bookings within a date range, optionally filtered by facility.
+     * Used by admin/facility-manager to view scheduled bookings.
+     * 
+     * @param facilityId Optional facility ID filter (null for all facilities)
+     * @param statusList Statuses to include
+     * @param startDate Start of date range
+     * @param endDate End of date range
+     * @return List of bookings sorted by date and time
+     */
+    @Query("SELECT b FROM Booking b " +
+           "WHERE (:facilityId IS NULL OR b.facility.id = :facilityId) " +
+           "AND b.status IN (:statusList) " +
+           "AND b.bookingDate >= :startDate " +
+           "AND b.bookingDate <= :endDate " +
+           "ORDER BY b.bookingDate ASC, b.startTime ASC")
+    List<Booking> findBookingsByDateRangeAndFacility(
+            @Param("facilityId") UUID facilityId,
+            @Param("statusList") List<BookingStatus> statusList,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

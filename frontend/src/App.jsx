@@ -8,6 +8,7 @@ import {
   FacilitiesAndBookingsPage,
   ApprovalsPage,
   BookingApprovalsPage,
+  AdminBookingsPage,
   DashboardPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
@@ -69,12 +70,12 @@ function App() {
               }
             />
 
-            {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
+            {/* Admin Bookings - All scheduled bookings for ADMIN/FACILITY_MANAGER */}
             <Route
-              path="approvals/bookings"
+              path="admin/bookings"
               element={
-                <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
-                  <BookingApprovalsPage />
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
+                  <AdminBookingsPage />
                 </ProtectedRoute>
               }
             />

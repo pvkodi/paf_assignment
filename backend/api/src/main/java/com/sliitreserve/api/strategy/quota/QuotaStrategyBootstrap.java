@@ -52,8 +52,8 @@ public class QuotaStrategyBootstrap {
         log.info("Bootstrapping quota policy strategies");
 
         if (studentStrategy != null) {
-            rolePolicyResolver.registerStrategy("STUDENT", studentStrategy);
-            log.info("Registered STUDENT quota strategy");
+            rolePolicyResolver.registerStrategy("USER", studentStrategy);
+            log.info("Registered USER quota strategy");
         } else {
             log.warn("StudentQuotaStrategy not yet implemented (T053)");
         }
