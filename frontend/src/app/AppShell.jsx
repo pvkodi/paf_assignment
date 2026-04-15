@@ -6,6 +6,9 @@ function AppShell() {
   const location = useLocation();
   const userRoles = user?.roles || [];
   const isAdmin = userRoles.includes("ADMIN");
+  const canApproveBookings = userRoles.some((r) =>
+    ["ADMIN", "LECTURER", "FACILITY_MANAGER"].includes(r),
+  );
 
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
@@ -128,6 +131,18 @@ function AppShell() {
                 >
                   Notifications
                 </Link>
+                {canApproveBookings && (
+                  <Link
+                    to="/approvals/bookings"
+                    className={`pb-2 text-sm font-medium transition ${
+                      isActive("/approvals/bookings")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    📋 Booking Approvals
+                  </Link>
+                )}
                 {isAdmin && (
                   <Link
                     to="/approvals"

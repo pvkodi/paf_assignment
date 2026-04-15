@@ -31,6 +31,11 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
     
     List<Booking> findByRequestedBy_Id(UUID userId);
 
+    /**
+     * Find all bookings with a specific status.
+     */
+    List<Booking> findByStatus(BookingStatus status);
+
     List<Booking> findByFacility_IdAndBookingDateAndStatusIn(
            UUID facilityId,
            LocalDate bookingDate,

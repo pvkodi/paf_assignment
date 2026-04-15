@@ -8,6 +8,15 @@ import {
   FacilitiesAndBookingsPage,
   BookingsPage,
   BookingRecommendationsPage,
+  ApprovalsPage,
+  AppealsPage,
+  BookingApprovalsPage,
+  AnalyticsPage,
+  FacilitiesPage,
+  FacilityDetailRoutePage,
+  UnderutilizedPage,
+  FacilitySuggestionsPage,
+  NotificationsPage,
 } from "./pages";
 
 const router = createBrowserRouter([
@@ -19,12 +28,49 @@ const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
-            { path: "bookings", element: <BookingsPage /> },
-            { path: "bookings/recommendations", element: <BookingRecommendationsPage /> },
-            { path: "facilities", element: <FacilitiesAndBookingsPage /> },
       {
         path: "my-bookings",
         element: <BookingsPage />,
+      },
+      {
+        path: "bookings/recommendations",
+        element: <BookingRecommendationsPage />,
+      },
+      {
+        path: "facilities",
+        element: <FacilitiesAndBookingsPage />,
+      },
+      {
+        path: "facility/:id",
+        element: <FacilityDetailRoutePage />,
+      },
+      {
+        path: "facilities/underutilized",
+        element: <UnderutilizedPage />,
+      },
+      {
+        path: "facilities/suggestions",
+        element: <FacilitySuggestionsPage />,
+      },
+      {
+        path: "approvals",
+        element: <ApprovalsPage />,
+      },
+      {
+        path: "approvals/bookings",
+        element: <BookingApprovalsPage />,
+      },
+      {
+        path: "appeals",
+        element: <AppealsPage />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationsPage />,
+      },
+      {
+        path: "analytics",
+        element: <AnalyticsPage />,
       },
       {
         path: "tickets",

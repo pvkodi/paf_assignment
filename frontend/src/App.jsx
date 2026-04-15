@@ -7,6 +7,7 @@ import {
   BookingsPage,
   FacilitiesAndBookingsPage,
   ApprovalsPage,
+  BookingApprovalsPage,
   DashboardPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
@@ -57,6 +58,16 @@ function App() {
             <Route path="facilities/:id" element={<FacilityDetailRoutePage />} />
             <Route path="facilities/underutilized" element={<UnderutilizedPage />} />
             <Route path="facilities/suggestions" element={<FacilitySuggestionsPage />} />
+
+            {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
+            <Route
+              path="approvals/bookings"
+              element={
+                <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
+                  <BookingApprovalsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />

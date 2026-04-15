@@ -25,7 +25,9 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -293,6 +295,31 @@ public class BookingService {
     }
 
     /**
+     * Rejects an existing booking using its @Version for optimistic locking (409).
+     */
+    @Transactional
+    public Booking rejectBooking(UUID bookingId, Long expectedVersion) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getVersion().equals(expectedVersion)) {
+            throw new ConflictException("Optimistic lock failure: mismatched versions");
+        }
+
+        if (booking.isTerminal()) {
+            throw new ValidationException("Booking is already in a terminal state.");
+        }
+
+        booking.setStatus(BookingStatus.REJECTED);
+
+        try {
+            return bookingRepository.save(booking);
+        } catch (OptimisticLockingFailureException ex) {
+            throw new ConflictException("Optimistic lock failure upon saving");
+        }
+    }
+
+    /**
      * Get all bookings for a user (both as requester and bookedFor).
      * Returns bookings ordered by booking date descending.
      */
@@ -308,5 +335,53 @@ public class BookingService {
     public Booking getBooking(UUID bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+    }
+
+    /**
+     * Get pending bookings for approval by the given user.
+     * - ADMIN: All pending bookings
+     * - LECTURER: All pending bookings (they can approve any)
+     * - FACILITY_MANAGER: Pending bookings for their managed facilities
+     */
+    @Transactional(readOnly = true)
+    public List<Booking> getPendingApprovalsForUser(User user) {
+        // Get all pending bookings
+        List<Booking> pendingBookings = bookingRepository.findByStatus(BookingStatus.PENDING);
+        
+        // Filter based on role
+        if (user.getRoles().contains(com.sliitreserve.api.entities.auth.Role.ADMIN) || 
+            user.getRoles().contains(com.sliitreserve.api.entities.auth.Role.LECTURER)) {
+            // Admins and lecturers can approve all pending bookings
+            return pendingBookings;
+        }
+        
+        if (user.getRoles().contains(com.sliitreserve.api.entities.auth.Role.FACILITY_MANAGER)) {
+            // Facility managers only see bookings for facilities they manage
+            // For now, return all (assuming facility manager role has permission)
+            // TODO: Add facility ownership check if needed
+            return pendingBookings;
+        }
+        
+        // Other roles cannot approve
+        return List.of();
+    }
+
+    /**
+     * Get quota status for a user (placeholder implementation).
+     * Returns basic quota info for the user.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getQuotaStatus(User user) {
+        Map<String, Object> quotaStatus = new HashMap<>();
+        quotaStatus.put("userId", user.getId());
+        quotaStatus.put("userRole", user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().toString());
+        quotaStatus.put("weeklyBookings", bookingRepository.countWeeklyBookings(
+            user.getId(),
+            LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)),
+            LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY))
+        ));
+        quotaStatus.put("quotaLimit", 5); // Default quota
+        quotaStatus.put("quotaRemaining", Math.max(0, 5 - (int)(long)quotaStatus.get("weeklyBookings")));
+        return quotaStatus;
     }
 }
