@@ -1,6 +1,9 @@
 import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
+import RecurrenceSelector from "./RecurrenceSelector";
+import QuotaPolicySummary from "./QuotaPolicySummary";
+import AdminBookForUserSelector from "./AdminBookForUserSelector";
 
 export default function BookingForm({ facility: initialFacility, onBookingComplete, isModal, onClose }) {
   const { user } = useContext(AuthContext);
@@ -29,8 +32,11 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
   }, [initialFacility]);
 
   const canBookForOthers = user?.roles?.some((r) =>
-    ["ADMIN", "FACILITY_MANAGER", "LECTURER"].includes(r),
+    ["ADMIN", "FACILITY_MANAGER"].includes(r),
   );
+
+  // Get user role for quota display
+  const userRole = user?.roles?.[0] || "USER";
 
   const validateForm = () => {
     const errors = {};
@@ -90,7 +96,7 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
         bookingPayload.booked_for_user_id = bookedForUserId;
       }
 
-      if (useRecurrence && recurrenceRule) {
+      if (recurrenceRule) {
         bookingPayload.recurrence_rule = recurrenceRule;
       }
 
@@ -110,7 +116,6 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
         setStartTime("");
         setEndTime("");
         setPurpose("");
-        setAttendees("");
         setBookedForUserId("");
         setRecurrenceRule("");
         setUseRecurrence(false);

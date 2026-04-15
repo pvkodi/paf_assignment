@@ -73,6 +73,18 @@ const router = createBrowserRouter([
         element: <AnalyticsPage />,
       },
       {
+        path: "approvals",
+        element: <ApprovalsPage />,
+      },
+      {
+        path: "approvals/bookings",
+        element: <BookingApprovalsPage />,
+      },
+      {
+        path: "appeals",
+        element: <AppealsPage />,
+      },
+      {
         path: "tickets",
         element: <TicketsPage />,
       },

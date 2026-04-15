@@ -69,6 +69,16 @@ function App() {
               }
             />
 
+            {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
+            <Route
+              path="approvals/bookings"
+              element={
+                <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
+                  <BookingApprovalsPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Tickets */}
             <Route path="tickets" element={<TicketsPage />} />
             <Route path="tickets/:id" element={<TicketDetailPage />} />

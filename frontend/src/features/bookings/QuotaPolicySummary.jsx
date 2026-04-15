@@ -80,22 +80,27 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
 
   if (compact) {
     return (
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-        <p className="text-sm font-semibold text-slate-700 mb-2">
-          Quota Status
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm font-semibold text-blue-900 mb-2">
+          📊 Your Quota Status ({userRole})
         </p>
-        <div className="space-y-2 text-xs text-slate-600">
+        <div className="space-y-1 text-xs text-blue-800">
           <p>
-            Bookings:{" "}
-            <span className="font-semibold text-slate-900">
-              {quota.currentConcurrent}/{quota.maxConcurrentBookings}
+            Concurrent Bookings:{" "}
+            <span className="font-mono font-bold">
+              {quota.currentConcurrent}/{quota.maxConcurrentBookings || "∞"}
             </span>
           </p>
-          {!isAdmin && (
-            <p>
-              Advance booking: up to {quota.maxAdvanceDays} days
-            </p>
-          )}
+          <p>
+            Peak Hour Slots This Week:{" "}
+            <span className="font-mono font-bold">
+              {quota.currentPeakHours}/{quota.maxPeakHoursPerWeek || "∞"}
+            </span>
+          </p>
+          <p>
+            Max Advance Booking:{" "}
+            <span className="font-mono font-bold">{quota.maxAdvanceDays || "∞"} days</span>
+          </p>
         </div>
       </div>
     );
