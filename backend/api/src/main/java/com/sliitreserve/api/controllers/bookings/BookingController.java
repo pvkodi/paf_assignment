@@ -161,8 +161,7 @@ public class BookingController {
         Booking booking = bookingService.getBooking(bookingId);
         Long expectedVersion = version != null ? version : booking.getVersion();
         
-        Booking approvedBooking = bookingService.approveBooking(bookingId, expectedVersion);
-        // TODO: Handle approval note if needed
+        Booking approvedBooking = bookingService.approveBooking(bookingId, expectedVersion, note);
         
         BookingResponseDTO response = bookingMapper.toResponseDTO(approvedBooking);
         return ResponseEntity.ok(response);
@@ -171,6 +170,7 @@ public class BookingController {
     /**
      * Reject a pending booking.
      * Only LECTURER, FACILITY_MANAGER, and ADMIN can reject.
+     * Rejection reason is required.
      */
     @PostMapping("/{bookingId}/reject")
     @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
@@ -182,8 +182,7 @@ public class BookingController {
         Booking booking = bookingService.getBooking(bookingId);
         Long expectedVersion = version != null ? version : booking.getVersion();
         
-        Booking rejectedBooking = bookingService.rejectBooking(bookingId, expectedVersion);
-        // TODO: Handle rejection note if needed
+        Booking rejectedBooking = bookingService.rejectBooking(bookingId, expectedVersion, note);
         
         BookingResponseDTO response = bookingMapper.toResponseDTO(rejectedBooking);
         return ResponseEntity.ok(response);

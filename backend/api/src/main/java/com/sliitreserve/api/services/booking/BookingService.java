@@ -43,6 +43,7 @@ public class BookingService {
     private final PublicHolidayService publicHolidayService;
     private final QuotaPolicyEngine quotaPolicyEngine;
     private final EventPublisher eventPublisher;
+    private final ApprovalWorkflowService approvalWorkflowService;
 
     private static final int HIGH_CAPACITY_THRESHOLD = 200;
 
@@ -208,7 +209,17 @@ public class BookingService {
         }
 
         try {
-            return bookingRepository.save(newBooking);
+            Booking savedBooking = bookingRepository.save(newBooking);
+            
+            // Initiate approval workflow after booking is saved
+            // This will auto-approve or create approval steps based on user role and facility constraints
+            approvalWorkflowService.initiateApproval(savedBooking);
+            
+            // Refresh booking from database to get updated status and approval steps
+            savedBooking = bookingRepository.findById(savedBooking.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking not found after approval workflow"));
+            
+            return savedBooking;
         } catch (OptimisticLockingFailureException e) {
             throw new ConflictException("Data conflict occurred. Version mismatched.");
         }
@@ -283,9 +294,10 @@ public class BookingService {
 
     /**
      * Approves an existing booking using its @Version for optimistic locking (409).
+     * Records the approval with an optional note to the approval workflow history.
      */
     @Transactional
-    public Booking approveBooking(UUID bookingId, Long expectedVersion) {
+    public Booking approveBooking(UUID bookingId, Long expectedVersion, String approvalNote) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
 
@@ -300,7 +312,19 @@ public class BookingService {
         booking.setStatus(BookingStatus.APPROVED);
 
         try {
-            return bookingRepository.save(booking);
+            Booking approvedBooking = bookingRepository.save(booking);
+            
+            // Record approval step with note in workflow history
+            com.sliitreserve.api.workflow.approval.ApprovalDecision decision = 
+                com.sliitreserve.api.workflow.approval.ApprovalDecision.builder()
+                    .status(com.sliitreserve.api.workflow.approval.ApprovalStatus.APPROVED)
+                    .approverRole("MANUAL_APPROVAL")
+                    .note(approvalNote != null ? approvalNote : "Manually approved")
+                    .build();
+            
+            approvalWorkflowService.recordApprovalStep(booking, 99, decision);
+            
+            return approvedBooking;
         } catch (OptimisticLockingFailureException ex) {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
@@ -308,9 +332,10 @@ public class BookingService {
 
     /**
      * Rejects an existing booking using its @Version for optimistic locking (409).
+     * Records the rejection with a rejection reason/note to the approval workflow history.
      */
     @Transactional
-    public Booking rejectBooking(UUID bookingId, Long expectedVersion) {
+    public Booking rejectBooking(UUID bookingId, Long expectedVersion, String rejectionReason) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
 
@@ -322,10 +347,26 @@ public class BookingService {
             throw new ValidationException("Booking is already in a terminal state.");
         }
 
+        if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+            throw new ValidationException("Rejection reason is required");
+        }
+
         booking.setStatus(BookingStatus.REJECTED);
 
         try {
-            return bookingRepository.save(booking);
+            Booking rejectedBooking = bookingRepository.save(booking);
+            
+            // Record rejection step with reason in workflow history
+            com.sliitreserve.api.workflow.approval.ApprovalDecision decision = 
+                com.sliitreserve.api.workflow.approval.ApprovalDecision.builder()
+                    .status(com.sliitreserve.api.workflow.approval.ApprovalStatus.REJECTED)
+                    .approverRole("MANUAL_REJECTION")
+                    .note(rejectionReason)
+                    .build();
+            
+            approvalWorkflowService.recordApprovalStep(booking, 99, decision);
+            
+            return rejectedBooking;
         } catch (OptimisticLockingFailureException ex) {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
