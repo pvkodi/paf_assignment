@@ -133,17 +133,13 @@ function FacilitiesAndBookingsPage() {
         <p className="text-slate-600">Search for facilities and create booking requests</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Facility Search */}
-        <div className="lg:col-span-2">
-          <FacilitySearch onFacilitySelect={setSelectedFacility} />
-        </div>
+      <div>
+        <FacilitySearch layout="columns" onFacilitySelect={handleFacilitySelect} />
+      </div>
 
-        {/* Booking Form & Status */}
-        <div className="lg:col-span-1 space-y-6">
-          <QuotaPolicySummary userRole="USER" compact={false} />
-          <BookingForm facility={selectedFacility} />
-        </div>
+      {/* Quota Policy Summary below facilities search */}
+      <div>
+        <QuotaPolicySummary userRole="USER" compact={false} />
       </div>
 
       {/* Slide-over booking panel (hovering, rounded, spaced) */}
@@ -155,7 +151,7 @@ function FacilitiesAndBookingsPage() {
             <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/5 h-full">
               <div className="px-4 py-2 flex items-center justify-end">
                 <button onClick={closeBooking} aria-label="Close booking panel" className="px-3 py-1 rounded-md text-slate-600 hover:bg-slate-100">Close</button>
-              </ div>
+              </div>
               <div className="flex-1 overflow-auto px-6 pb-6">
                 <BookingForm facility={selectedFacility} isModal onClose={closeBooking} onBookingComplete={() => { /* close after success */ setTimeout(closeBooking, 600); }} />
               </div>
