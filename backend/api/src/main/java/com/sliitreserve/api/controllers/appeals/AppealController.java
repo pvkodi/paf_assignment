@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -131,5 +132,52 @@ public class AppealController {
 
     log.info("Appeal rejected by admin {}: {}", adminEmail, appealId);
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Admin endpoint to manually unsuspend a user.
+   *
+   * <p>Allows admin to directly lift a user's suspension without requiring an appeal.
+   * Bypasses the appeal process for immediate admin override (e.g., system errors, special circumstances).
+   *
+   * <p>Endpoint: POST /api/v1/appeals/users/{userId}/unsuspend
+   *
+   * @param userId UUID of the user to unsuspend
+   * @param request Optional admin notes/reason
+   * @param authentication Current authenticated admin
+   * @return User details with suspension cleared
+   * @throws ResourceNotFoundException if user not found
+   */
+  @PostMapping("/users/{userId}/unsuspend")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Object> adminUnsuspendUser(
+      @PathVariable("userId") UUID userId,
+      @Valid @RequestBody(required = false) AppealDecisionRequest request,
+      Authentication authentication) {
+
+    log.info("Admin unsuspend request for user id: {} by admin: {}", userId, authentication.getPrincipal());
+
+    String adminEmail = (String) authentication.getPrincipal();
+    User admin = userRepository.findByEmail(adminEmail)
+        .orElseThrow(() -> new ResourceNotFoundException("Admin user not found with email: " + adminEmail));
+
+    User targetUser = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+    // Create an audit entry message
+    String reason = request != null && request.getDecision() != null ? 
+                    request.getDecision() : "Admin manual unsuspend";
+
+    log.info("Admin {} unsuspended user {} with reason: {}", adminEmail, targetUser.getEmail(), reason);
+
+    userRepository.save(targetUser);
+
+    return ResponseEntity.ok(Map.of(
+        "message", "User unsuspended successfully",
+        "userId", targetUser.getId(),
+        "userEmail", targetUser.getEmail(),
+        "suspendedUntil", targetUser.getSuspendedUntil(),
+        "adminReason", reason
+    ));
   }
 }
