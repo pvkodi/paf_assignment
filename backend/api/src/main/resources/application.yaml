@@ -37,6 +37,23 @@ app:
     peak-hour-start: "08:00" # Peak hour restriction start
     peak-hour-end: "10:00" # Peak hour restriction end
     no-show-grace-minutes: 15 # 15 minutes from booking start to classify as no-show
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:noreply@smartcampus.local}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+          debug: false
+
+mail:
+  enabled: ${MAIL_ENABLED:true}
 
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080
