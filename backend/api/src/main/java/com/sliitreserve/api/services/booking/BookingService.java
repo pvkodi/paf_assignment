@@ -37,6 +37,9 @@ public class BookingService {
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final PublicHolidayService publicHolidayService;
+    private final QuotaPolicyEngine quotaPolicyEngine;
+    
+    private static final int HIGH_CAPACITY_THRESHOLD = 200;
 
     /**
      * Creates a new booking. Checks capacity, overlapping times, skips public holidays if recursive.
@@ -64,6 +67,16 @@ public class BookingService {
         if (startTime.isBefore(facility.getAvailabilityStart()) || endTime.isAfter(facility.getAvailabilityEnd())) {
             throw new ValidationException("Booking times are outside of the facility's availability window");
         }
+        
+        // Validate booking against quota policies (weekly, monthly, peak hours, advance window)
+        quotaPolicyEngine.validateBookingRequest(
+            bookedFor,
+            bookingDate,
+            startTime,
+            endTime,
+            facility.getCapacity(),
+            HIGH_CAPACITY_THRESHOLD
+        );
 
         Booking newBooking = BookingBuilder.builder()
                 .facility(facility)
@@ -195,21 +208,81 @@ public class BookingService {
     }
 
     /**
-     * Get quota status for a user (placeholder implementation).
-     * Returns basic quota info for the user.
+     * Get quota status for a user with role-based quota limits.
+     * Returns complete quota information including weekly, monthly, and advance window limits.
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getQuotaStatus(User user) {
         Map<String, Object> quotaStatus = new HashMap<>();
+        
+        // Get this week's date range (Monday-Sunday)
+        LocalDate weekStart = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate weekEnd = LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        
+        // Get this month's date range
+        LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
+        LocalDate monthEnd = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+        
+        // Count current bookings
+        long weeklyBookings = bookingRepository.countWeeklyBookings(user.getId(), weekStart, weekEnd);
+        long monthlyBookings = bookingRepository.countMonthlyBookings(user.getId(), monthStart, monthEnd);
+        
+        // Determine role and get quota limits
+        String userRole = user.getRoles().isEmpty() ? "STUDENT" : user.getRoles().iterator().next().toString();
+        int weeklyQuota = getWeeklyQuotaForRole(userRole);
+        int monthlyQuota = getMonthlyQuotaForRole(userRole);
+        int advanceWindowDays = getAdvanceWindowForRole(userRole);
+        
         quotaStatus.put("userId", user.getId());
-        quotaStatus.put("userRole", user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().toString());
-        quotaStatus.put("weeklyBookings", bookingRepository.countWeeklyBookings(
-            user.getId(),
-            LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)),
-            LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY))
-        ));
-        quotaStatus.put("quotaLimit", 5); // Default quota
-        quotaStatus.put("quotaRemaining", Math.max(0, 5 - (int)(long)quotaStatus.get("weeklyBookings")));
+        quotaStatus.put("userRole", userRole);
+        quotaStatus.put("weeklyBookings", weeklyBookings);
+        quotaStatus.put("weeklyQuota", weeklyQuota);
+        quotaStatus.put("weeklyRemaining", Math.max(0, weeklyQuota - (int)weeklyBookings));
+        quotaStatus.put("monthlyBookings", monthlyBookings);
+        quotaStatus.put("monthlyQuota", monthlyQuota);
+        quotaStatus.put("monthlyRemaining", Math.max(0, monthlyQuota - (int)monthlyBookings));
+        quotaStatus.put("advanceWindowDays", advanceWindowDays);
+        quotaStatus.put("weekStart", weekStart.toString());
+        quotaStatus.put("weekEnd", weekEnd.toString());
+        quotaStatus.put("monthStart", monthStart.toString());
+        quotaStatus.put("monthEnd", monthEnd.toString());
+        
         return quotaStatus;
+    }
+    
+    /**
+     * Get weekly quota limit for a role.
+     */
+    private int getWeeklyQuotaForRole(String role) {
+        return switch (role) {
+            case "STUDENT" -> 5;
+            case "LECTURER" -> 99;
+            case "ADMIN" -> 9999;
+            default -> 5;
+        };
+    }
+    
+    /**
+     * Get monthly quota limit for a role.
+     */
+    private int getMonthlyQuotaForRole(String role) {
+        return switch (role) {
+            case "STUDENT" -> 20;
+            case "LECTURER" -> 999;
+            case "ADMIN" -> 9999;
+            default -> 20;
+        };
+    }
+    
+    /**
+     * Get advance booking window in days for a role.
+     */
+    private int getAdvanceWindowForRole(String role) {
+        return switch (role) {
+            case "STUDENT" -> 90;
+            case "LECTURER" -> 90;
+            case "ADMIN" -> 180;
+            default -> 90;
+        };
     }
 }

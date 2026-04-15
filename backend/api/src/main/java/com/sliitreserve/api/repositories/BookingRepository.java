@@ -84,4 +84,26 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("bookedForUserId") UUID bookedForUserId,
             @Param("monthStart") LocalDate monthStart,
             @Param("monthEnd") LocalDate monthEnd);
+    
+    /**
+     * Count concurrent bookings for a user at a specific time slot.
+     * Concurrent bookings are those that overlap with the proposed time on the same date.
+     * Counts only APPROVED and PENDING bookings on the same facility.
+     * 
+     * @param userId User ID to count bookings for
+     * @param bookingDate Date of the booking
+     * @param startTime Start time of the proposed booking
+     * @param endTime End time of the proposed booking
+     * @return Number of concurrent bookings
+     */
+    @Query("SELECT COUNT(b) FROM Booking b " +
+           "WHERE b.bookedFor.id = :userId " +
+           "AND b.bookingDate = :bookingDate " +
+           "AND b.startTime < :endTime AND b.endTime > :startTime " +
+           "AND b.status IN ('PENDING', 'APPROVED')")
+    long countConcurrentBookings(
+            @Param("userId") UUID userId,
+            @Param("bookingDate") LocalDate bookingDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime);
 }
