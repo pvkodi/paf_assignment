@@ -30,7 +30,7 @@ function AppShell() {
           {/* Navigation */}
           {isAuthenticated && (
             <nav className="flex items-center justify-between border-t border-slate-200 pt-4">
-              <div className="flex gap-6">
+              <div className="flex items-center gap-6">
                 <Link
                   to="/dashboard"
                   className={`pb-2 text-sm font-medium transition ${
@@ -71,16 +71,43 @@ function AppShell() {
                 >
                   My Bookings
                 </Link>
-                <Link
-                  to="/facilities/suggestions"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive('/facilities/suggestions')
-                      ? 'border-b-2 border-indigo-600 text-indigo-600'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Suggestions
-                </Link>
+                <div className="relative group inline-flex items-center">
+                  <Link
+                    to="/facilities"
+                    className={`pb-2 text-sm font-medium transition ${
+                      isActive("/facilities")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Facilities
+                  </Link>
+
+                  <div className="absolute left-0 mt-2 w-48 rounded bg-white border border-gray-200 shadow-md hidden group-hover:block z-10">
+                    <div className="py-1">
+                      <Link
+                        to="/facilities"
+                        className="block px-4 py-2 text-sm text-slate-700 hover:bg-gray-50"
+                      >
+                        Overview
+                      </Link>
+                      <Link
+                        to="/facilities/suggestions"
+                        className="block px-4 py-2 text-sm text-slate-700 hover:bg-gray-50"
+                      >
+                        Suggestions
+                      </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/facilities/underutilized"
+                          className="block px-4 py-2 text-sm text-slate-700 hover:bg-gray-50"
+                        >
+                          Underutilized
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <Link
                   to="/appeals"
                   className={`pb-2 text-sm font-medium transition ${
@@ -113,18 +140,7 @@ function AppShell() {
                     Approval Queue
                   </Link>
                 )}
-                {isAdmin && (
-                  <Link
-                    to="/facilities/underutilized"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive('/facilities/underutilized')
-                        ? 'border-b-2 border-indigo-600 text-indigo-600'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Underutilized
-                  </Link>
-                )}
+                {/* Underutilized is available under the Facilities menu for admins */}
                 {isAdmin && (
                   <Link
                     to="/analytics"

@@ -8,12 +8,13 @@ import com.sliitreserve.api.factories.FacilityFactory;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.services.facility.FacilityService;
 import com.sliitreserve.api.services.integration.MaintenanceIntegrationService;
-import com.sliitreserve.api.util.mapping.FacilityMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.sliitreserve.api.util.mapping.FacilityMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -41,14 +42,18 @@ public class FacilityServiceTest {
     @Mock
     private FacilityFactory facilityFactory;
 
-    @Mock
     private FacilityMapper facilityMapper;
 
     @Mock
     private MaintenanceIntegrationService maintenanceIntegrationService;
 
-    @InjectMocks
     private FacilityService facilityService;
+
+    @BeforeEach
+    void init() {
+        facilityMapper = org.mockito.Mockito.spy(new FacilityMapper());
+        facilityService = new FacilityService(facilityRepository, facilityFactory, facilityMapper, maintenanceIntegrationService);
+    }
 
     @Test
     public void searchFacilities_returnsPagedResults() {
@@ -63,7 +68,7 @@ public class FacilityServiceTest {
         dto.setType(Facility.FacilityType.LECTURE_HALL);
 
         Page<Facility> page = new PageImpl<>(List.of(facility), PageRequest.of(0, 10), 1);
-        when(facilityRepository.findAll(org.mockito.ArgumentMatchers.<Specification<Facility>>any(), any(Pageable.class))).thenReturn(page);
+        when(facilityRepository.findAll((Specification<Facility>) any(), any(Pageable.class))).thenReturn(page);
         when(facilityMapper.toResponseDTO(facility)).thenReturn(dto);
 
         Page<FacilityResponseDTO> response = facilityService.searchFacilities(
