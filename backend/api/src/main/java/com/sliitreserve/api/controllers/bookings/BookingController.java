@@ -185,6 +185,26 @@ public class BookingController {
     }
 
     /**
+     * Cancel an approved booking.
+     * Only ADMIN and FACILITY_MANAGER can cancel approved bookings.
+     */
+    @PostMapping("/{bookingId}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACILITY_MANAGER')")
+    public ResponseEntity<BookingResponseDTO> cancelBooking(
+            @PathVariable UUID bookingId,
+            @RequestParam(required = false) String note,
+            @RequestParam(required = false) Long version) {
+
+        Booking booking = bookingService.getBooking(bookingId);
+        Long expectedVersion = version != null ? version : booking.getVersion();
+        
+        Booking cancelledBooking = bookingService.cancelBooking(bookingId, expectedVersion, note);
+        
+        BookingResponseDTO response = bookingMapper.toResponseDTO(cancelledBooking);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Get available timeslots for a facility on a specific date.
      * Used by booking form to show available/booked times visually.
      * 

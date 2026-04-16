@@ -142,7 +142,7 @@ function AppShell() {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    📋 Booking Approvals
+                    Booking Approvals
                   </Link>
                 )}
                 {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
@@ -154,7 +154,7 @@ function AppShell() {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    📅 All Bookings
+                    All Bookings
                   </Link>
                 )}
                 {isAdmin && (

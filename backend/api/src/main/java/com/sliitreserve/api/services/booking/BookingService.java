@@ -326,6 +326,34 @@ public class BookingService {
     }
 
     /**
+     * Cancels an approved booking.
+     * Only APPROVED bookings can be cancelled to CANCELLED status.
+     * Uses optimistic locking via @Version for concurrency control.
+     */
+    @Transactional
+    public Booking cancelBooking(UUID bookingId, Long expectedVersion, String note) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getVersion().equals(expectedVersion)) {
+            throw new ConflictException("Optimistic lock failure: mismatched versions");
+        }
+
+        // Only allow cancelling APPROVED bookings
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new ValidationException("Only APPROVED bookings can be cancelled. Current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        try {
+            return bookingRepository.save(booking);
+        } catch (OptimisticLockingFailureException ex) {
+            throw new ConflictException("Optimistic lock failure upon saving");
+        }
+    }
+
+    /**
      * Get all bookings for a user (both as requester and bookedFor).
      * Returns bookings ordered by booking date descending.
      */
