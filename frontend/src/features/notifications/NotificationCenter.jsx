@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../services/apiClient";
 
 function formatTimestamp(value) {
@@ -30,14 +30,14 @@ export function NotificationCenter() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     const response = await apiClient.get("/v1/notifications/unread/count");
     const payload = response?.data || {};
     const value = payload.unreadCount ?? payload.unread_count ?? 0;
     setUnreadCount(Number(value) || 0);
-  };
+  }, []);
 
-  const fetchNotifications = async (targetPage = 0) => {
+  const fetchNotifications = useCallback(async (targetPage = 0) => {
     try {
       setLoading(true);
       setError(null);
@@ -66,11 +66,11 @@ export function NotificationCenter() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchUnreadCount]);
 
   useEffect(() => {
     fetchNotifications(0);
-  }, []);
+  }, [fetchNotifications]);
 
   const markOneAsRead = async (id) => {
     try {

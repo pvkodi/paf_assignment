@@ -9,7 +9,7 @@ import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
 import com.sliitreserve.api.dto.auth.UserProfileResponse;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

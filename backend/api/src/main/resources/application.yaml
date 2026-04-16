@@ -51,9 +51,8 @@ app:
             enable: false
             required: false
           debug: false
-
-mail:
-  enabled: ${MAIL_ENABLED:true}
+  booking:
+    high-capacity-threshold: 200 # Facilities with capacity > 200 require additional approval
 
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080

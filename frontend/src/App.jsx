@@ -4,17 +4,23 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import AppShell from "./app/AppShell";
 import {
-  AnalyticsPage,
-  AppealsPage,
+  BookingsPage,
+  FacilitiesAndBookingsPage,
   ApprovalsPage,
   BookingApprovalsPage,
+  AdminBookingsPage,
   DashboardPage,
-  FacilitiesAndBookingsPage,
+  FacilitiesPage,
+  FacilityDetailRoutePage,
+  FacilitySuggestionsPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
-  BookingsPage,
+  UnderutilizedPage,
+  BookingRecommendationsPage,
+  AnalyticsPage,
+  AppealsPage,
 } from "./routes/pages";
 
 /**
@@ -47,8 +53,12 @@ function App() {
 
             {/* Facilities & Bookings */}
             <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
+            <Route path="bookings/recommendations" element={<BookingRecommendationsPage />} />
             <Route path="my-bookings" element={<BookingsPage />} />
-            <Route path="facilities" element={<FacilitiesAndBookingsPage />} />
+            <Route path="facilities" element={<FacilitiesPage />} />
+            <Route path="facilities/:id" element={<FacilityDetailRoutePage />} />
+            <Route path="facilities/underutilized" element={<UnderutilizedPage />} />
+            <Route path="facilities/suggestions" element={<FacilitySuggestionsPage />} />
 
             {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
             <Route
@@ -56,6 +66,16 @@ function App() {
               element={
                 <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
                   <BookingApprovalsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Bookings - All scheduled bookings for ADMIN/FACILITY_MANAGER */}
+            <Route
+              path="admin/bookings"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
+                  <AdminBookingsPage />
                 </ProtectedRoute>
               }
             />

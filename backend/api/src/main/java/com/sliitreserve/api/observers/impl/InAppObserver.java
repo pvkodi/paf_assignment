@@ -5,10 +5,13 @@ import com.sliitreserve.api.entities.notification.NotificationChannel;
 import com.sliitreserve.api.observers.EventEnvelope;
 import com.sliitreserve.api.observers.EventSeverity;
 import com.sliitreserve.api.observers.Observer;
+
 import com.sliitreserve.api.observers.EventPublisher;
-import com.sliitreserve.api.repositories.NotificationRepository;
-import com.sliitreserve.api.repositories.UserRepository;
 import jakarta.annotation.PostConstruct;
+
+import com.sliitreserve.api.repositories.notification.NotificationRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;

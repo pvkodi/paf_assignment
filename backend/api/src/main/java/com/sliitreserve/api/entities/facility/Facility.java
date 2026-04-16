@@ -56,7 +56,7 @@ public class Facility {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Column(length = 255)
+    @Column(name = "location", length = 255)
     private String location;
 
     @Column(length = 100)
@@ -68,14 +68,15 @@ public class Facility {
     @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
+    @Builder.Default
     private FacilityStatus status = FacilityStatus.ACTIVE;
 
     @NotNull(message = "Availability start time is required")
-    @Column(nullable = false)
+    @Column(name = "availability_start", nullable = false)
     private LocalTime availabilityStart;
 
     @NotNull(message = "Availability end time is required")
-    @Column(nullable = false)
+    @Column(name = "availability_end", nullable = false)
     private LocalTime availabilityEnd;
 
     @CreationTimestamp
@@ -91,20 +92,15 @@ public class Facility {
         if (status == null) {
             status = FacilityStatus.ACTIVE;
         }
+        validateAvailabilityRange();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        // Additional validation can be added here
+        validateAvailabilityRange();
     }
 
-    /**
-     * Validates that availability start time is before end time.
-     * Called before persistence checks.
-     */
-    @PostLoad
-    @PostPersist
-    protected void validateAvailability() {
+    private void validateAvailabilityRange() {
         if (availabilityStart != null && availabilityEnd != null) {
             if (availabilityStart.isAfter(availabilityEnd) || availabilityStart.equals(availabilityEnd)) {
                 throw new IllegalArgumentException(
@@ -112,6 +108,36 @@ public class Facility {
                 );
             }
         }
+    }
+
+    /**
+     * API alias for location field required by module contract.
+     */
+    public String getLocationDescription() {
+        return location;
+    }
+
+    public void setLocationDescription(String locationDescription) {
+        this.location = locationDescription;
+    }
+
+    /**
+     * API aliases for availability field names required by module contract.
+     */
+    public LocalTime getAvailabilityStartTime() {
+        return availabilityStart;
+    }
+
+    public void setAvailabilityStartTime(LocalTime availabilityStartTime) {
+        this.availabilityStart = availabilityStartTime;
+    }
+
+    public LocalTime getAvailabilityEndTime() {
+        return availabilityEnd;
+    }
+
+    public void setAvailabilityEndTime(LocalTime availabilityEndTime) {
+        this.availabilityEnd = availabilityEndTime;
     }
 
     /**
@@ -123,6 +149,7 @@ public class Facility {
         MEETING_ROOM,
         AUDITORIUM,
         EQUIPMENT,
+        SPORTS,
         SPORTS_FACILITY
     }
 
@@ -131,6 +158,7 @@ public class Facility {
      */
     public enum FacilityStatus {
         ACTIVE,
+        MAINTENANCE,
         OUT_OF_SERVICE
     }
 }

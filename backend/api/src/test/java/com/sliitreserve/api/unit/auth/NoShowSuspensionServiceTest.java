@@ -2,7 +2,7 @@ package com.sliitreserve.api.unit.auth;
 
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.exception.ForbiddenException;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.auth.SuspensionPolicyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

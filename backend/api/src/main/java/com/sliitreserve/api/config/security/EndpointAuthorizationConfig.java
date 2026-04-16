@@ -98,6 +98,30 @@ public class EndpointAuthorizationConfig {
         ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/facilities",
                 new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
 
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/facilities/search",
+            new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/facilities/*",
+            new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/facilities",
+            new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("PUT /api/v1/facilities/*",
+            new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("DELETE /api/v1/facilities/*",
+            new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/facilities/*/utilization",
+            new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/facilities/underutilized",
+            new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/facilities/suggestions",
+            new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
         // ========== BOOKING ENDPOINTS (US2, US3) ==========
         // FR-007: All users can create booking requests
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/bookings",

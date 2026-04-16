@@ -1,15 +1,15 @@
 package com.sliitreserve.api.contract.analytics;
 
-import com.sliitreserve.api.controllers.AnalyticsController;
-import com.sliitreserve.api.controllers.NotificationController;
+import com.sliitreserve.api.controllers.analytics.AnalyticsController;
+import com.sliitreserve.api.controllers.notifications.NotificationController;
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.notification.Notification;
 import com.sliitreserve.api.entities.notification.NotificationChannel;
 import com.sliitreserve.api.observers.EventSeverity;
-import com.sliitreserve.api.repositories.NotificationRepository;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.notification.NotificationRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.analytics.UtilizationAnalyticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

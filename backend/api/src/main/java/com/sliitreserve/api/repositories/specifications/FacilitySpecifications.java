@@ -51,7 +51,10 @@ public class FacilitySpecifications {
      * @return Specification for building
      */
     public static Specification<Facility> inBuilding(String building) {
-        return (root, query, cb) -> cb.equal(root.get("building"), building);
+        return (root, query, cb) -> cb.like(
+                cb.lower(root.get("building")),
+                "%" + building.toLowerCase() + "%"
+        );
     }
 
     /**
@@ -88,6 +91,10 @@ public class FacilitySpecifications {
                 cb.lower(root.get("location")),
                 "%" + location.toLowerCase() + "%"
         );
+    }
+
+    public static Specification<Facility> hasStatus(FacilityStatus status) {
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 
     /**

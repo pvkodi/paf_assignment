@@ -1,18 +1,16 @@
 package com.sliitreserve.api.integration.analytics;
 
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
-import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.entities.booking.Booking;
-import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.observers.EventEnvelope;
 import com.sliitreserve.api.observers.EventSeverity;
 import com.sliitreserve.api.observers.Observer;
-import com.sliitreserve.api.repositories.BookingRepository;
-import com.sliitreserve.api.repositories.FacilityRepository;
-import com.sliitreserve.api.repositories.UtilizationSnapshotRepository;
+import com.sliitreserve.api.repositories.facility.FacilityRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
 import com.sliitreserve.api.services.analytics.UtilizationSnapshotService;
+import com.sliitreserve.api.services.integration.BookingIntegrationService;
+import com.sliitreserve.api.services.integration.MaintenanceIntegrationService;
 import com.sliitreserve.api.services.notification.NotificationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -35,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -50,7 +48,10 @@ class NotificationAnalyticsIntegrationTest {
     private FacilityRepository facilityRepository;
 
     @Mock
-    private BookingRepository bookingRepository;
+    private BookingIntegrationService bookingIntegrationService;
+
+    @Mock
+    private MaintenanceIntegrationService maintenanceIntegrationService;
 
     @Mock
     private UtilizationSnapshotRepository snapshotRepository;
@@ -63,8 +64,9 @@ class NotificationAnalyticsIntegrationTest {
         notificationService = new NotificationServiceImpl();
         utilizationSnapshotService = new UtilizationSnapshotService(
             facilityRepository,
-            bookingRepository,
             snapshotRepository,
+            bookingIntegrationService,
+            maintenanceIntegrationService,
             ZoneId.of("Asia/Colombo")
         );
     }
@@ -146,29 +148,9 @@ class NotificationAnalyticsIntegrationTest {
         activeFacility.setAvailabilityStart(LocalTime.of(8, 0));
         activeFacility.setAvailabilityEnd(LocalTime.of(18, 0));
 
-        User requester = User.builder()
-            .id(UUID.randomUUID())
-            .googleSubject("google-sub")
-            .email("student@smartcampus.local")
-            .displayName("Student")
-            .build();
-
-        Booking approvedBooking = Booking.builder()
-            .id(UUID.randomUUID())
-            .facility(activeFacility)
-            .requestedBy(requester)
-            .bookedFor(requester)
-            .bookingDate(snapshotDate)
-            .startTime(LocalTime.of(9, 0))
-            .endTime(LocalTime.of(11, 30))
-            .purpose("Workshop")
-            .attendees(30)
-            .status(BookingStatus.APPROVED)
-            .build();
-
         when(facilityRepository.findByStatus(FacilityStatus.ACTIVE)).thenReturn(List.of(activeFacility));
-        when(bookingRepository.findByFacility_IdAndBookingDateAndStatusIn(eq(facilityId), eq(snapshotDate), anyList()))
-            .thenReturn(List.of(approvedBooking));
+        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(false);
+        when(bookingIntegrationService.getBookedHours(eq(facilityId), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(2.5);
         when(snapshotRepository.findByFacility_IdAndSnapshotDateBetweenOrderBySnapshotDateAsc(any(UUID.class), any(LocalDate.class), any(LocalDate.class)))
             .thenReturn(List.of());
         when(snapshotRepository.findByFacility_IdAndSnapshotDate(facilityId, snapshotDate)).thenReturn(Optional.empty());
@@ -202,6 +184,7 @@ class NotificationAnalyticsIntegrationTest {
         invalidFacility.setAvailabilityEnd(LocalTime.of(10, 0));
 
         when(facilityRepository.findByStatus(FacilityStatus.ACTIVE)).thenReturn(List.of(invalidFacility));
+        when(maintenanceIntegrationService.isFacilityUnderMaintenance(any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(false);
 
         int processedCount = utilizationSnapshotService.generateDailySnapshots(snapshotDate);
 
