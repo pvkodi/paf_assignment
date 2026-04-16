@@ -22,13 +22,13 @@ import java.util.UUID;
 public class TicketAttachmentResponseDTO {
 
   private UUID id;
-  private String fileName;
+  private String originalFilename;
   private String mimeType;
   private Long fileSize;
-  private String checksum;
+  private String checksumHash;
 
-  private String fileUrl;
-  private String thumbnailUrl;
+  private String filePath;
+  private String thumbnailPath;
 
   private UUID uploadedById;
   private String uploadedByName;

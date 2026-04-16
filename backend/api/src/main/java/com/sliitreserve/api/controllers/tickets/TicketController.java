@@ -3,11 +3,9 @@ package com.sliitreserve.api.controllers.tickets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +14,7 @@ import com.sliitreserve.api.dto.ticket.*;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketComment;
+import com.sliitreserve.api.entities.ticket.TicketCommentVisibility;
 import com.sliitreserve.api.entities.ticket.TicketAttachment;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
@@ -26,7 +25,6 @@ import com.sliitreserve.api.services.ticket.EscalationService;
 import com.sliitreserve.api.workflow.escalation.EscalationLevel;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,12 +63,18 @@ public class TicketController {
   public ResponseEntity<TicketResponseDTO> createTicket(
       @Valid @RequestBody TicketCreationRequest request,
       Authentication auth) {
-    log.info("Creating new ticket: {} in facility {}", request.getTitle(), request.getFacilityId());
-
+    log.info("Creating ticket: title='{}', category='{}', facilityId='{}'", 
+        request.getTitle(), request.getCategory(), request.getFacilityId());
+    
     User currentUser = getCurrentUser(auth);
     
-    var facility = facilityRepository.findById(request.getFacilityId())
-        .orElseThrow(() -> new IllegalArgumentException("Facility not found: " + request.getFacilityId()));
+    UUID facilityId = request.getFacilityIdAsUUID();
+    
+    var facility = facilityRepository.findById(facilityId)
+        .orElseThrow(() -> {
+          log.error("Facility not found: {}", facilityId);
+          return new IllegalArgumentException("Facility not found: " + facilityId);
+        });
     
     MaintenanceTicket ticket = ticketService.createTicket(
         facility,
@@ -109,7 +113,18 @@ public class TicketController {
 
     User currentUser = getCurrentUser(auth);
 
-    List<MaintenanceTicket> tickets = ticketRepository.findAll();
+    // Filter tickets by access control: creator, assigned technician, or staff role
+    List<MaintenanceTicket> allTickets = ticketRepository.findAll();
+    boolean isStaff = currentUser.getRoles().stream()
+        .anyMatch(role -> role.name().startsWith("TECHNICIAN") || role.name().startsWith("FACILITY_MANAGER") || role.name().startsWith("ADMIN"));
+    
+    List<MaintenanceTicket> tickets = allTickets.stream()
+        .filter(ticket -> 
+            isStaff || 
+            ticket.getCreatedBy().getId().equals(currentUser.getId()) ||
+            (ticket.getAssignedTechnician() != null && ticket.getAssignedTechnician().getId().equals(currentUser.getId()))
+        )
+        .collect(Collectors.toList());
 
     List<TicketResponseDTO> response = tickets.stream()
         .map(this::mapToResponseDTO)
@@ -129,7 +144,10 @@ public class TicketController {
     MaintenanceTicket ticket = ticketRepository.findById(ticketId)
         .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
 
-    User currentUser = getCurrentUser(auth);
+    // Set rejection reason if rejecting
+    if (request.getStatus().name().equals("REJECTED") && request.getRejectionReason() != null) {
+      ticket.setRejectionReason(request.getRejectionReason());
+    }
 
     MaintenanceTicket updated = ticketService.updateTicketStatus(ticket, request.getStatus());
 
@@ -150,7 +168,8 @@ public class TicketController {
 
     User technician = null;
     if (request.getTechnicianId() != null) {
-      // TODO: Fetch technician from UserRepository
+      technician = userRepository.findById(request.getTechnicianId())
+          .orElseThrow(() -> new IllegalArgumentException("Technician not found: " + request.getTechnicianId()));
     }
 
     MaintenanceTicket updated = ticketService.assignTicketToTechnician(ticket, technician);
@@ -176,7 +195,7 @@ public class TicketController {
         ticket,
         currentUser,
         request.getContent(),
-        request.getVisibility()
+        request.getVisibility() != null ? request.getVisibility() : TicketCommentVisibility.PUBLIC
     );
 
     TicketCommentResponseDTO response = mapCommentToResponseDTO(comment);
@@ -217,8 +236,21 @@ public class TicketController {
         .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
 
     User currentUser = getCurrentUser(auth);
+    
+    // Note: Comment repository method needed - for now finding comments via ticket
+    TicketComment comment = null;
+    for (TicketComment c : ticket.getComments()) {
+      if (c.getId().equals(commentId)) {
+        comment = c;
+        break;
+      }
+    }
+    if (comment == null) {
+      throw new IllegalArgumentException("Comment not found: " + commentId);
+    }
 
-    TicketCommentResponseDTO response = new TicketCommentResponseDTO();
+    TicketComment updated = ticketService.updateComment(comment, request.getContent(), currentUser);
+    TicketCommentResponseDTO response = mapCommentToResponseDTO(updated);
     return ResponseEntity.ok(response);
   }
 
@@ -234,12 +266,25 @@ public class TicketController {
         .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
 
     User currentUser = getCurrentUser(auth);
+    
+    // Find comment by ID in ticket comments
+    TicketComment comment = null;
+    for (TicketComment c : ticket.getComments()) {
+      if (c.getId().equals(commentId)) {
+        comment = c;
+        break;
+      }
+    }
+    if (comment == null) {
+      throw new IllegalArgumentException("Comment not found: " + commentId);
+    }
 
+    ticketService.deleteComment(comment, currentUser);
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{ticketId}/attachments")
-  @PreAuthorize("hasAnyRole('TECHNICIAN', 'FACILITY_MANAGER', 'ADMIN')")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<TicketAttachmentResponseDTO> attachFile(
       @PathVariable UUID ticketId,
       @RequestParam("file") MultipartFile file,
@@ -277,7 +322,6 @@ public class TicketController {
   }
 
   @DeleteMapping("/{ticketId}/attachments/{attachmentId}")
-  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteAttachment(
       @PathVariable UUID ticketId,
       @PathVariable UUID attachmentId,
@@ -287,6 +331,29 @@ public class TicketController {
     MaintenanceTicket ticket = ticketRepository.findById(ticketId)
         .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
 
+    // Find attachment in ticket
+    TicketAttachment attachment = null;
+    for (TicketAttachment a : ticket.getAttachments()) {
+      if (a.getId().equals(attachmentId)) {
+        attachment = a;
+        break;
+      }
+    }
+    if (attachment == null) {
+      throw new IllegalArgumentException("Attachment not found: " + attachmentId);
+    }
+
+    // Check authorization: owner or admin can delete
+    User currentUser = getCurrentUser(auth);
+    boolean isOwner = attachment.getUploadedBy().getId().equals(currentUser.getId());
+    boolean isAdmin = auth.getAuthorities().stream()
+        .anyMatch(auth2 -> auth2.getAuthority().equals("ROLE_ADMIN"));
+    
+    if (!isOwner && !isAdmin) {
+      throw new IllegalArgumentException("Not authorized to delete this attachment");
+    }
+
+    attachmentService.deleteAttachment(attachment);
     return ResponseEntity.noContent().build();
   }
 
@@ -352,6 +419,7 @@ public class TicketController {
         .category(ticket.getCategory())
         .priority(ticket.getPriority())
         .status(ticket.getStatus())
+        .rejectionReason(ticket.getRejectionReason())
         .escalationLevel(ticket.getEscalationLevel())
         .slaDueAt(ticket.getSlaDueAt())
         .createdAt(ticket.getCreatedAt())
@@ -378,6 +446,7 @@ public class TicketController {
         .category(ticket.getCategory())
         .priority(ticket.getPriority())
         .status(ticket.getStatus())
+        .rejectionReason(ticket.getRejectionReason())
         .escalationLevel(ticket.getEscalationLevel())
         .slaDueAt(ticket.getSlaDueAt())
         .slaBreach(ticket.getSlaDueAt() != null && java.time.LocalDateTime.now().isAfter(ticket.getSlaDueAt()))
@@ -391,7 +460,9 @@ public class TicketController {
         .assignedTechnicianName(ticket.getAssignedTechnician() != null ? ticket.getAssignedTechnician().getDisplayName() : null)
         .comments(visibleComments.stream().map(this::mapCommentToResponseDTO).collect(Collectors.toList()))
         .attachments(attachments.stream().map(this::mapAttachmentToResponseDTO).collect(Collectors.toList()))
-        .escalationHistory(new java.util.ArrayList<>()) // TODO: Map from escalation service
+        .escalationHistory(escalationService.getEscalationHistory(ticket).stream()
+            .map(this::mapEscalationToResponseDTO)
+            .collect(Collectors.toList()))
         .build();
   }
 
@@ -411,12 +482,12 @@ public class TicketController {
   private TicketAttachmentResponseDTO mapAttachmentToResponseDTO(TicketAttachment attachment) {
     return TicketAttachmentResponseDTO.builder()
         .id(attachment.getId())
-        .fileName(attachment.getFileName())
+        .originalFilename(attachment.getFileName())
         .mimeType(attachment.getMimeType())
         .fileSize(attachment.getFileSize())
-        .checksum(attachment.getChecksumHash())
-        .fileUrl("/api/uploads/original/" + attachment.getFilePath())
-        .thumbnailUrl(attachment.getThumbnailPath() != null ? "/api/uploads/thumbnails/" + attachment.getThumbnailPath() : null)
+        .checksumHash(attachment.getChecksumHash())
+        .filePath(attachment.getFilePath())
+        .thumbnailPath(attachment.getThumbnailPath())
         .uploadedById(attachment.getUploadedBy().getId())
         .uploadedByName(attachment.getUploadedBy().getDisplayName())
         .uploadedAt(attachment.getUploadedAt())

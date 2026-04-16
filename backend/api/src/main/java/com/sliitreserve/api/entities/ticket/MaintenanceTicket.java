@@ -63,6 +63,9 @@ public class MaintenanceTicket {
   @Column(nullable = false, length = 50)
   private TicketStatus status = TicketStatus.OPEN;
 
+  @Column(name = "rejection_reason", columnDefinition = "TEXT")
+  private String rejectionReason;
+
   @NotBlank(message = "Title is required")
   @Size(min = 20, max = 200, message = "Title must be between 20 and 200 characters")
   @Column(nullable = false, length = 200)

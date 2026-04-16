@@ -25,7 +25,10 @@ export function TicketDetailView() {
     try {
       setLoading(true);
       setError(null);
+      console.log("fetchTicket called - fetching ticket data");
       const response = await apiClient.get(`/tickets/${id}`);
+      console.log("Ticket data fetched:", response.data);
+      console.log("Attachments count:", response.data?.attachments?.length);
       setTicket(response.data);
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
@@ -47,11 +50,12 @@ export function TicketDetailView() {
   );
 
   const canAssign =
-    isStaff &&
-    user?.facilityId === ticket?.facilityId;
+    user?.roles?.includes("ADMIN") ||
+    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId);
 
   const canUpdateStatus =
-    isStaff && user?.facilityId === ticket?.facilityId;
+    user?.roles?.includes("ADMIN") ||
+    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -68,7 +72,6 @@ export function TicketDetailView() {
     const colors = {
       OPEN: "bg-blue-100 text-blue-800",
       IN_PROGRESS: "bg-purple-100 text-purple-800",
-      ON_HOLD: "bg-orange-100 text-orange-800",
       RESOLVED: "bg-green-100 text-green-800",
       CLOSED: "bg-gray-100 text-gray-800",
       REJECTED: "bg-red-100 text-red-800",
@@ -182,6 +185,16 @@ export function TicketDetailView() {
             </span>
           </div>
 
+          {/* Rejection Reason (if ticket was rejected) */}
+          {ticket.status === "REJECTED" && (
+            <div className="mt-4 p-4 rounded-lg border border-red-200 bg-red-50">
+              <h3 className="text-sm font-semibold text-red-800 mb-2">Rejection Reason</h3>
+              <p className="text-red-700 text-sm">
+                {ticket.rejectionReason || "No reason provided"}
+              </p>
+            </div>
+          )}
+
           {/* SLA Deadline (if available) */}
           {ticket.slaDeadline && (
             <div className={`mt-4 p-3 rounded-lg border ${getEscalationColor(ticket.escalationLevel)}`}>
@@ -236,7 +249,7 @@ export function TicketDetailView() {
                       <label className="text-sm font-medium text-gray-600">
                         Created By
                       </label>
-                      <p className="text-gray-900 mt-1">{ticket.creatorName}</p>
+                      <p className="text-gray-900 mt-1">{ticket.createdByName}</p>
                     </div>
                   </div>
 
@@ -286,6 +299,7 @@ export function TicketDetailView() {
                 <AttachmentsSection
                   ticketId={ticket.id}
                   attachments={ticket.attachments}
+                  user={user}
                   isAdmin={user?.roles?.includes("ADMIN")}
                   onAttachmentDeleted={fetchTicket}
                 />
@@ -381,8 +395,8 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
       return;
     }
 
-    if (newComment.length < 1 || newComment.length > 5000) {
-      setError("Comment must be between 1 and 5000 characters");
+    if (newComment.length < 5 || newComment.length > 2000) {
+      setError("Comment must be between 5 and 2000 characters");
       return;
     }
 
@@ -461,7 +475,7 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Add a comment... (1-5000 characters)"
+          placeholder="Add a comment... (5-2000 characters)"
           rows="3"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
@@ -584,9 +598,10 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
 /**
  * Attachments Section Component
  */
-function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDeleted }) {
+function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachmentDeleted }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [deleting, setDeleting] = useState(null); // Track which attachment is being deleted
   const [file, setFile] = useState(null);
 
   const handleFileChange = (e) => {
@@ -645,10 +660,19 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
     }
 
     try {
-      await apiClient.delete(`/tickets/${ticketId}/attachments/${attachmentId}`);
+      setDeleting(attachmentId);
+      console.log("Starting delete for attachment:", attachmentId);
+      const response = await apiClient.delete(`/tickets/${ticketId}/attachments/${attachmentId}`);
+      console.log("Delete response:", response);
+      console.log("Calling onAttachmentDeleted callback");
       onAttachmentDeleted();
+      console.log("onAttachmentDeleted callback completed");
     } catch (err) {
       console.error("Failed to delete attachment:", err);
+      console.error("Error response:", err.response);
+      alert(`Failed to delete attachment: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -728,13 +752,18 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
                   >
                     Download
                   </a>
-                  {isAdmin && (
+                  {(isAdmin || attachment.uploadedBy?.id === user?.id) && (
                     <button
                       onClick={() =>
                         handleDelete(attachment.id)}
-                      className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                      disabled={deleting === attachment.id}
+                      className={`px-3 py-1 bg-red-600 text-white rounded text-sm ${
+                        deleting === attachment.id
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-red-700"
+                      }`}
                     >
-                      Delete
+                      {deleting === attachment.id ? "Deleting..." : "Delete"}
                     </button>
                   )}
                 </div>

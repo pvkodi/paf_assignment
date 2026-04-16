@@ -86,6 +86,12 @@ public class EndpointAuthorizationConfig {
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/register", new HashSet<>());
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/login", new HashSet<>());
 
+        // ========== FILE UPLOADS (PUBLIC) ==========
+        // Allow downloads of uploaded attachments without authentication
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/uploads/**", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/uploads/original/*", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/uploads/thumbnails/*", new HashSet<>());
+
         // FR-003: Profile and logout are whitelisted for suspended users
         ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/auth/profile",
                 new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
@@ -173,6 +179,50 @@ public class EndpointAuthorizationConfig {
         // Ticket status updates: Staff roles only
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/tickets/*/status",
                 new HashSet<>(Arrays.asList(Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        // FR-030, FR-031: File attachments - all authenticated users can upload
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/tickets/*/attachments",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/v1/tickets/*/attachments",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("DELETE /api/v1/tickets/*/attachments/*",
+                new HashSet<>(Collections.singletonList(Role.ADMIN)));
+
+        // ========== ACTUAL ENDPOINT PATHS (without /v1) ==========
+        // These are the actual paths used by controllers
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/auth/login", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/auth/register", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/auth/profile",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/tickets",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/tickets",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/tickets/*",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/tickets/*/comments",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/tickets/*/assign",
+                new HashSet<>(Arrays.asList(Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/tickets/*/status",
+                new HashSet<>(Arrays.asList(Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/tickets/*/attachments",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("GET /api/tickets/*/attachments",
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
+
+        ENDPOINT_ACCESS_MATRIX.put("DELETE /api/tickets/*/attachments/*",
+                new HashSet<>(Collections.singletonList(Role.ADMIN)));
 
         // ========== NOTIFICATION ENDPOINTS (US5) ==========
         // All authenticated users can view their notifications

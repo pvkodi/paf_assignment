@@ -77,7 +77,7 @@ public class TicketService {
   /**
    * Create a new maintenance ticket with SLA deadline calculation.
    *
-   * <p>SLA deadline is set to 48 hours from creation time. Status is initialized to OPEN.
+   * <p>SLA deadline is priority-based (CRITICAL 4h, HIGH 8h, MEDIUM 24h, LOW 72h). Status is initialized to OPEN.
    *
    * @param facility the facility affected by the maintenance issue (must be non-null)
    * @param category the issue category (must be non-null)
@@ -85,7 +85,7 @@ public class TicketService {
    * @param title the ticket title (20-200 chars)
    * @param description the detailed description of the issue (min 50 chars)
    * @param createdBy the user reporting the issue (must be non-null)
-   * @return the created MaintenanceTicket with SLA deadline set to now + 48 hours
+   * @return the created MaintenanceTicket with priority-based SLA deadline
    * @throws IllegalArgumentException if any required parameter is null
    */
   public MaintenanceTicket createTicket(
@@ -115,8 +115,16 @@ public class TicketService {
       throw new IllegalArgumentException("Created by user cannot be null");
     }
 
-    // Calculate SLA deadline: 48 hours from now
-    LocalDateTime slaDueAt = LocalDateTime.now().plusHours(48);
+    // Calculate SLA deadline based on priority (24x7 elapsed time in campus timezone)
+    LocalDateTime slaDueAt = LocalDateTime.now().plus(
+        switch(priority) {
+            case CRITICAL -> java.time.Duration.ofHours(4);
+            case HIGH -> java.time.Duration.ofHours(8);
+            case MEDIUM -> java.time.Duration.ofHours(24);
+            case LOW -> java.time.Duration.ofHours(72);
+            default -> java.time.Duration.ofHours(48);
+        }
+    );
 
     MaintenanceTicket ticket =
         MaintenanceTicket.builder()
@@ -137,7 +145,7 @@ public class TicketService {
         savedTicket.getId(),
         facility.getId(),
         priority,
-        slaDueAt);
+        LocalDateTime.now());
 
     return savedTicket;
   }

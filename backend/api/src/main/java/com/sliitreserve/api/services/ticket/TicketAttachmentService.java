@@ -149,7 +149,7 @@ public class TicketAttachmentService {
     String thumbnailPath = null;
     try {
       LocalFileStorageService.FileUploadResult uploadResult = fileStorageService.uploadFile(file);
-      filePath = uploadResult.storageFilename;
+      filePath = uploadResult.originalUrl;  // Store full relative path, not just filename
       thumbnailPath = uploadResult.thumbnailUrl; // Automatically generated for images
       log.debug("Stored file {} to {}. Thumbnail: {}", originalFileName, uploadResult.originalUrl, thumbnailPath);
     } catch (Exception e) {
