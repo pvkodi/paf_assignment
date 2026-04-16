@@ -2,6 +2,7 @@ package com.sliitreserve.api.controllers.bookings;
 
 import com.sliitreserve.api.dto.bookings.BookingRequestDTO;
 import com.sliitreserve.api.dto.bookings.BookingResponseDTO;
+import com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.booking.Booking;
@@ -73,15 +74,12 @@ public class BookingController {
      */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(Authentication authentication) {
+    public ResponseEntity<List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO>> getUserBookings(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        List<Booking> bookings = bookingService.getUserBookings(currentUser.getId());
-        List<BookingResponseDTO> response = bookings.stream()
-                .map(bookingMapper::toResponseDTO)
-                .toList();
+        List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> response = bookingService.getUserBookingsDetailed(currentUser.getId());
 
         return ResponseEntity.ok(response);
     }
@@ -93,15 +91,12 @@ public class BookingController {
      */
     @GetMapping("/pending-approvals")
     @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
-    public ResponseEntity<List<BookingResponseDTO>> getPendingApprovals(Authentication authentication) {
+    public ResponseEntity<List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO>> getPendingApprovals(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        List<Booking> pendingBookings = bookingService.getPendingApprovalsForUser(currentUser);
-        List<BookingResponseDTO> response = pendingBookings.stream()
-                .map(bookingMapper::toResponseDTO)
-                .toList();
+        List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> response = bookingService.getPendingApprovalsDetailed(currentUser);
 
         return ResponseEntity.ok(response);
     }
@@ -126,7 +121,7 @@ public class BookingController {
      */
     @GetMapping("/{bookingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BookingResponseDTO> getBooking(
+    public ResponseEntity<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> getBooking(
             @PathVariable UUID bookingId,
             Authentication authentication) {
 
@@ -143,7 +138,7 @@ public class BookingController {
             throw new ForbiddenException("You do not have permission to view this booking");
         }
 
-        BookingResponseDTO response = bookingMapper.toResponseDTO(booking);
+        com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO response = bookingService.getBookingDetailed(bookingId);
         return ResponseEntity.ok(response);
     }
 

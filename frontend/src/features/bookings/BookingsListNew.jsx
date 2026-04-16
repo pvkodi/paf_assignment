@@ -136,8 +136,8 @@ export default function BookingsList() {
         </div>
       </div>
 
-      {/* Status Filter Pills - Modern Minimalist Design */}
-      <div className="flex gap-4 flex-wrap items-center pb-2 border-b border-slate-200">
+      {/* Status Filter Tabs */}
+      <div className="flex gap-3 flex-wrap">
         {["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"].map((status) => {
           const isActive = filter === status;
           const count = status === "ALL" ? bookings.length : bookings.filter((b) => b.status === status).length;
@@ -146,13 +146,13 @@ export default function BookingsList() {
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`text-sm font-medium transition-all duration-200 pb-2 border-b-2 ${
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                 isActive
-                  ? "text-slate-900 border-b-slate-900"
-                  : "text-slate-500 border-b-transparent hover:text-slate-700 hover:border-b-slate-300"
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
-              {status} <span className="text-xs opacity-70 ml-1">({count})</span>
+              {status} <span className="text-xs opacity-75 ml-1">({count})</span>
             </button>
           );
         })}
@@ -209,7 +209,7 @@ export default function BookingsList() {
                           </div>
                           <div className="text-slate-600">
                             <span className="font-mono bg-white bg-opacity-50 px-2 py-1 rounded text-xs">
-                              {booking.start_time} – {booking.end_time}
+                              {booking.startTime} – {booking.endTime}
                             </span>
                           </div>
                         </div>
@@ -261,25 +261,25 @@ export default function BookingsList() {
                   </div>
                 </div>
 
-                {/* Action Buttons - Minimalist Design */}
-                <div className="flex items-center gap-3 flex-wrap">
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() =>
                       setSelectedBookingId(
                         selectedBookingId === booking.id ? null : booking.id,
                       )
                     }
-                    className="px-4 py-2 text-sm font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md transition-all duration-200 active:scale-95"
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-colors"
                   >
-                    {selectedBookingId === booking.id ? "Hide" : "Details"}
+                    {selectedBookingId === booking.id ? "Hide Details" : "View Details"}
                   </button>
 
                   {canCheckInBooking(booking) && (
                     <button
                       onClick={() => setCheckInBookingId(booking.id)}
-                      className="px-4 py-2 text-sm font-semibold text-slate-900 border-2 border-slate-300 hover:border-slate-400 rounded-md transition-all duration-200 active:scale-95"
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors"
                     >
-                      ✓ Check In
+                      Check In
                     </button>
                   )}
 
@@ -287,9 +287,9 @@ export default function BookingsList() {
                     <button
                       onClick={() => handleCancelBooking(booking.id)}
                       disabled={actionLoading === booking.id}
-                      className="px-4 py-2 text-sm font-semibold text-red-600 border-2 border-red-300 hover:border-red-400 hover:bg-red-50 rounded-md transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {actionLoading === booking.id ? "Cancelling..." : "✕ Cancel"}
+                      {actionLoading === booking.id ? "Cancelling..." : "Cancel"}
                     </button>
                   )}
                 </div>

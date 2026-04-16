@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
 import RecurrenceSelector from "./RecurrenceSelector";
-import QuotaPolicySummary from "./QuotaPolicySummary";
 import AdminBookForUserSelector from "./AdminBookForUserSelector";
 
 export default function BookingForm({ facility: initialFacility, onBookingComplete, isModal, onClose }) {
@@ -83,8 +82,15 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
     ["ADMIN", "FACILITY_MANAGER"].includes(r),
   );
 
-  // Get user role for quota display
-  const userRole = user?.roles?.[0] || "USER";
+  // Get today's date in YYYY-MM-DD format for date input min attribute
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const minDate = getTodayDate();
 
   const validateForm = () => {
     const errors = {};
@@ -150,7 +156,7 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
 
       const response = await apiClient.post("/v1/bookings", bookingPayload);
 
-      setSuccess("Booking created successfully! Your booking is pending approval.");
+      setSuccess("✓ Booking submitted successfully! Your booking is now being reviewed.");
       setError(null);
       setValidationErrors({});
 
@@ -309,7 +315,13 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Booking Date *</label>
-                  <input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
+                  <input 
+                    type="date" 
+                    min={minDate}
+                    value={bookingDate} 
+                    onChange={(e) => setBookingDate(e.target.value)} 
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} 
+                  />
                   {validationErrors.bookingDate && <p className="text-sm text-red-600 mt-1">{validationErrors.bookingDate}</p>}
                 </div>
 
@@ -416,54 +428,55 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
                     <input type="text" value={bookedForUserId} onChange={(e) => setBookedForUserId(e.target.value)} placeholder="Enter user ID (leave blank to book for yourself)" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                   </div>
                 )}
+              </div>
 
-                <div className="border-t-2 border-slate-200 pt-4">
-                  <label className="flex items-center">
-                    <input type="checkbox" checked={useRecurrence} onChange={(e) => setUseRecurrence(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" />
-                    <span className="ml-2 text-sm font-medium text-slate-700">This is a recurring booking</span>
-                  </label>
+              {/* Recurrence Section - Moved to bottom for better UX */}
+              <div className="border-t-2 border-slate-200 pt-4">
+                <label className="flex items-center">
+                  <input type="checkbox" checked={useRecurrence} onChange={(e) => setUseRecurrence(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" />
+                  <span className="ml-2 text-sm font-medium text-slate-700">This is a recurring booking</span>
+                </label>
 
-                  {useRecurrence && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Recurrence Pattern</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button type="button" onClick={() => { setRecurrencePreset('daily'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=DAILY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'daily' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Daily</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('weekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Weekly (M/W/F)</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('biweekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'biweekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Bi-Weekly</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('monthly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=MONTHLY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Monthly</button>
-                        </div>
+                {useRecurrence && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Recurrence Pattern</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => { setRecurrencePreset('daily'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=DAILY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'daily' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Daily</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('weekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Weekly (M/W/F)</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('biweekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'biweekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Bi-Weekly</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('monthly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=MONTHLY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Monthly</button>
                       </div>
-
-                      {recurrencePreset && (
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Number of Occurrences</label>
-                          <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => { setRecurrenceCount(e.target.value); if (recurrencePreset === 'daily') { setRecurrenceRule(`FREQ=DAILY;COUNT=${e.target.value}`); } else if (recurrencePreset === 'weekly') { setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${e.target.value}`); } else if (recurrencePreset === 'biweekly') { setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${e.target.value}`); } else if (recurrencePreset === 'monthly') { setRecurrenceRule(`FREQ=MONTHLY;COUNT=${e.target.value}`); } }} className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                        </div>
-                      )}
-
-                      <div className="mb-3">
-                        <label className="flex items-center text-sm">
-                          <input type="checkbox" checked={recurrenceCustom} onChange={(e) => setRecurrenceCustom(e.target.checked)} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-slate-300 rounded" />
-                          <span className="ml-2 text-slate-700 font-medium">Advanced: Custom iCal RRULE</span>
-                        </label>
-                      </div>
-
-                      {recurrenceCustom && (
-                        <div>
-                          <input type="text" value={recurrenceRule} onChange={(e) => setRecurrenceRule(e.target.value)} placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" />
-                          <p className="text-xs text-slate-500 mt-1">See <a href="https://datatracker.ietf.org/doc/html/rfc5545" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">RFC 5545</a> for RRULE format</p>
-                        </div>
-                      )}
-
-                      {recurrenceRule && (
-                        <div className="mt-3 p-2 bg-white rounded border border-blue-200 text-xs text-slate-600">
-                          <strong>Rule:</strong> <code className="text-slate-700">{recurrenceRule}</code>
-                        </div>
-                      )}
                     </div>
-                  )}
-                </div>
+
+                    {recurrencePreset && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Number of Occurrences</label>
+                        <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => { setRecurrenceCount(e.target.value); if (recurrencePreset === 'daily') { setRecurrenceRule(`FREQ=DAILY;COUNT=${e.target.value}`); } else if (recurrencePreset === 'weekly') { setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${e.target.value}`); } else if (recurrencePreset === 'biweekly') { setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${e.target.value}`); } else if (recurrencePreset === 'monthly') { setRecurrenceRule(`FREQ=MONTHLY;COUNT=${e.target.value}`); } }} className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                      <label className="flex items-center text-sm">
+                        <input type="checkbox" checked={recurrenceCustom} onChange={(e) => setRecurrenceCustom(e.target.checked)} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-slate-300 rounded" />
+                        <span className="ml-2 text-slate-700 font-medium">Advanced: Custom iCal RRULE</span>
+                      </label>
+                    </div>
+
+                    {recurrenceCustom && (
+                      <div>
+                        <input type="text" value={recurrenceRule} onChange={(e) => setRecurrenceRule(e.target.value)} placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" />
+                        <p className="text-xs text-slate-500 mt-1">See <a href="https://datatracker.ietf.org/doc/html/rfc5545" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">RFC 5545</a> for RRULE format</p>
+                      </div>
+                    )}
+
+                    {recurrenceRule && (
+                      <div className="mt-3 p-2 bg-white rounded border border-blue-200 text-xs text-slate-600">
+                        <strong>Rule:</strong> <code className="text-slate-700">{recurrenceRule}</code>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-200">

@@ -76,30 +76,30 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
   }
 
   const quota = quotaStatus || getDefaultQuota(userRole);
-  const isAdmin = userRole === "ADMIN";
+  const isAdmin = quota.effectiveRole === "ADMIN" || userRole === "ADMIN";
 
   if (compact) {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-sm font-semibold text-blue-900 mb-2">
-          📊 Your Quota Status ({userRole})
+          📊 Your Quota Status ({quota.effectiveRole || userRole})
         </p>
         <div className="space-y-1 text-xs text-blue-800">
           <p>
-            Concurrent Bookings:{" "}
+            Weekly Bookings:{" "}
             <span className="font-mono font-bold">
-              {quota.currentConcurrent}/{quota.maxConcurrentBookings || "∞"}
+              {quota.weeklyBookings || 0}/{quota.weeklyQuota || "∞"}
             </span>
           </p>
           <p>
-            Peak Hour Slots This Week:{" "}
+            Monthly Bookings:{" "}
             <span className="font-mono font-bold">
-              {quota.currentPeakHours}/{quota.maxPeakHoursPerWeek || "∞"}
+              {quota.monthlyBookings || 0}/{quota.monthlyQuota || "∞"}
             </span>
           </p>
           <p>
-            Max Advance Booking:{" "}
-            <span className="font-mono font-bold">{quota.maxAdvanceDays || "∞"} days</span>
+            Advance Window:{" "}
+            <span className="font-mono font-bold">{quota.advanceBookingDays || "∞"} days</span>
           </p>
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
     <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-slate-900 mb-1">📊 Quota Policy Summary</h3>
-        <p className="text-sm text-slate-600">Role: <span className="font-semibold">{userRole}</span></p>
+        <p className="text-sm text-slate-600">Role: <span className="font-semibold">{quota.effectiveRole || userRole}</span></p>
       </div>
 
       {isAdmin ? (
@@ -119,60 +119,72 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
             ✅ Admin users have unlimited booking quotas
           </p>
           <p className="text-xs text-green-700 mt-1">
-            You can create unlimited concurrent bookings and book any time in advance.
+            You can create unlimited bookings and book any time in advance.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Concurrent Bookings */}
+          {/* Weekly Bookings */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-700">Concurrent Bookings</span>
+              <span className="text-sm font-medium text-slate-700">Weekly Bookings</span>
               <span className="text-sm font-bold text-slate-900">
-                {quota.currentConcurrent}/{quota.maxConcurrentBookings}
+                {quota.weeklyBookings || 0}/{quota.weeklyQuota || "∞"}
               </span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${getProgressColor(
-                  quota.currentConcurrent,
-                  quota.maxConcurrentBookings,
+                  quota.weeklyBookings || 0,
+                  quota.weeklyQuota,
                 )}`}
                 style={{
                   width: `${getProgressPercentage(
-                    quota.currentConcurrent,
-                    quota.maxConcurrentBookings,
+                    quota.weeklyBookings || 0,
+                    quota.weeklyQuota,
                   )}%`,
                 }}
               />
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              You can have up to {quota.maxConcurrentBookings} active bookings at once.
+              You can book up to {quota.weeklyQuota || "∞"} times per week (Monday-Sunday).
             </p>
           </div>
 
-          {/* Peak Hour Slots */}
+          {/* Monthly Bookings */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-700">Peak Hour Slots (This Week)</span>
+              <span className="text-sm font-medium text-slate-700">Monthly Bookings</span>
               <span className="text-sm font-bold text-slate-900">
-                {quota.currentPeakHours}/{quota.maxPeakHoursPerWeek}
+                {quota.monthlyBookings || 0}/{quota.monthlyQuota || "∞"}
               </span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${getProgressColor(
-                  quota.currentPeakHours,
-                  quota.maxPeakHoursPerWeek,
+                  quota.monthlyBookings || 0,
+                  quota.monthlyQuota,
                 )}`}
                 style={{
-                  width: `${getProgressPercentage(quota.currentPeakHours, quota.maxPeakHoursPerWeek)}%`,
+                  width: `${getProgressPercentage(quota.monthlyBookings || 0, quota.monthlyQuota)}%`,
                 }}
               />
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Peak hours: 10:00-12:00, 14:00-16:00. Limited to {quota.maxPeakHoursPerWeek} slots
-              per week.
+              You can book up to {quota.monthlyQuota || "∞"} times per calendar month.
+            </p>
+          </div>
+
+          {/* Peak Hours */}
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-medium text-blue-900">Peak Hour Access</span>
+              <span className="text-sm font-bold text-blue-900">
+                {quota.canBookDuringPeakHours ? "✓ Allowed" : "✗ Restricted"}
+              </span>
+            </div>
+            <p className="text-xs text-blue-700">
+              Peak hours: {quota.peakHourWindow || "08:00-10:00"}
             </p>
           </div>
 
@@ -181,38 +193,36 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-slate-700">Advance Booking Window</span>
               <span className="text-sm font-bold text-slate-900">
-                ≤ {quota.maxAdvanceDays} days
+                ≤ {quota.advanceBookingDays || "∞"} days
               </span>
             </div>
             <p className="text-xs text-slate-600">
-              You can book facilities up to {quota.maxAdvanceDays} days in advance. Bookings
-              beyond this date will be rejected.
+              You can book facilities up to {quota.advanceBookingDays || "∞"} days in advance
+              {quota.advanceBookingUntil ? ` (until ${quota.advanceBookingUntil})` : ""}.
             </p>
           </div>
 
           {/* Usage Warnings */}
-          {quota.currentConcurrent >= quota.maxConcurrentBookings * 0.8 && (
+          {quota.weeklyBookings && quota.weeklyQuota && quota.weeklyBookings >= quota.weeklyQuota * 0.8 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-xs font-semibold text-yellow-800">
-                ⚠️ Approaching concurrent booking limit
+                ⚠️ Approaching weekly booking limit
               </p>
               <p className="text-xs text-yellow-700 mt-1">
-                You have {quota.maxConcurrentBookings - quota.currentConcurrent} booking
-                {quota.maxConcurrentBookings - quota.currentConcurrent === 1 ? "" : "s"} remaining
-                this cycle.
+                You have {quota.weeklyRemaining} booking{quota.weeklyRemaining === 1 ? "" : "s"} remaining
+                this week.
               </p>
             </div>
           )}
 
-          {quota.currentPeakHours >= quota.maxPeakHoursPerWeek * 0.8 && (
+          {quota.monthlyBookings && quota.monthlyQuota && quota.monthlyBookings >= quota.monthlyQuota * 0.8 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-xs font-semibold text-yellow-800">
-                ⚠️ Approaching peak hour limit
+                ⚠️ Approaching monthly booking limit
               </p>
               <p className="text-xs text-yellow-700 mt-1">
-                You have {quota.maxPeakHoursPerWeek - quota.currentPeakHours} peak hour
-                {quota.maxPeakHoursPerWeek - quota.currentPeakHours === 1 ? "" : "s"} remaining
-                this week.
+                You have {quota.monthlyRemaining} booking{quota.monthlyRemaining === 1 ? "" : "s"} remaining
+                this month.
               </p>
             </div>
           )}

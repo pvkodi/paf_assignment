@@ -32,9 +32,33 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
     List<Booking> findByRequestedBy_Id(UUID userId);
 
     /**
+     * Find all bookings for a user with eager loading of relationships.
+     * Uses JOIN FETCH to load facility and user relationships to avoid lazy loading issues.
+     */
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "LEFT JOIN FETCH b.facility f " +
+           "LEFT JOIN FETCH b.requestedBy r " +
+           "LEFT JOIN FETCH b.bookedFor bf " +
+           "WHERE b.requestedBy.id = :userId OR b.bookedFor.id = :userId " +
+           "ORDER BY b.bookingDate DESC, b.startTime DESC")
+    List<Booking> findUserBookingsWithDetails(@Param("userId") UUID userId);
+
+    /**
      * Find all bookings with a specific status.
      */
     List<Booking> findByStatus(BookingStatus status);
+
+    /**
+     * Find all pending bookings with eager loading of relationships.
+     * Uses JOIN FETCH to load facility and user relationships to avoid lazy loading issues.
+     */
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "LEFT JOIN FETCH b.facility f " +
+           "LEFT JOIN FETCH b.requestedBy r " +
+           "LEFT JOIN FETCH b.bookedFor bf " +
+           "WHERE b.status = :status " +
+           "ORDER BY b.bookingDate DESC, b.startTime DESC")
+    List<Booking> findByStatusWithDetails(@Param("status") BookingStatus status);
 
     List<Booking> findByFacility_IdAndBookingDateAndStatusIn(
            UUID facilityId,

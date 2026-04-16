@@ -102,12 +102,6 @@ function BookingsPage() {
 function BookingApprovalsPage() {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Booking Approvals</h1>
-        <p className="text-slate-600">
-          Review and approve booking requests from facility users
-        </p>
-      </div>
       <BookingApprovalQueue />
     </div>
   );
