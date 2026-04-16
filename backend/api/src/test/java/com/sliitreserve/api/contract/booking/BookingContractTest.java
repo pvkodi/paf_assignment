@@ -9,6 +9,7 @@ import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ConflictException;
 import com.sliitreserve.api.repositories.auth.UserRepository;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
 import com.sliitreserve.api.services.booking.BookingService;
 import com.sliitreserve.api.util.mapping.BookingMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +51,13 @@ class BookingContractTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApprovalStepRepository approvalStepRepository;
+
     private MockMvc mockMvc;
     @BeforeEach
     void setUp() {
-        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper());
+        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper(approvalStepRepository));
         mockMvc = MockMvcBuilders.standaloneSetup(bookingController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
