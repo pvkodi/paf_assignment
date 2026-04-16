@@ -219,7 +219,7 @@ export default function BookingApprovalQueue() {
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Requested By</p>
                     <p className="text-sm text-slate-900 font-medium mt-1">
-                      {booking.requestedBy?.displayName || booking.requestedBy?.email || "Unknown"}
+                      {booking.requested_by?.displayName || booking.requested_by?.email || "Unknown"}
                     </p>
                     <p className="text-xs text-slate-600 mt-1">
                       {booking.attendees} attendees
