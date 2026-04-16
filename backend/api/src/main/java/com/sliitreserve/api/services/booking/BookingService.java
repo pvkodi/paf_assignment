@@ -19,7 +19,6 @@ import com.sliitreserve.api.util.booking.BookingBuilder;
 import com.sliitreserve.api.observers.EventEnvelope;
 import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.observers.EventSeverity;
-import com.sliitreserve.api.strategy.quota.QuotaPolicyEngine;
 import com.sliitreserve.api.strategy.quota.QuotaPolicyViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

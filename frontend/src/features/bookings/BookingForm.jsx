@@ -423,9 +423,11 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
                 </div>
 
                 {canBookForOthers && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Book for Another User (Optional - Admin/Lecturer only)</label>
-                    <input type="text" value={bookedForUserId} onChange={(e) => setBookedForUserId(e.target.value)} placeholder="Enter user ID (leave blank to book for yourself)" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                  <div className="col-span-full">
+                    <AdminBookForUserSelector 
+                      onUserSelect={setBookedForUserId} 
+                      userRole={user?.roles?.[0]}
+                    />
                   </div>
                 )}
               </div>

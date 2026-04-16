@@ -45,9 +45,10 @@ public class BookingController {
         UUID bookedFor = requestedBy;
 
         if (request.getBookedForUserId() != null && !request.getBookedForUserId().equals(requestedBy)) {
-            boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
-            if (!isAdmin) {
-                throw new ForbiddenException("Only ADMIN users can book on behalf of others");
+            boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                               currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+            if (!isAdminOrFacilityManager) {
+                throw new ForbiddenException("Only ADMIN and FACILITY_MANAGER users can book on behalf of others");
             }
             bookedFor = request.getBookedForUserId();
         }

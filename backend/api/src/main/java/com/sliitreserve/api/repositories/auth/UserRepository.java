@@ -28,4 +28,18 @@ public interface UserRepository extends com.sliitreserve.api.repositories.BaseRe
      */
     @Query("SELECT u FROM User u WHERE u.suspendedUntil IS NOT NULL AND u.suspendedUntil < :cutoff")
     List<User> findBySuspendedUntilNotNullAndSuspendedUntilBefore(@Param("cutoff") LocalDateTime cutoffDateTime);
+
+    /**
+     * Search users by email or display name (case-insensitive).
+     * Used by facility managers and admins to find users when booking for someone else.
+     * 
+     * @param emailPattern Email search pattern (will be wrapped with wildcards)
+     * @param displayNamePattern Display name search pattern (will be wrapped with wildcards)
+     * @return List of matching users
+     */
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :emailPattern, '%')) " +
+           "OR LOWER(u.displayName) LIKE LOWER(CONCAT('%', :displayNamePattern, '%')) " +
+           "ORDER BY u.displayName ASC, u.email ASC")
+    List<User> searchByEmailOrDisplayName(@Param("emailPattern") String emailPattern, 
+                                          @Param("displayNamePattern") String displayNamePattern);
 }
