@@ -219,7 +219,7 @@ public class BookingController {
      */
     @GetMapping("/admin/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'FACILITY_MANAGER')")
-    public ResponseEntity<java.util.List<BookingResponseDTO>> getAdminBookings(
+    public ResponseEntity<java.util.List<BookingDetailedResponseDTO>> getAdminBookings(
             @RequestParam(required = false) UUID facilityId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from,
@@ -247,8 +247,8 @@ public class BookingController {
             }
 
             java.util.List<Booking> bookings = bookingService.getAdminBookings(facilityId, statuses, startDate, endDate);
-            java.util.List<BookingResponseDTO> response = bookings.stream()
-                    .map(bookingMapper::toResponseDTO)
+            java.util.List<BookingDetailedResponseDTO> response = bookings.stream()
+                    .map(bookingMapper::toDetailedResponseDTO)
                     .toList();
 
             return ResponseEntity.ok(response);
