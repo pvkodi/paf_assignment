@@ -186,16 +186,33 @@ public class BookingController {
 
     /**
      * Cancel an approved booking.
-     * Only ADMIN and FACILITY_MANAGER can cancel approved bookings.
+     * ADMIN and FACILITY_MANAGER can cancel any booking.
+     * Students (USER) can only cancel their own bookings.
      */
     @PostMapping("/{bookingId}/cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACILITY_MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> cancelBooking(
             @PathVariable UUID bookingId,
             @RequestParam(required = false) String note,
-            @RequestParam(required = false) Long version) {
+            @RequestParam(required = false) Long version,
+            Authentication authentication) {
+
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         Booking booking = bookingService.getBooking(bookingId);
+        
+        // Check authorization: ADMIN/FACILITY_MANAGER can cancel any booking, USER can only cancel their own
+        boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                           currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+        boolean isOwnBooking = booking.getRequestedBy().getId().equals(currentUser.getId()) || 
+                               booking.getBookedFor().getId().equals(currentUser.getId());
+        
+        if (!isAdminOrFacilityManager && !isOwnBooking) {
+            throw new ForbiddenException("You can only cancel your own bookings");
+        }
+        
         Long expectedVersion = version != null ? version : booking.getVersion();
         
         Booking cancelledBooking = bookingService.cancelBooking(bookingId, expectedVersion, note);
