@@ -148,9 +148,9 @@
 
 - [x] T060 [P] [US4] Add unit tests for ticket state machine in `backend/src/test/java/com/sliitreserve/api/unit/ticket/TicketStateMachineTest.java`
 - [x] T061 [P] [US4] Add unit tests for escalation service and SLA deadlines in `backend/src/test/java/com/sliitreserve/api/unit/ticket/EscalationServiceTest.java`
-- [ ] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/sliitreserve/api/unit/ticket/AttachmentServiceTest.java`
-- [ ] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/sliitreserve/api/contract/ticket/TicketContractTest.java`
-- [ ] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/sliitreserve/api/integration/ticket/TicketEscalationIntegrationTest.java`
+- [x] T062 [P] [US4] Add unit tests for attachment validation and thumbnail generation in `backend/src/test/java/com/sliitreserve/api/unit/ticket/AttachmentServiceTest.java`
+- [x] T063 [P] [US4] Add contract tests for ticket/comment/assignment endpoints in `backend/src/test/java/com/sliitreserve/api/contract/ticket/TicketContractTest.java`
+- [x] T064 [P] [US4] Add integration tests for escalation level actions and internal-comment visibility in `backend/src/test/java/com/sliitreserve/api/integration/ticket/TicketEscalationIntegrationTest.java`
 
 ### Implementation for User Story 4
 

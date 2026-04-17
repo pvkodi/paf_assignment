@@ -37,8 +37,14 @@ public class TicketStatusUpdate {
 
   /**
    * New status to transition to.
-   * Must be a valid TicketStatus enum (OPEN, IN_PROGRESS, ESCALATED, CLOSED, REJECTED).
+   * Must be a valid TicketStatus enum (OPEN, IN_PROGRESS, RESOLVED, CLOSED, REJECTED).
    */
   @NotNull(message = "Status is required")
   private TicketStatus status;
+
+  /**
+   * Optional rejection reason - required when status is REJECTED.
+   * Must be at least 10 characters for REJECTED status.
+   */
+  private String rejectionReason;
 }

@@ -77,7 +77,7 @@ public class TicketService {
   /**
    * Create a new maintenance ticket with SLA deadline calculation.
    *
-   * <p>SLA deadline is set to 48 hours from creation time. Status is initialized to OPEN.
+   * <p>SLA deadline is priority-based (CRITICAL 4h, HIGH 8h, MEDIUM 24h, LOW 72h). Status is initialized to OPEN.
    *
    * @param facility the facility affected by the maintenance issue (must be non-null)
    * @param category the issue category (must be non-null)
@@ -85,7 +85,7 @@ public class TicketService {
    * @param title the ticket title (20-200 chars)
    * @param description the detailed description of the issue (min 50 chars)
    * @param createdBy the user reporting the issue (must be non-null)
-   * @return the created MaintenanceTicket with SLA deadline set to now + 48 hours
+   * @return the created MaintenanceTicket with priority-based SLA deadline
    * @throws IllegalArgumentException if any required parameter is null
    */
   public MaintenanceTicket createTicket(
@@ -115,8 +115,16 @@ public class TicketService {
       throw new IllegalArgumentException("Created by user cannot be null");
     }
 
-    // Calculate SLA deadline: 48 hours from now
-    LocalDateTime slaDueAt = LocalDateTime.now().plusHours(48);
+    // Calculate SLA deadline based on priority (24x7 elapsed time in campus timezone)
+    LocalDateTime slaDueAt = LocalDateTime.now().plus(
+        switch(priority) {
+            case CRITICAL -> java.time.Duration.ofHours(4);
+            case HIGH -> java.time.Duration.ofHours(8);
+            case MEDIUM -> java.time.Duration.ofHours(24);
+            case LOW -> java.time.Duration.ofHours(72);
+            default -> java.time.Duration.ofHours(48);
+        }
+    );
 
     MaintenanceTicket ticket =
         MaintenanceTicket.builder()
@@ -137,7 +145,7 @@ public class TicketService {
         savedTicket.getId(),
         facility.getId(),
         priority,
-        slaDueAt);
+        LocalDateTime.now());
 
     return savedTicket;
   }
@@ -435,13 +443,11 @@ public class TicketService {
       throw new IllegalStateException("Cannot update a deleted comment");
     }
 
-    // Check permissions: author or admin
+    // Check permissions: only author can edit comments
     boolean isAuthor = comment.getAuthor().getId().equals(updateBy.getId());
-    boolean isAdmin =
-        updateBy.getRoles().stream().anyMatch(role -> role == Role.ADMIN);
 
-    if (!isAuthor && !isAdmin) {
-      throw new IllegalStateException("Only comment author or admin can update comment");
+    if (!isAuthor) {
+      throw new IllegalStateException("Only comment author can edit their own comment");
     }
 
     comment.setContent(newContent);
@@ -478,12 +484,21 @@ public class TicketService {
       throw new IllegalStateException("Comment is already deleted");
     }
 
-    // Check permissions: author or admin
+    // Check permissions: author, admin, or technician (but not technician if author is admin)
     boolean isAuthor = comment.getAuthor().getId().equals(deleteBy.getId());
     boolean isAdmin =
         deleteBy.getRoles().stream().anyMatch(role -> role == Role.ADMIN);
+    boolean isTechnician =
+        deleteBy.getRoles().stream().anyMatch(role -> role == Role.TECHNICIAN);
+    boolean authorIsAdmin =
+        comment.getAuthor().getRoles().stream().anyMatch(role -> role == Role.ADMIN);
 
-    if (!isAuthor && !isAdmin) {
+    // Technician cannot delete admin comments
+    if (isTechnician && authorIsAdmin) {
+      throw new IllegalStateException("Technician cannot delete admin comments");
+    }
+
+    if (!isAuthor && !isAdmin && !isTechnician) {
       throw new IllegalStateException("Only comment author or admin can delete comment");
     }
 
@@ -529,5 +544,82 @@ public class TicketService {
       throw new IllegalArgumentException("Ticket cannot be null");
     }
     return commentRepository.countByTicketAndDeletedAtIsNull(ticket);
+  }
+
+  /**
+   * Update ticket details (title, description, category, priority).
+   *
+   * <p><b>Authorization Rules</b>:
+   * <ul>
+   *   <li>Creator can edit only OPEN tickets
+   *   <li>ADMIN can edit anytime
+   *   <li>Controller validates authorization before calling this method
+   * </ul>
+   *
+   * @param ticket the ticket to update
+   * @param request the update request with new values
+   * @return updated MaintenanceTicket
+   * @throws IllegalArgumentException if ticket or request is null
+   */
+  public MaintenanceTicket updateTicketDetails(
+      MaintenanceTicket ticket,
+      com.sliitreserve.api.dto.ticket.TicketUpdateRequest request) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+    if (request == null) {
+      throw new IllegalArgumentException("Update request cannot be null");
+    }
+
+    log.info("Updating ticket {} details", ticket.getId());
+
+    if (request.getTitle() != null && !request.getTitle().isBlank()) {
+      ticket.setTitle(request.getTitle());
+    }
+    if (request.getDescription() != null && !request.getDescription().isBlank()) {
+      ticket.setDescription(request.getDescription());
+    }
+    if (request.getCategory() != null) {
+      ticket.setCategory(request.getCategory());
+    }
+    if (request.getPriority() != null) {
+      ticket.setPriority(request.getPriority());
+    }
+
+    MaintenanceTicket updated = ticketRepository.save(ticket);
+    log.info("Ticket {} details updated successfully", ticket.getId());
+
+    return updated;
+  }
+
+  /**
+   * Delete a ticket (hard delete).
+   *
+   * <p><b>Authorization Rules</b>:
+   * <ul>
+   *   <li>Creator can delete only OPEN tickets that are not assigned
+   *   <li>ADMIN can delete anytime
+   *   <li>Controller validates authorization before calling this method
+   * </ul>
+   *
+   * @param ticket the ticket to delete
+   * @throws IllegalArgumentException if ticket is null
+   */
+  public void deleteTicket(MaintenanceTicket ticket) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+
+    log.info("Deleting ticket {}", ticket.getId());
+
+    // Delete associated comments first
+    List<TicketComment> comments = commentRepository.findByTicketAndDeletedAtIsNullOrderByCreatedAtAsc(ticket);
+    for (TicketComment comment : comments) {
+      commentRepository.delete(comment);
+    }
+
+    // Delete the ticket
+    ticketRepository.delete(ticket);
+    log.info("Ticket {} deleted successfully", ticket.getId());
   }
 }

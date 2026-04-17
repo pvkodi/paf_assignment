@@ -82,8 +82,11 @@ public class SecurityConfig {
                     // Public OAuth endpoints
                     .requestMatchers("/api/auth/**").permitAll()
 
-                    // Health check endpoints (for monitoring/load balancers)
-                    .requestMatchers("/ping", "/health").permitAll()
+                    // Public file download endpoint (for uploaded attachments)
+                    .requestMatchers("/api/uploads/**").permitAll()
+
+                    // Static assets (favicon, etc)
+                    .requestMatchers("/favicon.ico", "/ping", "/health").permitAll()
 
                     // All other endpoints are evaluated by the EndpointAuthorizationFilter
                     .anyRequest().permitAll()

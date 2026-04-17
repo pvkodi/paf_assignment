@@ -45,14 +45,13 @@ public class TicketCommentRequest {
    * Examples: "Status update: water source identified", "Waiting for parts arrival"
    */
   @NotBlank(message = "Comment content is required")
-  @Size(min = 1, max = 5000, message = "Comment must be between 1 and 5000 characters")
+  @Size(min = 5, max = 2000, message = "Comment must be between 5 and 2000 characters")
   private String content;
 
   /**
-   * Visibility level of the comment.
+   * Visibility level of the comment (optional for updates, required for creation).
    * PUBLIC: Visible to creator, technician, staff
    * INTERNAL: Staff-only visibility
    */
-  @NotNull(message = "Visibility is required")
   private TicketCommentVisibility visibility;
 }

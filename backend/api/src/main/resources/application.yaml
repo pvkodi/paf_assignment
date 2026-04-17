@@ -2,7 +2,7 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://localhost:5432/smartcampus
+    url: jdbc:postgresql://postgres:5432/smartcampus
     username: smartcampus
     password: smartcampus
     driver-class-name: org.postgresql.Driver
@@ -14,8 +14,10 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 1
-  jackson:
-    property-naming-strategy: SNAKE_CASE
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 app:
   auth:
@@ -29,8 +31,8 @@ app:
   file-storage:
     upload-dir: uploads
     max-file-size: 5242880 # 5 MB in bytes
-    allowed-extensions: jpg,jpeg,png,gif,webp
-    allowed-mime-types: image/jpeg,image/png,image/gif,image/webp
+    allowed-extensions: jpg,jpeg,png,gif,webp,pdf
+    allowed-mime-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
     thumbnail-dimensions: 200x200
   time-policy:
     campus-timezone: Asia/Colombo # DST-aware campus timezone
@@ -56,3 +58,7 @@ app:
 
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080
+
+server:
+  tomcat:
+    max-http-post-size: 5242880 # 5 MB in bytes

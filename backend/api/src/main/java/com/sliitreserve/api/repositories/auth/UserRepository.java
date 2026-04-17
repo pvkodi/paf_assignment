@@ -1,5 +1,6 @@
 package com.sliitreserve.api.repositories.auth;
 
+import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,6 +31,14 @@ public interface UserRepository extends com.sliitreserve.api.repositories.BaseRe
     List<User> findBySuspendedUntilNotNullAndSuspendedUntilBefore(@Param("cutoff") LocalDateTime cutoffDateTime);
 
     /**
+     * Find all active users with a specific role.
+     * Queries the user_roles element collection to find users with the given role.
+     *
+     * @param role The role to search for (e.g., TECHNICIAN, FACILITY_MANAGER, ADMIN)
+     * @return List of active users with the specified role
+     */
+    @Query("SELECT u FROM User u WHERE :role MEMBER OF u.roles AND u.active = true")
+    List<User> findByRoleAndActiveTrue(@Param("role") Role role);
      * Search users by email or display name (case-insensitive).
      * Used by facility managers and admins to find users when booking for someone else.
      * 

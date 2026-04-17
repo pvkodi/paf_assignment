@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sliitreserve.api.entities.ticket.TicketCategory;
 import com.sliitreserve.api.entities.ticket.TicketPriority;
 
@@ -74,7 +75,23 @@ public class TicketCreationRequest {
   /**
    * Facility ID where the issue is located.
    * Must reference an existing facility that the user has access to.
+   * Accepted as string UUID and validated for format.
    */
-  @NotNull(message = "Facility ID is required")
-  private UUID facilityId;
+  @NotBlank(message = "Facility ID is required")
+  @JsonProperty("facilityId")
+  private String facilityId;
+
+  /**
+   * Convert and validate facilityId string to UUID.
+   */
+  public UUID getFacilityIdAsUUID() {
+    if (this.facilityId == null || this.facilityId.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(this.facilityId);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid facility ID format: " + this.facilityId, e);
+    }
+  }
 }
