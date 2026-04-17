@@ -39,6 +39,8 @@ public interface UserRepository extends com.sliitreserve.api.repositories.BaseRe
      */
     @Query("SELECT u FROM User u WHERE :role MEMBER OF u.roles AND u.active = true")
     List<User> findByRoleAndActiveTrue(@Param("role") Role role);
+
+    /**
      * Search users by email or display name (case-insensitive).
      * Used by facility managers and admins to find users when booking for someone else.
      * 
