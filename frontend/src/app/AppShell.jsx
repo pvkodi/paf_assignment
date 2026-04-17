@@ -182,6 +182,18 @@ function AppShell() {
                     Utilization
                   </Link>
                 )}
+                {isAdmin && (
+                  <Link
+                    to="/admin/user-management"
+                    className={`pb-2 text-sm font-medium transition ${
+                      isActive("/admin/user-management")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    User Management
+                  </Link>
+                )}
               </div>
               <button
                 onClick={logout}

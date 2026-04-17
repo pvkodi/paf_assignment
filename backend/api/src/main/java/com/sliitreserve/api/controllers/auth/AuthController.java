@@ -5,11 +5,14 @@ import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
 import com.sliitreserve.api.dto.auth.UserProfileResponse;
 import com.sliitreserve.api.dto.auth.EmailPasswordLoginRequest;
 import com.sliitreserve.api.dto.auth.RegisterRequest;
+import com.sliitreserve.api.dto.auth.CreateRegistrationRequestDTO;
+import com.sliitreserve.api.dto.auth.RegistrationRequestDTO;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.exception.UnauthorizedException;
 import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.auth.OAuthAuthService;
 import com.sliitreserve.api.services.auth.EmailPasswordAuthService;
+import com.sliitreserve.api.services.auth.RegistrationRequestService;
 import com.sliitreserve.api.services.auth.JwtTokenService;
 import com.sliitreserve.api.services.auth.SuspensionPolicyService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +40,9 @@ public class AuthController {
 
     @Autowired
     private EmailPasswordAuthService emailPasswordAuthService;
+
+    @Autowired
+    private RegistrationRequestService registrationRequestService;
 
     @Autowired
     private JwtTokenService jwtTokenService;
@@ -89,23 +95,24 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody CreateRegistrationRequestDTO request) {
         log.info("Registration request for email: {}", request.getEmail());
 
         try {
-            OAuthAuthService.OAuthTokenResponse tokenResponse = emailPasswordAuthService.registerUser(request);
+            RegistrationRequestDTO registrationRequest = registrationRequestService.createRegistrationRequest(request);
 
-            AuthResponse authResponse = new AuthResponse();
-            authResponse.setToken(tokenResponse.getAccessToken());
-            authResponse.setRefreshToken(tokenResponse.getRefreshToken());
-            authResponse.setExpiresAt(tokenResponse.getExpiresAt());
-            authResponse.setUser(tokenResponse.getUser());
+            Map<String, Object> response = Map.of(
+                    "status", "PENDING",
+                    "message", "Registration submitted successfully. Awaiting admin approval.",
+                    "registrationId", registrationRequest.getId(),
+                    "email", registrationRequest.getEmail()
+            );
 
-            log.info("User registered successfully: {}", tokenResponse.getUser().getEmail());
+            log.info("Registration request created successfully: {}", registrationRequest.getId());
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(authResponse);
+                    .body(response);
 
         } catch (IllegalArgumentException e) {
             log.warn("Registration validation failed: {}", e.getMessage());

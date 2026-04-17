@@ -153,7 +153,7 @@ export default function QRCodePdfModal({ booking, isOpen, onClose }) {
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
       >
         {/* Modal */}
         <div

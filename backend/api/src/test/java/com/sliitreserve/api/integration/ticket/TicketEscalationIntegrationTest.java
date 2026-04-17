@@ -6,6 +6,7 @@ import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
 import com.sliitreserve.api.entities.ticket.*;
+import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
@@ -78,6 +79,7 @@ public class TicketEscalationIntegrationTest {
   @Mock private UserRepository userRepository;
   @Mock private EscalationService escalationService;
   @Mock private TicketStateMachine stateMachine;
+  @Mock private EventPublisher eventPublisher;
 
   private TicketService ticketService;
   private Facility testFacility;
@@ -88,7 +90,7 @@ public class TicketEscalationIntegrationTest {
   @BeforeEach
   void setUp() {
     ticketService =
-        new TicketService(ticketRepository, commentRepository, stateMachine);
+        new TicketService(ticketRepository, commentRepository, stateMachine, eventPublisher);
 
     testFacility =
         Facility.builder()

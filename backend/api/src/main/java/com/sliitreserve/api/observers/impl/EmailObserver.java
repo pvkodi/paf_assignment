@@ -228,6 +228,8 @@ public class EmailObserver implements Observer {
             case "APPEAL_APPROVED" -> "✅ Suspension Appeal Approved";
             case "BOOKING_APPROVED" -> "✅ Your Booking Has Been Approved";
             case "BOOKING_REJECTED" -> "❌ Your Booking Has Been Rejected";
+            case "USER_REGISTRATION_APPROVED" -> "✅ Your Registration Has Been Approved";
+            case "USER_REGISTRATION_REJECTED" -> "❌ Your Registration Has Been Rejected";
             default -> "Campus Operations Notification";
         };
     }
