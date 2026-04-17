@@ -230,12 +230,26 @@ export default function AdminUserManagementPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
-        <p className="text-slate-600 mt-2">
-          Manage user registrations and user data
-        </p>
+      {/* Header with Refresh */}
+      <div className="bg-white rounded-lg shadow-md p-6 border border-slate-200">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">
+              User Management
+            </h1>
+            <p className="text-slate-600 mt-1 text-sm">
+              Manage registrations and user data
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              activeTab === "registrations" ? fetchRequests() : fetchUsers()
+            }
+            className="px-4 py-2 text-slate-900 bg-slate-100 hover:bg-slate-200 font-semibold rounded-md transition-all duration-200 active:scale-95"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Tab Navigation */}
@@ -267,16 +281,16 @@ export default function AdminUserManagementPanel() {
         <div className="p-6">
           {/* Registration Requests Tab */}
           {activeTab === "registrations" && (
-            <div>
-              {/* Status Tabs */}
-              <div className="flex gap-2 mb-6">
+            <div className="space-y-6">
+              {/* Status Filters */}
+              <div className="flex gap-2 flex-wrap">
                 {["PENDING", "APPROVED", "REJECTED"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setRequestStatus(status)}
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
                       requestStatus === status
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-indigo-600 text-white shadow-md"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
@@ -288,6 +302,13 @@ export default function AdminUserManagementPanel() {
                 ))}
               </div>
 
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                  <p className="text-sm font-medium text-red-900">{error}</p>
+                </div>
+              )}
+
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center h-64">
@@ -297,188 +318,205 @@ export default function AdminUserManagementPanel() {
                 </div>
               )}
 
-              {/* Error State */}
-              {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4">
-                  <p className="text-sm font-medium text-red-900">{error}</p>
-                </div>
-              )}
-
               {/* Empty State */}
               {!loading && requests.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-slate-400 mb-2">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-2 opacity-50"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                  </div>
+                <div className="text-center py-12 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
                   <p className="text-slate-600 font-medium">
                     No {requestStatus.toLowerCase()} requests
                   </p>
                 </div>
               )}
 
-              {/* Requests List */}
+              {/* Table View */}
               {!loading && requests.length > 0 && (
-                <div className="space-y-4">
-                  {requests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="rounded-lg border border-slate-200 bg-white overflow-hidden"
-                    >
-                      {/* Request Summary */}
-                      <div className="p-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {request.displayName}
-                            </h3>
-                            <p className="text-sm text-slate-600 mt-1">
-                              {request.email}
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                              <span className="px-3 py-1 bg-slate-100 rounded text-slate-700 font-medium">
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Role
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Submitted
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {requests.map((request) => (
+                        <React.Fragment key={request.id}>
+                          <tr className="hover:bg-slate-50 transition">
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {request.displayName}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-slate-600">
+                                {request.email}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
                                 {request.roleRequested === "USER"
                                   ? "Student"
-                                  : request.roleRequested.replace("_", " ")}
+                                  : request.roleRequested.replace(/_/g, " ")}
                               </span>
-                              <span className="px-3 py-1 bg-blue-100 rounded text-blue-700 font-medium">
-                                {request.roleRequested === "USER"
-                                  ? `Reg #: ${request.registrationNumber}`
-                                  : `Emp #: ${request.employeeNumber}`}
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-slate-600">
+                                {new Date(
+                                  request.createdAt,
+                                ).toLocaleDateString()}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`px-3 py-1 rounded text-xs font-medium ${
+                                  request.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : request.status === "APPROVED"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {request.status === "PENDING" && "⏳ Pending"}
+                                {request.status === "APPROVED" && "✅ Approved"}
+                                {request.status === "REJECTED" && "❌ Rejected"}
                               </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() =>
-                              setExpandedId(
-                                expandedId === request.id ? null : request.id,
-                              )
-                            }
-                            className="px-3 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm transition-colors"
-                          >
-                            {expandedId === request.id ? "Less" : "More"}
-                          </button>
-                        </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() =>
+                                  setExpandedId(
+                                    expandedId === request.id
+                                      ? null
+                                      : request.id,
+                                  )
+                                }
+                                className="text-indigo-600 hover:text-indigo-900 font-medium text-sm"
+                              >
+                                {expandedId === request.id ? "Hide" : "View"}
+                              </button>
+                            </td>
+                          </tr>
 
-                        {/* Request Summary Info */}
-                        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase">
-                              Submitted
-                            </p>
-                            <p className="text-slate-900 mt-1">
-                              {new Date(request.createdAt).toLocaleString()}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase">
-                              Status
-                            </p>
-                            <p className="text-slate-900 mt-1">
-                              {request.status === "PENDING" && "⏳ Pending"}
-                              {request.status === "APPROVED" && "✅ Approved"}
-                              {request.status === "REJECTED" && "❌ Rejected"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                          {/* Expanded Row */}
+                          {expandedId === request.id && (
+                            <tr className="bg-slate-50">
+                              <td colSpan="6" className="px-6 py-4">
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                        {request.roleRequested === "USER"
+                                          ? "Registration Number"
+                                          : "Employee Number"}
+                                      </p>
+                                      <p className="text-sm text-slate-900">
+                                        {request.roleRequested === "USER"
+                                          ? request.registrationNumber
+                                          : request.employeeNumber}
+                                      </p>
+                                    </div>
+                                    {request.reviewedAt && (
+                                      <div>
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                          Reviewed
+                                        </p>
+                                        <p className="text-sm text-slate-900">
+                                          {new Date(
+                                            request.reviewedAt,
+                                          ).toLocaleString()}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
 
-                      {/* Expanded Details */}
-                      {expandedId === request.id && (
-                        <div className="border-t border-slate-200 bg-slate-50 p-6 space-y-4">
-                          {request.reviewedAt && (
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
-                                Reviewed
-                              </p>
-                              <p className="text-sm text-slate-700">
-                                {new Date(request.reviewedAt).toLocaleString()}
-                              </p>
-                            </div>
+                                  {request.rejectionReason && (
+                                    <div>
+                                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                        Rejection Reason
+                                      </p>
+                                      <p className="text-sm text-slate-700 bg-white p-3 rounded border border-slate-200">
+                                        {request.rejectionReason}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {request.status === "PENDING" && (
+                                    <div className="space-y-3 pt-3 border-t border-slate-300">
+                                      <div>
+                                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                          Add Note (Optional)
+                                        </label>
+                                        <textarea
+                                          value={
+                                            actionData[request.id]?.note ||
+                                            actionData[request.id]?.reason ||
+                                            ""
+                                          }
+                                          onChange={(e) => {
+                                            setActionData((prev) => ({
+                                              ...prev,
+                                              [request.id]: {
+                                                ...prev[request.id],
+                                                note: e.target.value,
+                                                reason: e.target.value,
+                                              },
+                                            }));
+                                          }}
+                                          placeholder="Add a note for the applicant..."
+                                          rows="2"
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
+                                        />
+                                      </div>
+
+                                      <div className="flex gap-3">
+                                        <button
+                                          onClick={() =>
+                                            handleApprove(request.id)
+                                          }
+                                          disabled={processingId === request.id}
+                                          className="flex-1 px-4 py-2 text-sm bg-green-50 text-green-600 border-2 border-green-600 hover:bg-green-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          {processingId === request.id
+                                            ? "Processing..."
+                                            : "✅ Approve"}
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleReject(request.id)
+                                          }
+                                          disabled={processingId === request.id}
+                                          className="flex-1 px-4 py-2 text-sm bg-red-50 text-red-600 border-2 border-red-600 hover:bg-red-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          {processingId === request.id
+                                            ? "Processing..."
+                                            : "❌ Reject"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-
-                          {request.rejectionReason && (
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
-                                Rejection Reason
-                              </p>
-                              <p className="text-sm text-slate-700">
-                                {request.rejectionReason}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Action Buttons (for PENDING requests) */}
-                      {request.status === "PENDING" && (
-                        <div className="border-t border-slate-200 p-6 bg-white space-y-4">
-                          {/* Approval Note/Rejection Reason */}
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-900 mb-2">
-                              {requestStatus === "PENDING"
-                                ? "Add note (optional)"
-                                : ""}
-                            </label>
-                            <textarea
-                              value={
-                                actionData[request.id]?.note ||
-                                actionData[request.id]?.reason ||
-                                ""
-                              }
-                              onChange={(e) => {
-                                const isRejection = false; // Determine if this is for rejection
-                                setActionData((prev) => ({
-                                  ...prev,
-                                  [request.id]: {
-                                    ...prev[request.id],
-                                    note: e.target.value,
-                                    reason: e.target.value,
-                                  },
-                                }));
-                              }}
-                              placeholder="Add a note for the applicant..."
-                              rows="3"
-                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
-                            />
-                          </div>
-
-                          {/* Buttons */}
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => handleApprove(request.id)}
-                              disabled={processingId === request.id}
-                              className="flex-1 px-4 py-2 text-sm text-green-600 border-2 border-green-600 hover:bg-green-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {processingId === request.id
-                                ? "Processing..."
-                                : "Approve"}
-                            </button>
-                            <button
-                              onClick={() => handleReject(request.id)}
-                              disabled={processingId === request.id}
-                              className="flex-1 px-4 py-2 text-sm text-red-600 border-2 border-red-600 hover:bg-red-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {processingId === request.id
-                                ? "Processing..."
-                                : "Reject"}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -486,33 +524,35 @@ export default function AdminUserManagementPanel() {
 
           {/* User Data Tab */}
           {activeTab === "userData" && (
-            <div>
-              {/* Search and Filter */}
-              <div className="mb-6 space-y-4">
-                {/* Search Bar */}
+            <div className="space-y-6">
+              {/* Search and Filter Bar */}
+              <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-3">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Search by Email or Username
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                    Search
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter email or display name..."
+                    placeholder="Search by email or display name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   />
                 </div>
 
-                {/* Role Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                     Filter by Roles
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableRoles.map((role) => (
                       <label
                         key={role}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-300 cursor-pointer hover:bg-slate-50 transition"
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition ${
+                          selectedRoles.includes(role)
+                            ? "border-indigo-600 bg-indigo-50"
+                            : "border-slate-300 hover:border-slate-400"
+                        }`}
                       >
                         <input
                           type="checkbox"
@@ -539,11 +579,18 @@ export default function AdminUserManagementPanel() {
                       onClick={() => setSelectedRoles([])}
                       className="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
                     >
-                      Clear all roles
+                      Clear filters
                     </button>
                   )}
                 </div>
               </div>
+
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                  <p className="text-sm font-medium text-red-900">{error}</p>
+                </div>
+              )}
 
               {/* Loading State */}
               {loading && (
@@ -552,219 +599,224 @@ export default function AdminUserManagementPanel() {
                 </div>
               )}
 
-              {/* Error State */}
-              {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4">
-                  <p className="text-sm font-medium text-red-900">{error}</p>
-                </div>
-              )}
-
               {/* Empty State */}
               {!loading && users.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-slate-400 mb-2">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-2 opacity-50"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M12 4.354a4 4 0 110 5.292M19 14H5m14 0a2 2 0 012 2v3H3v-3a2 2 0 012-2m0-5a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
-                  </div>
+                <div className="text-center py-12 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
                   <p className="text-slate-600 font-medium">No users found</p>
                 </div>
               )}
 
-              {/* Users List */}
+              {/* Table View */}
               {!loading && users.length > 0 && (
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div
-                      key={user.id}
-                      className="rounded-lg border border-slate-200 bg-white overflow-hidden"
-                    >
-                      {/* User Summary */}
-                      {editingUserId !== user.id ? (
-                        <div className="p-6">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-slate-900">
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Roles
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          No-Shows
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {users.map((user) => (
+                        <React.Fragment key={user.id}>
+                          <tr className="hover:bg-slate-50 transition">
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-900">
                                 {user.displayName}
-                              </h3>
-                              <p className="text-sm text-slate-600 mt-1">
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-slate-600">
                                 {user.email}
                               </p>
-                              <div className="mt-3 flex flex-wrap gap-2">
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-1 flex-wrap">
                                 {user.roles &&
                                   user.roles.map((role) => (
                                     <span
                                       key={role}
-                                      className="px-3 py-1 bg-blue-100 rounded text-blue-700 text-xs font-medium"
+                                      className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium"
                                     >
                                       {role}
                                     </span>
                                   ))}
                               </div>
-                            </div>
-                            <button
-                              onClick={() => handleEditUser(user)}
-                              className="px-4 py-2 text-sm text-indigo-600 border-2 border-indigo-600 hover:bg-indigo-50 font-medium rounded-lg transition"
-                            >
-                              Edit
-                            </button>
-                          </div>
-
-                          {/* User Details */}
-                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase">
-                                No-Shows
-                              </p>
-                              <p className="text-slate-900 mt-1">
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-slate-900 font-medium">
                                 {user.noShowCount}
                               </p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase">
-                                Status
-                              </p>
-                              <p className="text-slate-900 mt-1">
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`px-3 py-1 rounded text-xs font-medium ${
+                                  user.suspendedUntil &&
+                                  new Date(user.suspendedUntil) > new Date()
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-green-100 text-green-700"
+                                }`}
+                              >
                                 {user.suspendedUntil &&
                                 new Date(user.suspendedUntil) > new Date() ? (
-                                  <span className="text-red-600 font-semibold">
-                                    🚫 Suspended
-                                  </span>
+                                  <>🚫 Suspended</>
                                 ) : (
-                                  <span className="text-green-600 font-semibold">
-                                    ✅ Active
-                                  </span>
+                                  <>✅ Active</>
                                 )}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase">
-                                Created
-                              </p>
-                              <p className="text-slate-900 mt-1">
-                                {new Date(user.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase">
-                                Updated
-                              </p>
-                              <p className="text-slate-900 mt-1">
-                                {new Date(user.updatedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Edit Form */
-                        <div className="p-6 bg-slate-50 border-t border-slate-200">
-                          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                            Edit User
-                          </h3>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                                Display Name
-                              </label>
-                              <input
-                                type="text"
-                                value={editFormData.displayName}
-                                onChange={(e) =>
-                                  setEditFormData({
-                                    ...editFormData,
-                                    displayName: e.target.value,
-                                  })
-                                }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                              />
-                            </div>
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              {editingUserId === user.id ? (
+                                <button
+                                  onClick={() => setExpandedId(null)}
+                                  className="text-indigo-600 hover:text-indigo-900 font-medium text-sm"
+                                >
+                                  Close
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    handleEditUser(user);
+                                    setExpandedId(user.id);
+                                  }}
+                                  className="text-indigo-600 hover:text-indigo-900 font-medium text-sm"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </td>
+                          </tr>
 
-                            <div>
-                              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                                Email
-                              </label>
-                              <input
-                                type="email"
-                                value={editFormData.email}
-                                onChange={(e) =>
-                                  setEditFormData({
-                                    ...editFormData,
-                                    email: e.target.value,
-                                  })
-                                }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                              />
-                            </div>
+                          {/* Expanded Row - Edit Form */}
+                          {expandedId === user.id &&
+                            editingUserId === user.id && (
+                              <tr className="bg-slate-50 border-t-2 border-t-slate-300">
+                                <td colSpan="6" className="px-6 py-6">
+                                  <div className="max-w-2xl">
+                                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                                      Edit User
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                          Display Name
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={editFormData.displayName}
+                                          onChange={(e) =>
+                                            setEditFormData({
+                                              ...editFormData,
+                                              displayName: e.target.value,
+                                            })
+                                          }
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                      </div>
 
-                            <div>
-                              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                                No-Show Count
-                              </label>
-                              <input
-                                type="number"
-                                value={editFormData.noShowCount}
-                                onChange={(e) =>
-                                  setEditFormData({
-                                    ...editFormData,
-                                    noShowCount: e.target.value,
-                                  })
-                                }
-                                min="0"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                              />
-                            </div>
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                          Email
+                                        </label>
+                                        <input
+                                          type="email"
+                                          value={editFormData.email}
+                                          onChange={(e) =>
+                                            setEditFormData({
+                                              ...editFormData,
+                                              email: e.target.value,
+                                            })
+                                          }
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                      </div>
 
-                            <div>
-                              <label className="block text-sm font-semibold text-slate-900 mb-2">
-                                Suspended Until (leave empty to unsuspend)
-                              </label>
-                              <input
-                                type="datetime-local"
-                                value={editFormData.suspendedUntil}
-                                onChange={(e) =>
-                                  setEditFormData({
-                                    ...editFormData,
-                                    suspendedUntil: e.target.value,
-                                  })
-                                }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                              />
-                            </div>
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                          No-Show Count
+                                        </label>
+                                        <input
+                                          type="number"
+                                          value={editFormData.noShowCount}
+                                          onChange={(e) =>
+                                            setEditFormData({
+                                              ...editFormData,
+                                              noShowCount: e.target.value,
+                                            })
+                                          }
+                                          min="0"
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                      </div>
 
-                            {/* Buttons */}
-                            <div className="flex gap-3 pt-4">
-                              <button
-                                onClick={() => handleSaveUser(user.id)}
-                                disabled={processingId === user.id}
-                                className="flex-1 px-4 py-2 text-sm text-green-600 border-2 border-green-600 hover:bg-green-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {processingId === user.id
-                                  ? "Saving..."
-                                  : "Save Changes"}
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                disabled={processingId === user.id}
-                                className="flex-1 px-4 py-2 text-sm text-slate-600 border-2 border-slate-300 hover:bg-slate-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                                      <div>
+                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                          Suspend Until
+                                        </label>
+                                        <input
+                                          type="datetime-local"
+                                          value={editFormData.suspendedUntil}
+                                          onChange={(e) =>
+                                            setEditFormData({
+                                              ...editFormData,
+                                              suspendedUntil: e.target.value,
+                                            })
+                                          }
+                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <p className="text-xs text-slate-500 mb-4">
+                                      Leave "Suspend Until" empty to unsuspend
+                                      the user
+                                    </p>
+
+                                    <div className="flex gap-3">
+                                      <button
+                                        onClick={() => handleSaveUser(user.id)}
+                                        disabled={processingId === user.id}
+                                        className="flex-1 px-4 py-2 text-sm bg-green-50 text-green-600 border-2 border-green-600 hover:bg-green-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {processingId === user.id
+                                          ? "Saving..."
+                                          : "✅ Save Changes"}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleCancelEdit();
+                                          setExpandedId(null);
+                                        }}
+                                        disabled={processingId === user.id}
+                                        className="flex-1 px-4 py-2 text-sm bg-slate-100 text-slate-600 border-2 border-slate-300 hover:bg-slate-200 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
