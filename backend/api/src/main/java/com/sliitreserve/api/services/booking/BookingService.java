@@ -4,9 +4,12 @@ import com.sliitreserve.api.entities.booking.Booking;
 import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.auth.User;
+import com.sliitreserve.api.util.mapping.BookingMapper;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
+import com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO;
 import com.sliitreserve.api.dto.ConflictErrorResponseDTO;
-import com.sliitreserve.api.exception.ValidationException;
 import com.sliitreserve.api.exception.ConflictException;
+import com.sliitreserve.api.exception.ValidationException;
 import com.sliitreserve.api.exception.ResourceNotFoundException;
 import com.sliitreserve.api.repositories.bookings.BookingRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service managing Facility Bookings (capacity checks, overlapping guards, recurrence skips, 409 constraints, timezones).
@@ -44,6 +48,8 @@ public class BookingService {
     private final PublicHolidayService publicHolidayService;
     private final QuotaPolicyEngine quotaPolicyEngine;
     private final EventPublisher eventPublisher;
+    private final BookingMapper bookingMapper;
+    private final ApprovalStepRepository approvalStepRepository;
 
     /**
      * Creates a new booking. Checks capacity, overlapping times, skips public holidays if recursive.
@@ -361,12 +367,67 @@ public class BookingService {
     }
 
     /**
+     * Cancels an approved booking.
+     * Only APPROVED bookings can be cancelled to CANCELLED status.
+     * Uses optimistic locking via @Version for concurrency control.
+     */
+    @Transactional
+    public Booking cancelBooking(UUID bookingId, Long expectedVersion, String note) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getVersion().equals(expectedVersion)) {
+            throw new ConflictException("Optimistic lock failure: mismatched versions");
+        }
+
+        // Only allow cancelling APPROVED bookings
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new ValidationException("Only APPROVED bookings can be cancelled. Current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        try {
+            return bookingRepository.save(booking);
+        } catch (OptimisticLockingFailureException ex) {
+            throw new ConflictException("Optimistic lock failure upon saving");
+        }
+    }
+
+    /**
      * Get all bookings for a user (both as requester and bookedFor).
      * Returns bookings ordered by booking date descending.
+     */
+    /**
+     * Get all bookings for a user (detailed DTOs with nested objects).
+     * Used for the my-bookings page to display full booking information.
+     */
+    @Transactional(readOnly = true)
+    public List<BookingDetailedResponseDTO> getUserBookingsDetailed(UUID userId) {
+        List<Booking> bookings = bookingRepository.findUserBookingsWithDetails(userId);
+        return bookings.stream()
+                .map(bookingMapper::toDetailedResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all bookings for a user (basic DTOs with IDs only).
+     * Returns bookings where user is either the requester or the bookedFor user.
      */
     @Transactional(readOnly = true)
     public List<Booking> getUserBookings(UUID userId) {
         return bookingRepository.findByRequestedBy_Id(userId);
+    }
+
+    /**
+     * Get a specific booking by ID (detailed DTO with nested objects).
+     * Used for displaying full booking information.
+     */
+    @Transactional(readOnly = true)
+    public BookingDetailedResponseDTO getBookingDetailed(UUID bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+        return bookingMapper.toDetailedResponseDTO(booking);
     }
 
     /**
@@ -378,16 +439,26 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
     }
 
-    /**
-     * Get pending bookings for approval by the given user.
+    /**     * Get pending bookings that require approval with detailed information.
+     * Returns bookings with full nested objects for display purposes.
+     */
+    @Transactional(readOnly = true)
+    public List<BookingDetailedResponseDTO> getPendingApprovalsDetailed(User user) {
+        List<Booking> pendingBookings = getPendingApprovalsForUser(user);
+        return pendingBookings.stream()
+                .map(bookingMapper::toDetailedResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**     * Get pending bookings for approval by the given user.
      * - ADMIN: All pending bookings
      * - LECTURER: All pending bookings (they can approve any)
      * - FACILITY_MANAGER: Pending bookings for their managed facilities
      */
     @Transactional(readOnly = true)
     public List<Booking> getPendingApprovalsForUser(User user) {
-        // Get all pending bookings
-        List<Booking> pendingBookings = bookingRepository.findByStatus(BookingStatus.PENDING);
+        // Get all pending bookings with eager loaded relationships
+        List<Booking> pendingBookings = bookingRepository.findByStatusWithDetails(BookingStatus.PENDING);
         
         // Filter based on role
         if (user.getRoles().contains(com.sliitreserve.api.entities.auth.Role.ADMIN) || 
@@ -408,21 +479,58 @@ public class BookingService {
     }
 
     /**
-     * Get quota status for a user (placeholder implementation).
-     * Returns basic quota info for the user.
+     * Get comprehensive quota status for a user.
+     * Uses QuotaPolicyEngine to determine the user's effective role and quota limits.
+     * Returns both current usage and limits for weekly and monthly quotas.
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getQuotaStatus(User user) {
         Map<String, Object> quotaStatus = new HashMap<>();
+        
+        // Get effective role strategy
+        com.sliitreserve.api.strategy.quota.QuotaStrategy strategy = quotaPolicyEngine.resolveEffectiveStrategy(user);
+        String effectiveRole = strategy.getRoleName();
+        
+        // Get current date ranges
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Colombo"));
+        LocalDate weekStart = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate weekEnd = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
+        
+        // Count current bookings (PENDING and APPROVED only)
+        long weeklyBookings = bookingRepository.countWeeklyBookings(user.getId(), weekStart, weekEnd);
+        long monthlyBookings = bookingRepository.countMonthlyBookings(user.getId(), monthStart, monthEnd);
+        
+        // Get quota limits
+        int weeklyQuota = strategy.getWeeklyQuota();
+        int monthlyQuota = strategy.getMonthlyQuota();
+        
+        // Advance booking info
+        int maxAdvanceDays = strategy.getMaxAdvanceBookingDays();
+        LocalDate advanceBookingUntil = today.plusDays(maxAdvanceDays);
+        
+        // Peak hours info (08:00-10:00)
+        boolean canBookDuringPeakHours = strategy.canBookDuringPeakHours(LocalTime.of(9, 0));
+        
+        // Build response
         quotaStatus.put("userId", user.getId());
-        quotaStatus.put("userRole", user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().toString());
-        quotaStatus.put("weeklyBookings", bookingRepository.countWeeklyBookings(
-            user.getId(),
-            LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)),
-            LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY))
-        ));
-        quotaStatus.put("quotaLimit", 5); // Default quota
-        quotaStatus.put("quotaRemaining", Math.max(0, 5 - (int)(long)quotaStatus.get("weeklyBookings")));
+        quotaStatus.put("effectiveRole", effectiveRole);
+        
+        quotaStatus.put("weeklyBookings", weeklyBookings);
+        quotaStatus.put("weeklyQuota", weeklyQuota);
+        quotaStatus.put("weeklyRemaining", Math.max(0, weeklyQuota - (int)weeklyBookings));
+        
+        quotaStatus.put("monthlyBookings", monthlyBookings);
+        quotaStatus.put("monthlyQuota", monthlyQuota);
+        quotaStatus.put("monthlyRemaining", Math.max(0, monthlyQuota - (int)monthlyBookings));
+        
+        quotaStatus.put("canBookDuringPeakHours", canBookDuringPeakHours);
+        quotaStatus.put("peakHourWindow", "08:00-10:00");
+        
+        quotaStatus.put("advanceBookingDays", maxAdvanceDays);
+        quotaStatus.put("advanceBookingUntil", advanceBookingUntil.toString());
+        
         return quotaStatus;
     }
 

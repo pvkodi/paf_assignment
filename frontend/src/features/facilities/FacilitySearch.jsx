@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
 import { fetchFacilities, searchFacilities } from "./api";
+import QuotaPolicySummary from "../bookings/QuotaPolicySummary";
 
 /**
  * FacilitySearch Component
  * Provides facility discovery with filters for type, capacity, location, and building.
  */
 export default function FacilitySearch({ onFacilitySelect, onResultsChange, initialResults, layout = "stack" }) {
+  const { user } = useContext(AuthContext);
+  const userRole = user?.roles?.[0] || "USER";
   const [type, setType] = useState("");
   const [minCapacity, setMinCapacity] = useState("");
   const [location, setLocation] = useState("");
@@ -166,6 +170,11 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
   if (layout === "columns") {
     return (
       <div className="bg-transparent">
+        {/* Quota Policy Summary at Top */}
+        <div className="mb-6">
+          <QuotaPolicySummary userRole={userRole} compact={false} />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
           {/* Left: Filters (sticky) */}
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-24 self-start">
@@ -206,8 +215,8 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
               )}
 
               <div className="flex gap-2">
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors">{loading ? "Searching..." : "Search"}</button>
-                <button type="button" onClick={handleClear} className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-md hover:bg-slate-300 transition-colors">Clear</button>
+                <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">{loading ? "Searching..." : "🔍 Search"}</button>
+                <button type="button" onClick={handleClear} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition-all duration-200 active:scale-95">Clear</button>
               </div>
             </form>
           </div>
@@ -240,7 +249,7 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
                             </div>
                           </div>
 
-                          <button type="button" onClick={() => handleSelectFacility(facility)} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap self-center">Select</button>
+                          <button type="button" onClick={() => handleSelectFacility(facility)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-all duration-200 active:scale-95 whitespace-nowrap self-center">Select</button>
                         </div>
                       </div>
                     ))}
@@ -298,6 +307,11 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
   // fallback to original stacked layout
   return (
     <div className="space-y-6">
+      {/* Quota Policy Summary at Top */}
+      <div className="mb-6">
+        <QuotaPolicySummary userRole={userRole} compact={false} />
+      </div>
+
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold mb-4 text-slate-900">Search Facilities</h2>
 
@@ -336,8 +350,8 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
           )}
 
           <div className="flex gap-2">
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors">{loading ? "Searching..." : "Search"}</button>
-            <button type="button" onClick={handleClear} className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-md hover:bg-slate-300 transition-colors">Clear</button>
+            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-md shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700">{loading ? "Searching..." : "🔍 Search"}</button>
+            <button type="button" onClick={handleClear} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md border border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95">Clear</button>
           </div>
         </form>
       </div>
@@ -372,7 +386,7 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
                         </div>
                       </div>
 
-                      <button type="button" onClick={() => handleSelectFacility(facility)} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap self-center">Select</button>
+                      <button type="button" onClick={() => handleSelectFacility(facility)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-all duration-200 active:scale-95 whitespace-nowrap self-center">Select</button>
                     </div>
                   </div>
                 ))}

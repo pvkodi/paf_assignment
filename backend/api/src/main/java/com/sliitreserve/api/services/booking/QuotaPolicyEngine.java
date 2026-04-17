@@ -148,7 +148,7 @@ public class QuotaPolicyEngine {
      * @return Effects strategy (most permissive among user's roles)
      * @throws IllegalArgumentException if user has no roles or roles are not recognized
      */
-    private QuotaStrategy resolveEffectiveStrategy(User user) {
+    public QuotaStrategy resolveEffectiveStrategy(User user) {
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             log.warn("User {} has no roles assigned", user.getId());
             throw new IllegalArgumentException("User must have at least one role");

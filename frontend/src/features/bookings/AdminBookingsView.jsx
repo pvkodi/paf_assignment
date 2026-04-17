@@ -66,8 +66,8 @@ export default function AdminBookingsView() {
       
       // Sort by date descending
       allBookings.sort((a, b) => {
-        if (!a.bookingDate || !b.bookingDate) return 0;
-        return new Date(b.bookingDate) - new Date(a.bookingDate);
+        if (!a.booking_date || !b.booking_date) return 0;
+        return new Date(b.booking_date) - new Date(a.booking_date);
       });
       
       setBookings(allBookings);
@@ -106,7 +106,7 @@ export default function AdminBookingsView() {
     fetchAdminBookings(defaultFilters);
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = async (bookingId, version) => {
     if (
       !window.confirm(
         "Are you sure you want to cancel this booking? This action cannot be undone."
@@ -118,7 +118,11 @@ export default function AdminBookingsView() {
     try {
       setActionLoading(bookingId);
       setActionError(null);
-      await apiClient.post(`/v1/bookings/${bookingId}/cancel`);
+      const params = {};
+      if (version) {
+        params.version = version;
+      }
+      await apiClient.post(`/v1/bookings/${bookingId}/cancel`, null, { params });
       await fetchAdminBookings(filters);
     } catch (err) {
       console.error("Failed to cancel booking:", err);
@@ -306,25 +310,25 @@ export default function AdminBookingsView() {
                           {booking.facility?.name || "Unknown"}
                         </p>
                         <p className="text-sm text-slate-600">
-                          {booking.facility?.location}
+                          {booking.facility?.location || ""}
                         </p>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm">
                         <p className="font-medium text-slate-900">
-                          {formatDate(booking.bookingDate)}
+                          {formatDate(booking.booking_date)}
                         </p>
                         <p className="text-slate-600">
-                          {formatTime(booking.startTime)} -{" "}
-                          {formatTime(booking.endTime)}
+                          {formatTime(booking.start_time)} -{" "}
+                          {formatTime(booking.end_time)}
                         </p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-900">
-                        {booking.bookedFor?.displayName ||
-                          booking.bookedFor?.email ||
+                        {booking.booked_for?.displayName ||
+                          booking.booked_for?.email ||
                           "Unknown"}
                       </p>
                     </td>
@@ -349,11 +353,11 @@ export default function AdminBookingsView() {
                       {booking.status !== "CANCELLED" &&
                         booking.status !== "REJECTED" && (
                           <button
-                            title="Cancel booking feature coming soon - backend endpoint not yet implemented"
-                            disabled={true}
-                            className="px-3 py-1.5 bg-gray-300 text-gray-600 rounded text-xs font-medium cursor-not-allowed"
+                            onClick={() => handleCancelBooking(booking.id, booking.version)}
+                            disabled={actionLoading === booking.id}
+                            className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors disabled:bg-red-400"
                           >
-                            Cancel (Coming Soon)
+                            {actionLoading === booking.id ? "Cancelling..." : "Cancel"}
                           </button>
                         )}
                     </td>
