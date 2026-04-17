@@ -5,8 +5,13 @@ import com.sliitreserve.api.entities.notification.NotificationChannel;
 import com.sliitreserve.api.observers.EventEnvelope;
 import com.sliitreserve.api.observers.EventSeverity;
 import com.sliitreserve.api.observers.Observer;
+
+import com.sliitreserve.api.observers.EventPublisher;
+import jakarta.annotation.PostConstruct;
+
 import com.sliitreserve.api.repositories.notification.NotificationRepository;
 import com.sliitreserve.api.repositories.auth.UserRepository;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -64,6 +69,19 @@ public class InAppObserver implements Observer {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EventPublisher eventPublisher;
+
+    /**
+     * Subscribe this observer to the EventPublisher on bean initialization.
+     * Called automatically after @Autowired dependencies are injected.
+     */
+    @PostConstruct
+    public void init() {
+        eventPublisher.subscribe(this);
+        log.info("InAppObserver subscribed to EventPublisher");
+    }
+
     /**
      * Handle domain event for in-app notification delivery.
      *
@@ -76,17 +94,27 @@ public class InAppObserver implements Observer {
      */
     @Override
     public void handleEvent(EventEnvelope event) {
-        if (event == null || event.getAffectedUserId() == null) {
-            log.warn("InAppObserver: Cannot handle event without affected user ID. Event: {}", 
-                    event != null ? event.getEventType() : "null");
+        if (event == null) {
+            log.warn("InAppObserver: Cannot handle null event");
             return;
         }
 
         try {
-            log.debug("InAppObserver processing event type: {}, severity: {}, affected user: {}",
+            // Extract userId from metadata (stored as String UUID)
+            String userIdString = null;
+            if (event.getMetadata() != null && event.getMetadata().containsKey("userId")) {
+                userIdString = (String) event.getMetadata().get("userId");
+            }
+
+            if (userIdString == null) {
+                log.warn("InAppObserver: userId not found in metadata for event: {}", event.getEventType());
+                return;
+            }
+
+            log.debug("InAppObserver processing event type: {}, severity: {}, user ID: {}",
                     event.getEventType(),
                     event.getSeverity(),
-                    event.getAffectedUserId());
+                    userIdString);
 
             // Check if notification already exists (idempotency)
             if (event.getEventId() != null) {
@@ -97,10 +125,11 @@ public class InAppObserver implements Observer {
                 }
             }
 
-            // Look up recipient user
-            var recipient = userRepository.findById(UUID.fromString(String.valueOf(event.getAffectedUserId())));
+            // Look up recipient user by UUID from metadata
+            UUID userId = UUID.fromString(userIdString);
+            var recipient = userRepository.findById(userId);
             if (recipient.isEmpty()) {
-                log.warn("InAppObserver: Recipient user not found: {}", event.getAffectedUserId());
+                log.warn("InAppObserver: Recipient user not found: {}", userId);
                 return;
             }
 
@@ -123,7 +152,7 @@ public class InAppObserver implements Observer {
 
             log.info("InAppObserver: Created in-app notification {} for user {} - event type: {}",
                     notification.getId(),
-                    event.getAffectedUserId(),
+                    userId,
                     event.getEventType());
 
         } catch (Exception e) {

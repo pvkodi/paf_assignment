@@ -32,7 +32,7 @@ public interface QuotaStrategy {
      * Get the human-readable name of this quota strategy role.
      * Used for logging, error messages, and debugging.
      * 
-     * @return Role name (e.g., "STUDENT", "LECTURER", "ADMIN")
+     * @return Role name (e.g., "USER", "LECTURER", "ADMIN")
      */
     String getRoleName();
 

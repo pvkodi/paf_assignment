@@ -2,6 +2,7 @@ package com.sliitreserve.api.controllers.bookings;
 
 import com.sliitreserve.api.dto.bookings.BookingRequestDTO;
 import com.sliitreserve.api.dto.bookings.BookingResponseDTO;
+import com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.booking.Booking;
@@ -44,9 +45,10 @@ public class BookingController {
         UUID bookedFor = requestedBy;
 
         if (request.getBookedForUserId() != null && !request.getBookedForUserId().equals(requestedBy)) {
-            boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
-            if (!isAdmin) {
-                throw new ForbiddenException("Only ADMIN users can book on behalf of others");
+            boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                               currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+            if (!isAdminOrFacilityManager) {
+                throw new ForbiddenException("Only ADMIN and FACILITY_MANAGER users can book on behalf of others");
             }
             bookedFor = request.getBookedForUserId();
         }
@@ -73,15 +75,12 @@ public class BookingController {
      */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(Authentication authentication) {
+    public ResponseEntity<List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO>> getUserBookings(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        List<Booking> bookings = bookingService.getUserBookings(currentUser.getId());
-        List<BookingResponseDTO> response = bookings.stream()
-                .map(bookingMapper::toResponseDTO)
-                .toList();
+        List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> response = bookingService.getUserBookingsDetailed(currentUser.getId());
 
         return ResponseEntity.ok(response);
     }
@@ -93,15 +92,12 @@ public class BookingController {
      */
     @GetMapping("/pending-approvals")
     @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
-    public ResponseEntity<List<BookingResponseDTO>> getPendingApprovals(Authentication authentication) {
+    public ResponseEntity<List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO>> getPendingApprovals(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        List<Booking> pendingBookings = bookingService.getPendingApprovalsForUser(currentUser);
-        List<BookingResponseDTO> response = pendingBookings.stream()
-                .map(bookingMapper::toResponseDTO)
-                .toList();
+        List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> response = bookingService.getPendingApprovalsDetailed(currentUser);
 
         return ResponseEntity.ok(response);
     }
@@ -126,7 +122,7 @@ public class BookingController {
      */
     @GetMapping("/{bookingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BookingResponseDTO> getBooking(
+    public ResponseEntity<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO> getBooking(
             @PathVariable UUID bookingId,
             Authentication authentication) {
 
@@ -143,7 +139,7 @@ public class BookingController {
             throw new ForbiddenException("You do not have permission to view this booking");
         }
 
-        BookingResponseDTO response = bookingMapper.toResponseDTO(booking);
+        com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO response = bookingService.getBookingDetailed(bookingId);
         return ResponseEntity.ok(response);
     }
 
@@ -186,5 +182,115 @@ public class BookingController {
         
         BookingResponseDTO response = bookingMapper.toResponseDTO(rejectedBooking);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cancel an approved booking.
+     * ADMIN and FACILITY_MANAGER can cancel any booking.
+     * Students (USER) can only cancel their own bookings.
+     */
+    @PostMapping("/{bookingId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BookingResponseDTO> cancelBooking(
+            @PathVariable UUID bookingId,
+            @RequestParam(required = false) String note,
+            @RequestParam(required = false) Long version,
+            Authentication authentication) {
+
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        Booking booking = bookingService.getBooking(bookingId);
+        
+        // Check authorization: ADMIN/FACILITY_MANAGER can cancel any booking, USER can only cancel their own
+        boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                           currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+        boolean isOwnBooking = booking.getRequestedBy().getId().equals(currentUser.getId()) || 
+                               booking.getBookedFor().getId().equals(currentUser.getId());
+        
+        if (!isAdminOrFacilityManager && !isOwnBooking) {
+            throw new ForbiddenException("You can only cancel your own bookings");
+        }
+        
+        Long expectedVersion = version != null ? version : booking.getVersion();
+        
+        Booking cancelledBooking = bookingService.cancelBooking(bookingId, expectedVersion, note);
+        
+        BookingResponseDTO response = bookingMapper.toResponseDTO(cancelledBooking);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get available timeslots for a facility on a specific date.
+     * Used by booking form to show available/booked times visually.
+     * 
+     * @param facilityId Facility ID
+     * @param date Date in format YYYY-MM-DD
+     * @return Available timeslots and booked ranges
+     */
+    @GetMapping("/availability/{facilityId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getAvailableTimeslots(
+            @PathVariable UUID facilityId,
+            @RequestParam String date) {
+        try {
+            java.time.LocalDate bookingDate = java.time.LocalDate.parse(date);
+            java.util.List<java.util.Map<String, Object>> slots = bookingService.getAvailableTimeslots(facilityId, bookingDate);
+            return ResponseEntity.ok(slots);
+        } catch (Exception e) {
+            throw new ResourceNotFoundException("Invalid date format or facility not found");
+        }
+    }
+
+    /**
+     * Get all bookings for admin/facility-manager dashboard.
+     * Return all approved and upcoming bookings.
+     * Admin sees all bookings; Facility Manager sees only their facilities.
+     * 
+     * @param facilityId Optional facility filter UUID
+     * @param status Optional status filter (APPROVED, PENDING, CANCELLED, REJECTED)
+     * @param from Start date (YYYY-MM-DD)
+     * @param to End date (YYYY-MM-DD)
+     * @return List of bookings
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACILITY_MANAGER')")
+    public ResponseEntity<java.util.List<BookingDetailedResponseDTO>> getAdminBookings(
+            @RequestParam(required = false) UUID facilityId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Authentication authentication) {
+        
+        try {
+            String email = (String) authentication.getPrincipal();
+            User currentUser = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+            // Parse dates - default to current month if not provided
+            java.time.LocalDate startDate = from != null ? java.time.LocalDate.parse(from) : java.time.LocalDate.now().withDayOfMonth(1);
+            java.time.LocalDate endDate = to != null ? java.time.LocalDate.parse(to) : java.time.LocalDate.now().withDayOfMonth(java.time.LocalDate.now().lengthOfMonth());
+
+            // Parse status filter
+            java.util.List<com.sliitreserve.api.entities.booking.BookingStatus> statuses = new java.util.ArrayList<>();
+            if (status != null && !status.isEmpty()) {
+                statuses.add(com.sliitreserve.api.entities.booking.BookingStatus.valueOf(status));
+            } else {
+                statuses.addAll(java.util.Arrays.asList(
+                    com.sliitreserve.api.entities.booking.BookingStatus.APPROVED,
+                    com.sliitreserve.api.entities.booking.BookingStatus.PENDING
+                ));
+            }
+
+            java.util.List<Booking> bookings = bookingService.getAdminBookings(facilityId, statuses, startDate, endDate);
+            java.util.List<BookingDetailedResponseDTO> response = bookings.stream()
+                    .map(bookingMapper::toDetailedResponseDTO)
+                    .toList();
+
+            return ResponseEntity.ok(response);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new ResourceNotFoundException("Invalid date format. Use YYYY-MM-DD");
+        }
     }
 }

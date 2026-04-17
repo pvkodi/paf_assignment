@@ -4,9 +4,12 @@ import com.sliitreserve.api.entities.booking.Booking;
 import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.auth.User;
+import com.sliitreserve.api.util.mapping.BookingMapper;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
+import com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO;
 import com.sliitreserve.api.dto.ConflictErrorResponseDTO;
-import com.sliitreserve.api.exception.ValidationException;
 import com.sliitreserve.api.exception.ConflictException;
+import com.sliitreserve.api.exception.ValidationException;
 import com.sliitreserve.api.exception.ResourceNotFoundException;
 import com.sliitreserve.api.repositories.bookings.BookingRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.OptimisticLockingFailureException;
+import java.time.ZonedDateTime;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service managing Facility Bookings (capacity checks, overlapping guards, recurrence skips, 409 constraints, timezones).
@@ -43,9 +48,8 @@ public class BookingService {
     private final PublicHolidayService publicHolidayService;
     private final QuotaPolicyEngine quotaPolicyEngine;
     private final EventPublisher eventPublisher;
-    private final ApprovalWorkflowService approvalWorkflowService;
-
-    private static final int HIGH_CAPACITY_THRESHOLD = 200;
+    private final BookingMapper bookingMapper;
+    private final ApprovalStepRepository approvalStepRepository;
 
     /**
      * Creates a new booking. Checks capacity, overlapping times, skips public holidays if recursive.
@@ -68,16 +72,6 @@ public class BookingService {
         if (startTime.isBefore(facility.getAvailabilityStart()) || endTime.isAfter(facility.getAvailabilityEnd())) {
             throw new ValidationException("Booking times are outside of the facility's availability window");
         }
-        
-        // Validate booking against quota policies (weekly, monthly, peak hours, advance window)
-        quotaPolicyEngine.validateBookingRequest(
-            bookedFor,
-            bookingDate,
-            startTime,
-            endTime,
-            facility.getCapacity(),
-            HIGH_CAPACITY_THRESHOLD
-        );
 
         // Capacity validation
         if (attendees == null || attendees < 1 || attendees > facility.getCapacity()) {
@@ -209,17 +203,7 @@ public class BookingService {
         }
 
         try {
-            Booking savedBooking = bookingRepository.save(newBooking);
-            
-            // Initiate approval workflow after booking is saved
-            // This will auto-approve or create approval steps based on user role and facility constraints
-            approvalWorkflowService.initiateApproval(savedBooking);
-            
-            // Refresh booking from database to get updated status and approval steps
-            savedBooking = bookingRepository.findById(savedBooking.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Booking not found after approval workflow"));
-            
-            return savedBooking;
+            return bookingRepository.save(newBooking);
         } catch (OptimisticLockingFailureException e) {
             throw new ConflictException("Data conflict occurred. Version mismatched.");
         }
@@ -294,10 +278,10 @@ public class BookingService {
 
     /**
      * Approves an existing booking using its @Version for optimistic locking (409).
-     * Records the approval with an optional note to the approval workflow history.
+     * Publishes BOOKING_APPROVED event (STANDARD severity - in-app only).
      */
     @Transactional
-    public Booking approveBooking(UUID bookingId, Long expectedVersion, String approvalNote) {
+    public Booking approveBooking(UUID bookingId, Long expectedVersion, String note) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
 
@@ -314,15 +298,22 @@ public class BookingService {
         try {
             Booking approvedBooking = bookingRepository.save(booking);
             
-            // Record approval step with note in workflow history
-            com.sliitreserve.api.workflow.approval.ApprovalDecision decision = 
-                com.sliitreserve.api.workflow.approval.ApprovalDecision.builder()
-                    .status(com.sliitreserve.api.workflow.approval.ApprovalStatus.APPROVED)
-                    .approverRole("MANUAL_APPROVAL")
-                    .note(approvalNote != null ? approvalNote : "Manually approved")
-                    .build();
-            
-            approvalWorkflowService.recordApprovalStep(booking, 99, decision);
+            // Publish BOOKING_APPROVED event to notify requester (HIGH severity = in-app + email)
+            eventPublisher.publish(EventEnvelope.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .eventType("BOOKING_APPROVED")
+                    .severity(EventSeverity.HIGH)
+                    .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                    .title("Your Booking Has Been Approved")
+                    .description("Your booking for " + booking.getFacility().getName() + 
+                            " on " + booking.getBookingDate() + " has been approved.")
+                    .source("BookingService")
+                    .entityReference("booking:" + booking.getId())
+                    .actionUrl("/bookings/" + booking.getId())
+                    .actionLabel("View Booking")
+                    .occurrenceTime(ZonedDateTime.now())
+                    .metadata(java.util.Map.of("userId", booking.getRequestedBy().getId().toString()))
+                    .build());
             
             return approvedBooking;
         } catch (OptimisticLockingFailureException ex) {
@@ -332,10 +323,10 @@ public class BookingService {
 
     /**
      * Rejects an existing booking using its @Version for optimistic locking (409).
-     * Records the rejection with a rejection reason/note to the approval workflow history.
+     * Publishes BOOKING_REJECTED event (STANDARD severity - in-app only).
      */
     @Transactional
-    public Booking rejectBooking(UUID bookingId, Long expectedVersion, String rejectionReason) {
+    public Booking rejectBooking(UUID bookingId, Long expectedVersion, String note) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
 
@@ -347,26 +338,57 @@ public class BookingService {
             throw new ValidationException("Booking is already in a terminal state.");
         }
 
-        if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
-            throw new ValidationException("Rejection reason is required");
-        }
-
         booking.setStatus(BookingStatus.REJECTED);
 
         try {
             Booking rejectedBooking = bookingRepository.save(booking);
             
-            // Record rejection step with reason in workflow history
-            com.sliitreserve.api.workflow.approval.ApprovalDecision decision = 
-                com.sliitreserve.api.workflow.approval.ApprovalDecision.builder()
-                    .status(com.sliitreserve.api.workflow.approval.ApprovalStatus.REJECTED)
-                    .approverRole("MANUAL_REJECTION")
-                    .note(rejectionReason)
-                    .build();
-            
-            approvalWorkflowService.recordApprovalStep(booking, 99, decision);
+            // Publish BOOKING_REJECTED event to notify requester (HIGH severity = in-app + email)
+            eventPublisher.publish(EventEnvelope.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .eventType("BOOKING_REJECTED")
+                    .severity(EventSeverity.HIGH)
+                    .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                    .title("Your Booking Has Been Rejected")
+                    .description("Your booking for " + booking.getFacility().getName() + 
+                            " on " + booking.getBookingDate() + " has been rejected.")
+                    .source("BookingService")
+                    .entityReference("booking:" + booking.getId())
+                    .actionUrl("/bookings/" + booking.getId())
+                    .actionLabel("View Booking")
+                    .occurrenceTime(ZonedDateTime.now())
+                    .metadata(java.util.Map.of("userId", booking.getRequestedBy().getId().toString()))
+                    .build());
             
             return rejectedBooking;
+        } catch (OptimisticLockingFailureException ex) {
+            throw new ConflictException("Optimistic lock failure upon saving");
+        }
+    }
+
+    /**
+     * Cancels an approved booking.
+     * Only APPROVED bookings can be cancelled to CANCELLED status.
+     * Uses optimistic locking via @Version for concurrency control.
+     */
+    @Transactional
+    public Booking cancelBooking(UUID bookingId, Long expectedVersion, String note) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getVersion().equals(expectedVersion)) {
+            throw new ConflictException("Optimistic lock failure: mismatched versions");
+        }
+
+        // Only allow cancelling APPROVED bookings
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new ValidationException("Only APPROVED bookings can be cancelled. Current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        try {
+            return bookingRepository.save(booking);
         } catch (OptimisticLockingFailureException ex) {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
@@ -376,9 +398,36 @@ public class BookingService {
      * Get all bookings for a user (both as requester and bookedFor).
      * Returns bookings ordered by booking date descending.
      */
+    /**
+     * Get all bookings for a user (detailed DTOs with nested objects).
+     * Used for the my-bookings page to display full booking information.
+     */
+    @Transactional(readOnly = true)
+    public List<BookingDetailedResponseDTO> getUserBookingsDetailed(UUID userId) {
+        List<Booking> bookings = bookingRepository.findUserBookingsWithDetails(userId);
+        return bookings.stream()
+                .map(bookingMapper::toDetailedResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all bookings for a user (basic DTOs with IDs only).
+     * Returns bookings where user is either the requester or the bookedFor user.
+     */
     @Transactional(readOnly = true)
     public List<Booking> getUserBookings(UUID userId) {
         return bookingRepository.findByRequestedBy_Id(userId);
+    }
+
+    /**
+     * Get a specific booking by ID (detailed DTO with nested objects).
+     * Used for displaying full booking information.
+     */
+    @Transactional(readOnly = true)
+    public BookingDetailedResponseDTO getBookingDetailed(UUID bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
+        return bookingMapper.toDetailedResponseDTO(booking);
     }
 
     /**
@@ -390,16 +439,26 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
     }
 
-    /**
-     * Get pending bookings for approval by the given user.
+    /**     * Get pending bookings that require approval with detailed information.
+     * Returns bookings with full nested objects for display purposes.
+     */
+    @Transactional(readOnly = true)
+    public List<BookingDetailedResponseDTO> getPendingApprovalsDetailed(User user) {
+        List<Booking> pendingBookings = getPendingApprovalsForUser(user);
+        return pendingBookings.stream()
+                .map(bookingMapper::toDetailedResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**     * Get pending bookings for approval by the given user.
      * - ADMIN: All pending bookings
      * - LECTURER: All pending bookings (they can approve any)
      * - FACILITY_MANAGER: Pending bookings for their managed facilities
      */
     @Transactional(readOnly = true)
     public List<Booking> getPendingApprovalsForUser(User user) {
-        // Get all pending bookings
-        List<Booking> pendingBookings = bookingRepository.findByStatus(BookingStatus.PENDING);
+        // Get all pending bookings with eager loaded relationships
+        List<Booking> pendingBookings = bookingRepository.findByStatusWithDetails(BookingStatus.PENDING);
         
         // Filter based on role
         if (user.getRoles().contains(com.sliitreserve.api.entities.auth.Role.ADMIN) || 
@@ -420,81 +479,168 @@ public class BookingService {
     }
 
     /**
-     * Get quota status for a user with role-based quota limits.
-     * Returns complete quota information including weekly, monthly, and advance window limits.
+     * Get comprehensive quota status for a user.
+     * Uses QuotaPolicyEngine to determine the user's effective role and quota limits.
+     * Returns both current usage and limits for weekly and monthly quotas.
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getQuotaStatus(User user) {
         Map<String, Object> quotaStatus = new HashMap<>();
         
-        // Get this week's date range (Monday-Sunday)
-        LocalDate weekStart = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-        LocalDate weekEnd = LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        // Get effective role strategy
+        com.sliitreserve.api.strategy.quota.QuotaStrategy strategy = quotaPolicyEngine.resolveEffectiveStrategy(user);
+        String effectiveRole = strategy.getRoleName();
         
-        // Get this month's date range
-        LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
-        LocalDate monthEnd = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+        // Get current date ranges
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Colombo"));
+        LocalDate weekStart = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate weekEnd = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
         
-        // Count current bookings
+        // Count current bookings (PENDING and APPROVED only)
         long weeklyBookings = bookingRepository.countWeeklyBookings(user.getId(), weekStart, weekEnd);
         long monthlyBookings = bookingRepository.countMonthlyBookings(user.getId(), monthStart, monthEnd);
         
-        // Determine role and get quota limits
-        String userRole = user.getRoles().isEmpty() ? "STUDENT" : user.getRoles().iterator().next().toString();
-        int weeklyQuota = getWeeklyQuotaForRole(userRole);
-        int monthlyQuota = getMonthlyQuotaForRole(userRole);
-        int advanceWindowDays = getAdvanceWindowForRole(userRole);
+        // Get quota limits
+        int weeklyQuota = strategy.getWeeklyQuota();
+        int monthlyQuota = strategy.getMonthlyQuota();
         
+        // Advance booking info
+        int maxAdvanceDays = strategy.getMaxAdvanceBookingDays();
+        LocalDate advanceBookingUntil = today.plusDays(maxAdvanceDays);
+        
+        // Peak hours info (08:00-10:00)
+        boolean canBookDuringPeakHours = strategy.canBookDuringPeakHours(LocalTime.of(9, 0));
+        
+        // Build response
         quotaStatus.put("userId", user.getId());
-        quotaStatus.put("userRole", userRole);
+        quotaStatus.put("effectiveRole", effectiveRole);
+        
         quotaStatus.put("weeklyBookings", weeklyBookings);
         quotaStatus.put("weeklyQuota", weeklyQuota);
         quotaStatus.put("weeklyRemaining", Math.max(0, weeklyQuota - (int)weeklyBookings));
+        
         quotaStatus.put("monthlyBookings", monthlyBookings);
         quotaStatus.put("monthlyQuota", monthlyQuota);
         quotaStatus.put("monthlyRemaining", Math.max(0, monthlyQuota - (int)monthlyBookings));
-        quotaStatus.put("advanceWindowDays", advanceWindowDays);
-        quotaStatus.put("weekStart", weekStart.toString());
-        quotaStatus.put("weekEnd", weekEnd.toString());
-        quotaStatus.put("monthStart", monthStart.toString());
-        quotaStatus.put("monthEnd", monthEnd.toString());
+        
+        quotaStatus.put("canBookDuringPeakHours", canBookDuringPeakHours);
+        quotaStatus.put("peakHourWindow", "08:00-10:00");
+        
+        quotaStatus.put("advanceBookingDays", maxAdvanceDays);
+        quotaStatus.put("advanceBookingUntil", advanceBookingUntil.toString());
         
         return quotaStatus;
     }
-    
+
     /**
-     * Get weekly quota limit for a role.
+     * Get available timeslots for a facility on a specific date.
+     * Returns a list of booked time ranges to help user avoid conflicts.
+     * 
+     * @param facilityId Facility ID
+     * @param bookingDate Date to check
+     * @return List of booked timeslots as DTOs
      */
-    private int getWeeklyQuotaForRole(String role) {
-        return switch (role) {
-            case "STUDENT" -> 5;
-            case "LECTURER" -> 99;
-            case "ADMIN" -> 9999;
-            default -> 5;
-        };
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAvailableTimeslots(UUID facilityId, LocalDate bookingDate) {
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Facility not found with id: " + facilityId));
+
+        // Get all confirmed bookings for this date
+        List<Booking> confirmedBookings = bookingRepository.findConfirmedBookingsByFacilityAndDate(facilityId, bookingDate);
+        
+        List<Map<String, Object>> bookedSlots = new java.util.ArrayList<>();
+        
+        for (Booking booking : confirmedBookings) {
+            Map<String, Object> slot = new HashMap<>();
+            slot.put("startTime", booking.getStartTime().toString());
+            slot.put("endTime", booking.getEndTime().toString());
+            slot.put("status", booking.getStatus().toString());
+            slot.put("purpose", booking.getPurpose());
+            slot.put("attendees", booking.getAttendees());
+            slot.put("bookedBy", booking.getBookedFor().getDisplayName());
+            bookedSlots.add(slot);
+        }
+
+        // Also include facility availability window
+        Map<String, Object> facilityInfo = new HashMap<>();
+        facilityInfo.put("facilityId", facilityId);
+        facilityInfo.put("facilityName", facility.getName());
+        facilityInfo.put("availabilityStart", facility.getAvailabilityStart().toString());
+        facilityInfo.put("availabilityEnd", facility.getAvailabilityEnd().toString());
+        facilityInfo.put("bookedSlots", bookedSlots);
+        
+        // Calculate free slots
+        List<Map<String, String>> freeSlots = calculateFreeSlots(
+            facility.getAvailabilityStart(),
+            facility.getAvailabilityEnd(),
+            confirmedBookings
+        );
+        facilityInfo.put("freeSlots", freeSlots);
+        
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        result.add(facilityInfo);
+        return result;
     }
-    
+
     /**
-     * Get monthly quota limit for a role.
+     * Calculate free/available time slots between booked time ranges.
      */
-    private int getMonthlyQuotaForRole(String role) {
-        return switch (role) {
-            case "STUDENT" -> 20;
-            case "LECTURER" -> 999;
-            case "ADMIN" -> 9999;
-            default -> 20;
-        };
+    private List<Map<String, String>> calculateFreeSlots(LocalTime facilityStart, LocalTime facilityEnd, 
+                                                          List<Booking> bookings) {
+        List<Map<String, String>> freeSlots = new java.util.ArrayList<>();
+        
+        if (bookings.isEmpty()) {
+            // Entire day is free
+            Map<String, String> slot = new HashMap<>();
+            slot.put("startTime", facilityStart.toString());
+            slot.put("endTime", facilityEnd.toString());
+            freeSlots.add(slot);
+            return freeSlots;
+        }
+
+        LocalTime currentTime = facilityStart;
+        for (Booking booking : bookings) {
+            if (currentTime.isBefore(booking.getStartTime())) {
+                Map<String, String> slot = new HashMap<>();
+                slot.put("startTime", currentTime.toString());
+                slot.put("endTime", booking.getStartTime().toString());
+                freeSlots.add(slot);
+            }
+            currentTime = booking.getEndTime();
+            if (currentTime.isAfter(facilityEnd)) currentTime = facilityEnd;
+        }
+
+        // Add final free slot if space remains
+        if (currentTime.isBefore(facilityEnd)) {
+            Map<String, String> slot = new HashMap<>();
+            slot.put("startTime", currentTime.toString());
+            slot.put("endTime", facilityEnd.toString());
+            freeSlots.add(slot);
+        }
+
+        return freeSlots;
     }
-    
+
     /**
-     * Get advance booking window in days for a role.
+     * Get all bookings for admin/facility-manager dashboard.
+     * Filters by status and date range. Facility managers see only their facilities.
+     * 
+     * @param facilityId Optional facility ID filter
+     * @param statuses Booking statuses to include
+     * @param startDate Start of date range
+     * @param endDate End of date range
+     * @return List of bookings sorted by date
      */
-    private int getAdvanceWindowForRole(String role) {
-        return switch (role) {
-            case "STUDENT" -> 90;
-            case "LECTURER" -> 90;
-            case "ADMIN" -> 180;
-            default -> 90;
-        };
+    @Transactional(readOnly = true)
+    public List<Booking> getAdminBookings(UUID facilityId, List<BookingStatus> statuses, 
+                                          LocalDate startDate, LocalDate endDate) {
+        return bookingRepository.findBookingsByDateRangeAndFacility(
+            facilityId,
+            statuses != null && !statuses.isEmpty() ? statuses : Arrays.asList(BookingStatus.APPROVED, BookingStatus.PENDING),
+            startDate,
+            endDate
+        );
     }
 }

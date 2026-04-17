@@ -5,16 +5,16 @@ import java.time.LocalTime;
 import org.springframework.stereotype.Component;
 
 /**
- * Student quota strategy implementation.
+ * User (Student) quota strategy implementation.
  * 
- * Enforces the most restrictive booking policies for regular student users.
+ * Enforces the most restrictive booking policies for regular user (student) roles.
  * 
- * Student policies:
+ * User policies:
  * - Weekly quota: 3 bookings max
  * - Monthly quota: 10 bookings max
  * - Advance booking window: 90 days (3 months)
  * - Peak hours (08:00-10:00): NOT allowed
- * - High-capacity approval: NOT required for students
+ * - High-capacity approval: NOT required for users
  * - Permissiveness priority: 1 (most restrictive)
  * 
  * Design pattern: Strategy pattern as per AR-004
@@ -50,7 +50,7 @@ public class StudentQuotaStrategy extends AbstractQuotaStrategy {
 
     @Override
     public String getRoleName() {
-        return "STUDENT";
+        return "USER";
     }
 
     @Override

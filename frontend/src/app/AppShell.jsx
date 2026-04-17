@@ -1,5 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function AppShell() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -140,7 +142,19 @@ function AppShell() {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    📋 Booking Approvals
+                    Booking Approvals
+                  </Link>
+                )}
+                {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
+                  <Link
+                    to="/admin/bookings"
+                    className={`pb-2 text-sm font-medium transition ${
+                      isActive("/admin/bookings")
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    All Bookings
                   </Link>
                 )}
                 {isAdmin && (
@@ -182,6 +196,17 @@ function AppShell() {
       <main className="mx-auto max-w-7xl px-4 py-8">
         <Outlet />
       </main>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick={true}
+        rtl={false}
+        pauseOnFocusLoss={true}
+        draggable={true}
+        pauseOnHover={true}
+      />
     </div>
   );
 }

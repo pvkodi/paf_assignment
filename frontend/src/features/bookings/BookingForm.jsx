@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
 import RecurrenceSelector from "./RecurrenceSelector";
-import QuotaPolicySummary from "./QuotaPolicySummary";
 import AdminBookForUserSelector from "./AdminBookForUserSelector";
 
 export default function BookingForm({ facility: initialFacility, onBookingComplete, isModal, onClose }) {
@@ -27,16 +26,71 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
   const [skippedNotification, setSkippedNotification] = useState(null);
   const [pollingNotifications, setPollingNotifications] = useState(false);
 
+  // Availability state
+  const [availabilityData, setAvailabilityData] = useState(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(null);
+
   useEffect(() => {
     setFacility(initialFacility || null);
   }, [initialFacility]);
+
+  // Fetch availability slots when facility and date are selected
+  useEffect(() => {
+    if (facility && bookingDate) {
+      fetchAvailabilitySlots();
+    } else {
+      setAvailabilityData(null);
+    }
+  }, [facility, bookingDate]);
+
+  const fetchAvailabilitySlots = async () => {
+    try {
+      setAvailabilityLoading(true);
+      setAvailabilityError(null);
+      
+      const response = await apiClient.get(`/v1/bookings/availability/${facility.id}`, {
+        params: { date: bookingDate }
+      });
+      
+      console.log("Availability response:", response.data);
+      console.log("freeslots: ", Array.isArray(response.data) && response.data.length > 0 ? response.data[0].freeSlots : "N/A");
+      
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        const facilityAvailability = response.data[0];
+        console.log("Availability debug:", {
+          facilityId: facilityAvailability.facilityId,
+          date: bookingDate,
+          bookedSlots: facilityAvailability.bookedSlots?.length || 0,
+          freeSlots: facilityAvailability.freeSlots?.length || 0,
+          sampleBooked: facilityAvailability.bookedSlots?.[0],
+          sampleFree: facilityAvailability.freeSlots?.[0]
+        });
+        
+        setAvailabilityData(facilityAvailability);
+      }
+    } catch (err) {
+      console.error("Failed to fetch availability:", err);
+      setAvailabilityError("Unable to load availability information");
+      setAvailabilityData(null);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   const canBookForOthers = user?.roles?.some((r) =>
     ["ADMIN", "FACILITY_MANAGER"].includes(r),
   );
 
-  // Get user role for quota display
-  const userRole = user?.roles?.[0] || "USER";
+  // Get today's date in YYYY-MM-DD format for date input min attribute
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const minDate = getTodayDate();
 
   const validateForm = () => {
     const errors = {};
@@ -102,7 +156,7 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
 
       const response = await apiClient.post("/v1/bookings", bookingPayload);
 
-      setSuccess("Booking created successfully! Your booking is pending approval.");
+      setSuccess("✓ Booking submitted successfully! Your booking is now being reviewed.");
       setError(null);
       setValidationErrors({});
 
@@ -261,7 +315,13 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Booking Date *</label>
-                  <input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
+                  <input 
+                    type="date" 
+                    min={minDate}
+                    value={bookingDate} 
+                    onChange={(e) => setBookingDate(e.target.value)} 
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} 
+                  />
                   {validationErrors.bookingDate && <p className="text-sm text-red-600 mt-1">{validationErrors.bookingDate}</p>}
                 </div>
 
@@ -270,6 +330,73 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
                   <input type="number" min="1" max={facility.capacity} value={attendees} onChange={(e) => setAttendees(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.attendees ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
                   {validationErrors.attendees && <p className="text-sm text-red-600 mt-1">{validationErrors.attendees}</p>}
                 </div>
+
+                {/* Availability Display Section */}
+                {bookingDate && (
+                  <div className="col-span-full">
+                    {availabilityLoading && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <p className="text-sm text-blue-700">Loading available time slots...</p>
+                      </div>
+                    )}
+
+                    {availabilityError && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-sm text-amber-700">{availabilityError}</p>
+                      </div>
+                    )}
+
+                    {availabilityData && !availabilityLoading && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Available Time Slots</h4>
+                        
+                        {availabilityData.bookedSlots && availabilityData.bookedSlots.length > 0 && (
+                          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                            <p className="text-xs font-semibold text-amber-900 mb-2">Booked Times:</p>
+                            <div className="space-y-1">
+                              {availabilityData.bookedSlots.map((slot, idx) => (
+                                <div key={idx} className="text-xs text-amber-800">
+                                  • {slot.startTime} - {slot.endTime}
+                                  {slot.purpose && <span className="ml-2 text-amber-700">({slot.purpose})</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {availabilityData.freeSlots && availabilityData.freeSlots.length > 0 ? (
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                            <p className="text-xs font-semibold text-green-900 mb-2">Free Time Slots ({availabilityData.freeSlots.length}):</p>
+                            <div className="space-y-2">
+                              {availabilityData.freeSlots.map((slot, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setStartTime(slot.startTime.substring(0, 5));
+                                    setEndTime(slot.endTime.substring(0, 5));
+                                  }}
+                                  className="w-full text-left px-3 py-2 bg-white border border-green-200 rounded-md hover:bg-green-100 transition text-xs text-green-900 font-medium"
+                                >
+                                  {slot.startTime} - {slot.endTime}
+                                </button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-green-700 mt-3">Click on any slot above to fill in start and end times.</p>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                            <p className="text-xs text-red-700 font-medium">No free time slots available for this date.</p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-slate-500 mt-3">
+                          Facility available: {availabilityData.availabilityStart} - {availabilityData.availabilityEnd}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Start Time *</label>
@@ -296,59 +423,62 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
                 </div>
 
                 {canBookForOthers && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Book for Another User (Optional - Admin/Lecturer only)</label>
-                    <input type="text" value={bookedForUserId} onChange={(e) => setBookedForUserId(e.target.value)} placeholder="Enter user ID (leave blank to book for yourself)" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                  <div className="col-span-full">
+                    <AdminBookForUserSelector 
+                      onUserSelect={setBookedForUserId} 
+                      userRole={user?.roles?.[0]}
+                    />
                   </div>
                 )}
+              </div>
 
-                <div className="border-t-2 border-slate-200 pt-4">
-                  <label className="flex items-center">
-                    <input type="checkbox" checked={useRecurrence} onChange={(e) => setUseRecurrence(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" />
-                    <span className="ml-2 text-sm font-medium text-slate-700">This is a recurring booking</span>
-                  </label>
+              {/* Recurrence Section - Moved to bottom for better UX */}
+              <div className="border-t-2 border-slate-200 pt-4">
+                <label className="flex items-center">
+                  <input type="checkbox" checked={useRecurrence} onChange={(e) => setUseRecurrence(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" />
+                  <span className="ml-2 text-sm font-medium text-slate-700">This is a recurring booking</span>
+                </label>
 
-                  {useRecurrence && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Recurrence Pattern</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button type="button" onClick={() => { setRecurrencePreset('daily'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=DAILY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'daily' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Daily</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('weekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Weekly (M/W/F)</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('biweekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'biweekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Bi-Weekly</button>
-                          <button type="button" onClick={() => { setRecurrencePreset('monthly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=MONTHLY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Monthly</button>
-                        </div>
+                {useRecurrence && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Recurrence Pattern</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => { setRecurrencePreset('daily'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=DAILY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'daily' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Daily</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('weekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'weekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Weekly (M/W/F)</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('biweekly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'biweekly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Bi-Weekly</button>
+                        <button type="button" onClick={() => { setRecurrencePreset('monthly'); setRecurrenceCustom(false); setRecurrenceRule(`FREQ=MONTHLY;COUNT=${recurrenceCount}`); }} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${recurrencePreset === 'monthly' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}>Monthly</button>
                       </div>
-
-                      {recurrencePreset && (
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Number of Occurrences</label>
-                          <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => { setRecurrenceCount(e.target.value); if (recurrencePreset === 'daily') { setRecurrenceRule(`FREQ=DAILY;COUNT=${e.target.value}`); } else if (recurrencePreset === 'weekly') { setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${e.target.value}`); } else if (recurrencePreset === 'biweekly') { setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${e.target.value}`); } else if (recurrencePreset === 'monthly') { setRecurrenceRule(`FREQ=MONTHLY;COUNT=${e.target.value}`); } }} className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                        </div>
-                      )}
-
-                      <div className="mb-3">
-                        <label className="flex items-center text-sm">
-                          <input type="checkbox" checked={recurrenceCustom} onChange={(e) => setRecurrenceCustom(e.target.checked)} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-slate-300 rounded" />
-                          <span className="ml-2 text-slate-700 font-medium">Advanced: Custom iCal RRULE</span>
-                        </label>
-                      </div>
-
-                      {recurrenceCustom && (
-                        <div>
-                          <input type="text" value={recurrenceRule} onChange={(e) => setRecurrenceRule(e.target.value)} placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" />
-                          <p className="text-xs text-slate-500 mt-1">See <a href="https://datatracker.ietf.org/doc/html/rfc5545" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">RFC 5545</a> for RRULE format</p>
-                        </div>
-                      )}
-
-                      {recurrenceRule && (
-                        <div className="mt-3 p-2 bg-white rounded border border-blue-200 text-xs text-slate-600">
-                          <strong>Rule:</strong> <code className="text-slate-700">{recurrenceRule}</code>
-                        </div>
-                      )}
                     </div>
-                  )}
-                </div>
+
+                    {recurrencePreset && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Number of Occurrences</label>
+                        <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => { setRecurrenceCount(e.target.value); if (recurrencePreset === 'daily') { setRecurrenceRule(`FREQ=DAILY;COUNT=${e.target.value}`); } else if (recurrencePreset === 'weekly') { setRecurrenceRule(`FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=${e.target.value}`); } else if (recurrencePreset === 'biweekly') { setRecurrenceRule(`FREQ=WEEKLY;INTERVAL=2;COUNT=${e.target.value}`); } else if (recurrencePreset === 'monthly') { setRecurrenceRule(`FREQ=MONTHLY;COUNT=${e.target.value}`); } }} className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                      <label className="flex items-center text-sm">
+                        <input type="checkbox" checked={recurrenceCustom} onChange={(e) => setRecurrenceCustom(e.target.checked)} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-slate-300 rounded" />
+                        <span className="ml-2 text-slate-700 font-medium">Advanced: Custom iCal RRULE</span>
+                      </label>
+                    </div>
+
+                    {recurrenceCustom && (
+                      <div>
+                        <input type="text" value={recurrenceRule} onChange={(e) => setRecurrenceRule(e.target.value)} placeholder="e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=12" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" />
+                        <p className="text-xs text-slate-500 mt-1">See <a href="https://datatracker.ietf.org/doc/html/rfc5545" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">RFC 5545</a> for RRULE format</p>
+                      </div>
+                    )}
+
+                    {recurrenceRule && (
+                      <div className="mt-3 p-2 bg-white rounded border border-blue-200 text-xs text-slate-600">
+                        <strong>Rule:</strong> <code className="text-slate-700">{recurrenceRule}</code>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-200">

@@ -11,6 +11,7 @@ import {
   ApprovalsPage,
   AppealsPage,
   BookingApprovalsPage,
+  AdminBookingsPage,
   AnalyticsPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
@@ -79,6 +80,10 @@ const router = createBrowserRouter([
       {
         path: "approvals/bookings",
         element: <BookingApprovalsPage />,
+      },
+      {
+        path: "admin/bookings",
+        element: <AdminBookingsPage />,
       },
       {
         path: "appeals",

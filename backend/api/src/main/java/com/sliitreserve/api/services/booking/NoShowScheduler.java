@@ -1,6 +1,7 @@
 package com.sliitreserve.api.services.booking;
 
 import com.sliitreserve.api.entities.booking.Booking;
+import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.repositories.bookings.BookingRepository;
 import com.sliitreserve.api.repositories.auth.UserRepository;
@@ -114,24 +115,37 @@ public class NoShowScheduler {
                         // Increment no-show count and check for suspension
                         User bookedForUser = booking.getBookedFor();
                         if (bookedForUser != null) {
-                            int currentNoShowCount = bookedForUser.getNoShowCount() != null ? bookedForUser.getNoShowCount() : 0;
-                            int newNoShowCount = currentNoShowCount + 1;
+                            // Check if user is ADMIN or FACILITY_MANAGER (exempt from suspension)
+                            boolean isPrivilegedUser = bookedForUser.getRoles() != null && 
+                                (bookedForUser.getRoles().contains(Role.ADMIN) || 
+                                 bookedForUser.getRoles().contains(Role.FACILITY_MANAGER));
                             
-                            bookedForUser.setNoShowCount(newNoShowCount);
-                            log.debug("User {} no-show count incremented to {}", bookedForUser.getId(), newNoShowCount);
-                            
-                            // Check if suspension threshold is reached (3 no-shows)
-                            if (newNoShowCount >= 3) {
-                                log.info("User {} reached no-show suspension threshold (noShowCount={})", 
-                                         bookedForUser.getId(), newNoShowCount);
+                            if (isPrivilegedUser) {
+                                log.info("No-show recorded for privileged user {} (exempted from suspension)", bookedForUser.getId());
+                                // Still increment for auditing, but don't suspend
+                                int currentNoShowCount = bookedForUser.getNoShowCount() != null ? bookedForUser.getNoShowCount() : 0;
+                                bookedForUser.setNoShowCount(currentNoShowCount + 1);
+                                userRepository.save(bookedForUser);
+                            } else {
+                                int currentNoShowCount = bookedForUser.getNoShowCount() != null ? bookedForUser.getNoShowCount() : 0;
+                                int newNoShowCount = currentNoShowCount + 1;
                                 
-                                suspensionPolicyService.applySuspensionIfThresholdReached(bookedForUser);
-                                suspensionCount++;
+                                bookedForUser.setNoShowCount(newNoShowCount);
+                                log.debug("User {} no-show count incremented to {}", bookedForUser.getId(), newNoShowCount);
                                 
-                                log.info("Suspension applied to user {} due to 3 no-shows", bookedForUser.getId());
+                                // Check if suspension threshold is reached (3 no-shows)
+                                if (newNoShowCount >= 3) {
+                                    log.info("User {} reached no-show suspension threshold (noShowCount={})", 
+                                             bookedForUser.getId(), newNoShowCount);
+                                    
+                                    suspensionPolicyService.applySuspensionIfThresholdReached(bookedForUser);
+                                    suspensionCount++;
+                                    
+                                    log.info("Suspension applied to user {} due to 3 no-shows", bookedForUser.getId());
+                                }
+                                
+                                userRepository.save(bookedForUser);
                             }
-                            
-                            userRepository.save(bookedForUser);
                         }
                     }
                     
