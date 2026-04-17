@@ -63,6 +63,7 @@ public class CheckInService {
     private final CheckInRepository checkInRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final GeofencingService geofencingService;
 
     /**
      * Campus local timezone constant.
@@ -184,7 +185,126 @@ public class CheckInService {
     }
 
     /**
+     * Record check-in with geofencing verification (WiFi + GPS).
+     * 
+     * Enhanced check-in that verifies user location before recording attendance.
+     * Supports both QR and MANUAL check-in methods with dual-layer geofencing.
+     * 
+     * Record check-in with GPS geofencing verification.
+     * 
+     * Verification logic:
+     * 1. Verify user is within facility GPS radius (primary check)
+     * 2. Record check-in if verification passes
+     * 
+     * Note: WiFi detection is not available in standard web browsers, so geofencing is GPS-only.
+     * 
+     * @param bookingId Booking ID for the check-in
+     * @param checkedInByUserId Optional user who performed the check-in (staff for manual, null for QR)
+     * @param method Check-in method: "QR" or "MANUAL"
+     * @param userLatitude User's GPS latitude (required)
+     * @param userLongitude User's GPS longitude (required)
+     * @return CheckInRecord created
+     * @throws ResourceNotFoundException if booking not found
+     * @throws ValidationException if booking already checked in
+     * @throws ForbiddenException if GPS verification fails (GEOFENCE_GPS_OUT_OF_RANGE)
+     */
+    @Transactional
+    public CheckInRecord recordCheckInWithGeofencing(
+            UUID bookingId, 
+            UUID checkedInByUserId,
+            String method,
+            Double userLatitude,
+            Double userLongitude) {
+        
+        log.info("==== CHECK-IN WITH GEOFENCING START ====");
+        log.info("Booking ID: {}", bookingId);
+        log.info("Method: {}", method);
+        log.info("User GPS: ({}, {})", userLatitude, userLongitude);
+        
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+        
+        log.info("Booking found: {} at facility: {}", bookingId, booking.getFacility().getName());
+        
+        // Check if booking already has a check-in
+        if (checkInRepository.existsByBookingId(bookingId)) {
+            log.warn("❌ DUPLICATE CHECK-IN: Booking {} already has a check-in recorded", bookingId);
+            throw new com.sliitreserve.api.exception.ValidationException("Check-in already recorded for this booking");
+        }
+        
+        log.info("✓ No previous check-in found");
+        
+        // **GEOFENCING VERIFICATION - GPS ONLY**
+        // WiFi detection is not available in browsers, so we only verify GPS location
+        log.info("--- GPS Verification (Primary) ---");
+        log.info("Facility GPS: ({}, {})", 
+                 booking.getFacility().getLatitude(), 
+                 booking.getFacility().getLongitude());
+        log.info("User GPS: ({}, {})", userLatitude, userLongitude);
+        
+        boolean isWithinGPS = geofencingService.isUserWithinGPSRadius(
+            booking.getFacility().getId(),
+            userLatitude,
+            userLongitude
+        );
+        
+        if (!isWithinGPS) {
+            double distance = geofencingService.calculateHaversineDistance(
+                booking.getFacility().getLatitude(),
+                booking.getFacility().getLongitude(),
+                userLatitude,
+                userLongitude
+            );
+            int radius = booking.getFacility().getGeofenceRadiusMeters() != null ? 
+                        booking.getFacility().getGeofenceRadiusMeters() : 100;
+            
+            log.error("❌ GEOFENCE GPS VIOLATION: Distance={}m, Required radius={}m", 
+                      String.format("%.1f", distance), radius);
+            throw new com.sliitreserve.api.exception.ForbiddenException(
+                "GEOFENCE_GPS_OUT_OF_RANGE: You are too far from the facility. Distance: " + 
+                String.format("%.1f", distance) + "m, Required radius: " + radius + "m"
+            );
+        }
+        
+        log.info("✓ GPS verification PASSED - within facility radius");
+        
+        // Geofencing passed, record check-in
+        log.info("✓ Geofencing verification PASSED - proceeding to record check-in");
+        
+        User checkedInBy = null;
+        if (checkedInByUserId != null) {
+            checkedInBy = userRepository.findById(checkedInByUserId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + checkedInByUserId));
+        }
+        
+        LocalDateTime now = LocalDateTime.now(CAMPUS_TIMEZONE);
+        
+        // Map method string to enum
+        com.sliitreserve.api.entities.booking.CheckInMethod checkInMethod;
+        try {
+            checkInMethod = com.sliitreserve.api.entities.booking.CheckInMethod.valueOf(method.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new com.sliitreserve.api.exception.ValidationException("Invalid check-in method: " + method);
+        }
+        
+        CheckInRecord checkIn = CheckInRecord.builder()
+                .booking(booking)
+                .method(checkInMethod)
+                .checkedInBy(checkedInBy)
+                .checkedInAt(now)
+                .build();
+        
+        CheckInRecord saved = checkInRepository.save(checkIn);
+        log.info("✅ CHECK-IN RECORDED: id={}, booking={}, method={}, timestamp={}", 
+                 saved.getId(), bookingId, method, now);
+        log.info("==== CHECK-IN WITH GEOFENCING END (SUCCESS) ====");
+        
+        return saved;
+    }
+
+    /**
      * Evaluate if a booking should be classified as a no-show.
+
      * 
      * A booking is a no-show if:
      * 1. No CheckInRecord exists for the booking, AND

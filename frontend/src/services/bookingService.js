@@ -126,6 +126,14 @@ export const bookingService = {
   },
 
   /**
+   * Search users by email or display name (for admin/facility manager booking for others)
+   */
+  searchUsers: async (query) => {
+    const response = await apiClient.get("/v1/users/search", { params: { query } });
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
+  /**
    * Expand recurring booking rule to actual dates
    */
   expandRecurrence: async (rrule, startDate) => {

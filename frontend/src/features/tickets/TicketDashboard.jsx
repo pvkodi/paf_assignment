@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../../services/apiClient";
+import { AuthContext } from "../../contexts/AuthContext";
 
 /**
  * Ticket Dashboard Component
@@ -8,8 +9,22 @@ import { apiClient } from "../../services/apiClient";
  * Implements US4 requirement: Ticket list/dashboard with filters and search
  */
 
+// Utility function to shorten UUID
+const shortenTicketId = (fullId) => {
+  if (!fullId) return "";
+  return fullId.substring(0, 8);
+};
+
+// Utility function to copy to clipboard
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log("Copied to clipboard:", text);
+  });
+};
+
 export function TicketDashboard() {
   const navigate = useNavigate();
+  const { hasRole } = useContext(AuthContext);
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +55,21 @@ export function TicketDashboard() {
       setLoading(true);
       setError(null);
       const response = await apiClient.get("/tickets");
-      setTickets(response.data || []);
+      
+      // Handle response format from backend (returns List directly)
+      let ticketsList = [];
+      if (Array.isArray(response.data)) {
+        ticketsList = response.data;
+      } else if (response.data && Array.isArray(response.data.content)) {
+        // If paginated format
+        ticketsList = response.data.content;
+      }
+      
+      setTickets(ticketsList || []);
     } catch (err) {
       console.error("Failed to fetch tickets:", err);
       setError("Failed to load tickets. Please try again.");
+      setTickets([]); // Ensure tickets is always an array
     } finally {
       setLoading(false);
     }
@@ -129,12 +155,14 @@ export function TicketDashboard() {
             View and manage maintenance tickets
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-        >
-          {showCreateForm ? "Cancel" : "Create Ticket"}
-        </button>
+        {(hasRole("USER") || hasRole("STUDENT") || hasRole("LECTURER") || hasRole("ADMIN")) && (
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            {showCreateForm ? "Cancel" : "Create Ticket"}
+          </button>
+        )}
       </div>
 
       {/* Error Message */}
@@ -266,7 +294,21 @@ export function TicketDashboard() {
                     className="hover:bg-gray-50 transition cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{ticket.id}
+                      <div className="flex items-center gap-2">
+                        <span className="text-indigo-600 font-semibold">#{shortenTicketId(ticket.id)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(ticket.id);
+                          }}
+                          title="Copy full ticket ID"
+                          className="p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
                       {ticket.title}
@@ -321,15 +363,16 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
   const [facilities, setFacilities] = useState([]);
   const [formData, setFormData] = useState({
     facilityId: "",
-    category: "BUG",
+    category: "ELECTRICAL",
     priority: "MEDIUM",
     title: "",
     description: "",
   });
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [fileError, setFileError] = useState(null);
 
-  const CATEGORIES = ["BUG", "MAINTENANCE", "REQUEST", "CLEANING"];
+  // Match backend TicketCategory enum values
+  const CATEGORIES = ["ELECTRICAL", "PLUMBING", "HVAC", "IT_NETWORKING", "STRUCTURAL", "CLEANING", "SAFETY", "OTHER"];
   const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
   // Fetch facilities
@@ -340,9 +383,24 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
   const fetchFacilities = async () => {
     try {
       const response = await apiClient.get("/facilities");
-      setFacilities(response.data || []);
+      
+      // Handle Spring Data Page format from backend
+      let facilitiesList = [];
+      if (response.data && Array.isArray(response.data.content)) {
+        // Backend returns Page<FacilityResponseDTO> with content array
+        facilitiesList = response.data.content;
+      } else if (Array.isArray(response.data)) {
+        // Fallback: direct array format
+        facilitiesList = response.data;
+      } else if (response.data && Array.isArray(response.data.items)) {
+        // Fallback: items array format
+        facilitiesList = response.data.items;
+      }
+      
+      setFacilities(facilitiesList || []);
     } catch (err) {
       console.error("Failed to fetch facilities:", err);
+      setFacilities([]); // Ensure facilities is always an array
     }
   };
 
@@ -355,29 +413,49 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) {
-      setFile(null);
+    const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
+    if (selectedFiles.length === 0) {
+      setFiles([]);
       setFileError(null);
       return;
     }
 
-    // Validate file size (5MB max)
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setFileError("File size must not exceed 5MB");
-      setFile(null);
+    // Check max 3 attachments
+    if (selectedFiles.length > 3) {
+      setFileError("Maximum 3 attachments allowed. You selected " + selectedFiles.length);
+      setFiles([]);
       return;
     }
 
-    // Validate MIME type
-    const validMimes = ["image/jpeg", "image/png", "image/gif", "application/pdf"];
-    if (!validMimes.includes(selectedFile.type)) {
-      setFileError("Only images (JPEG, PNG, GIF) and PDF files are allowed");
-      setFile(null);
+    // Validate each file
+    const validMimes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+    const validFiles = [];
+    let hasErrors = false;
+
+    for (const selectedFile of selectedFiles) {
+      // Validate file size (5MB max)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setFileError(`File "${selectedFile.name}" exceeds 5MB limit`);
+        hasErrors = true;
+        break;
+      }
+
+      // Validate MIME type
+      if (!validMimes.includes(selectedFile.type)) {
+        setFileError(`File "${selectedFile.name}": MIME type not allowed. Only images (JPEG, PNG, GIF, WebP) and PDF are allowed`);
+        hasErrors = true;
+        break;
+      }
+
+      validFiles.push(selectedFile);
+    }
+
+    if (hasErrors) {
+      setFiles([]);
       return;
     }
 
-    setFile(selectedFile);
+    setFiles(validFiles);
     setFileError(null);
   };
 
@@ -389,9 +467,9 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile) {
-      handleFileChange({ target: { files: [droppedFile] } });
+    const droppedFiles = e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+    if (droppedFiles.length > 0) {
+      handleFileChange({ target: { files: droppedFiles } });
     }
   };
 
@@ -426,41 +504,71 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
     try {
       setLoading(true);
 
-      // Create FormData for multipart/form-data submission
-      const submitData = new FormData();
-      submitData.append("facilityId", formData.facilityId);
-      submitData.append("category", formData.category);
-      submitData.append("priority", formData.priority);
-      submitData.append("title", formData.title);
-      submitData.append("description", formData.description);
+      // Step 1: Create ticket with JSON request
+      const ticketRequest = {
+        facilityId: formData.facilityId,
+        category: formData.category,
+        priority: formData.priority,
+        title: formData.title,
+        description: formData.description,
+      };
 
-      if (file) {
-        submitData.append("file", file);
+      const ticketResponse = await apiClient.post("/tickets", ticketRequest);
+      const newTicketId = ticketResponse.data.id;
+
+      // Step 2: Upload files separately if provided
+      if (files && files.length > 0) {
+        for (const file of files) {
+          try {
+            const fileFormData = new FormData();
+            fileFormData.append("file", file);
+
+            await apiClient.post(`/tickets/${newTicketId}/attachments`, fileFormData, {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            });
+          } catch (fileErr) {
+            console.warn(`File upload failed for "${file.name}" but ticket was created:`, fileErr);
+            // Don't fail the whole operation if file upload fails
+            // The ticket was created successfully
+          }
+        }
       }
-
-      // Create ticket
-      await apiClient.post("/tickets", submitData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
 
       // Reset form and notify parent
       setFormData({
         facilityId: "",
-        category: "BUG",
+        category: "ELECTRICAL",
         priority: "MEDIUM",
         title: "",
         description: "",
       });
-      setFile(null);
+      setFiles([]);
       onTicketCreated();
     } catch (err) {
       console.error("Failed to create ticket:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to create ticket. Please try again.",
-      );
+      console.error("Error response:", err.response?.data);
+      
+      // Construct detailed error message from various possible response formats
+      let errorMessage = "Failed to create ticket. Please try again.";
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.violations) {
+        // Validation errors from backend
+        errorMessage = err.response.data.violations
+          .map((v) => `${v.propertyPath}: ${v.message}`)
+          .join("; ");
+      } else if (err.response?.data?.errors) {
+        errorMessage = err.response.data.errors
+          .map((e) => `${e.field}: ${e.message}`)
+          .join("; ");
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -581,7 +689,7 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
       {/* File Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Attachment (Optional)
+          Attachments (Optional, Max 3, 5MB each)
         </label>
         <div
           onDragOver={handleDragOver}
@@ -591,21 +699,42 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
           <input
             type="file"
             onChange={handleFileChange}
-            accept="image/*,.pdf"
+            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+            multiple
             className="hidden"
             id="file-input"
           />
           <label htmlFor="file-input" className="cursor-pointer">
             <p className="text-gray-600">
-              {file ? file.name : "Drag & drop or click to select file"}
+              {files.length > 0 ? `${files.length} file(s) selected` : "Drag & drop or click to select files"}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Max 5MB | PNG, JPG, GIF, PDF
+              Max 3 files, 5MB each | PNG, JPG, GIF, WebP, PDF
             </p>
           </label>
         </div>
         {fileError && (
           <p className="text-xs text-red-600 mt-2">{fileError}</p>
+        )}
+        {files.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm font-medium text-gray-700">Selected files:</p>
+            {files.map((f, idx) => (
+              <div key={idx} className="flex justify-between items-center bg-blue-50 p-2 rounded text-sm">
+                <span className="text-gray-700">{f.name} ({(f.size / 1024).toFixed(1)} KB)</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiles(files.filter((_, i) => i !== idx));
+                    setFileError(null);
+                  }}
+                  className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

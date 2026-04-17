@@ -1,16 +1,70 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { apiClient } from "../../services/apiClient";
 
 /**
  * CheckInComponent
  * Allows users to check in to approved bookings via QR code or manual entry.
+ * Enhanced with WiFi and GPS geofencing verification.
  */
-export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose }) {
+export default function CheckInComponent({
+  bookingId,
+  onCheckInSuccess,
+  onClose,
+}) {
   const [method, setMethod] = useState("QR"); // QR or MANUAL
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [geofencingData, setGeofencingData] = useState(null);
+  const [geofencingError, setGeofencingError] = useState(null);
   const qrInputRef = useRef(null);
+
+  /**
+   * Get user's current GPS coordinates (requires location permission).
+   * Returns: { latitude, longitude }
+   */
+  const detectGPS = async () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation API not supported"));
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          reject(error);
+        },
+        { timeout: 10000, enableHighAccuracy: true },
+      );
+    });
+  };
+
+  /**
+   * Collect geofencing data (GPS only - WiFi detection not available in browsers).
+   */
+  const collectGeofencingData = async () => {
+    try {
+      setGeofencingError(null);
+      const gps = await detectGPS();
+
+      setGeofencingData({
+        latitude: gps.latitude,
+        longitude: gps.longitude,
+      });
+
+      return gps;
+    } catch (err) {
+      const errorMsg = `GPS data collection failed: ${err.message}`;
+      console.error(errorMsg);
+      setGeofencingError(errorMsg);
+      return null;
+    }
+  };
 
   const handleCheckIn = async (checkInMethod) => {
     try {
@@ -18,11 +72,28 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
       setError(null);
       setSuccess(null);
 
+      // Collect GPS data only (WiFi detection not available in browsers)
+      const gps = await collectGeofencingData();
+      if (!gps) {
+        setError(
+          "Failed to collect GPS location. Please enable location services.",
+        );
+        return;
+      }
+
       const payload = {
         method: checkInMethod,
+        latitude: gps.latitude,
+        longitude: gps.longitude,
       };
 
-      await apiClient.post(`/v1/bookings/${bookingId}/check-in`, payload);
+      console.log("📤 Sending check-in request with GPS payload:", payload);
+
+      // Use geofencing-enabled endpoint
+      await apiClient.post(
+        `/v1/bookings/${bookingId}/check-in/with-geofencing`,
+        payload,
+      );
 
       setSuccess(`✅ Check-in successful! Your attendance has been recorded.`);
       setTimeout(() => {
@@ -32,10 +103,27 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
       }, 2000);
     } catch (err) {
       console.error("Check-in error:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to record check-in. Please try again or contact support.",
-      );
+
+      // Parse geofencing-specific errors
+      if (err.response?.data?.message) {
+        if (err.response.data.message.includes("GEOFENCE_GPS_OUT_OF_RANGE")) {
+          setError(
+            `❌ Location Out of Range\n` +
+              `You are too far from the facility.\n` +
+              `${err.response.data.message}`,
+          );
+        } else {
+          setError(
+            err.response?.data?.message ||
+              "Failed to record check-in. Please try again or contact support.",
+          );
+        }
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Failed to record check-in. Please try again or contact support.",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -49,6 +137,16 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
     }
   };
 
+  useEffect(() => {
+    // Request geofencing permissions on component mount
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => console.log("Location permission granted"),
+        () => console.warn("Location permission denied"),
+      );
+    }
+  }, []);
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
       <h2 className="text-2xl font-bold text-slate-900 mb-4">Check In</h2>
@@ -61,13 +159,29 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
 
       {error && (
         <div className="rounded-md bg-red-50 p-4 mb-4">
-          <p className="text-sm font-medium text-red-800">{error}</p>
+          <p className="text-sm font-medium text-red-800 whitespace-pre-line">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {geofencingData && (
+        <div className="rounded-md bg-blue-50 border border-blue-200 p-4 mb-4">
+          <p className="text-xs font-semibold text-blue-900 mb-2">
+            GPS Location Detected:
+          </p>
+          <p className="text-xs text-blue-800">
+            📍 GPS: {geofencingData.latitude?.toFixed(4)},{" "}
+            {geofencingData.longitude?.toFixed(4)}
+          </p>
         </div>
       )}
 
       {/* Method Selection */}
       <div className="space-y-3 mb-6">
-        <label className="block text-sm font-medium text-slate-700">Check-in Method</label>
+        <label className="block text-sm font-medium text-slate-700">
+          Check-in Method
+        </label>
         <div className="flex gap-2">
           <button
             type="button"
@@ -103,7 +217,8 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
             </div>
           </div>
           <p className="text-sm text-blue-900 font-medium mb-3">
-            Scan the QR code displayed in the facility or on your booking confirmation
+            Scan the QR code displayed in the facility or on your booking
+            confirmation
           </p>
           <input
             ref={qrInputRef}
@@ -119,7 +234,9 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
             disabled={loading}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            {loading ? "Recording..." : "Manual QR Check-in"}
+            {loading
+              ? "Verifying Location & Recording..."
+              : "Manual QR Check-in"}
           </button>
         </div>
       )}
@@ -128,7 +245,8 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
       {method === "MANUAL" && (
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
           <p className="text-sm text-slate-600 mb-4">
-            Your check-in will be manually recorded by staff. Confirm to proceed.
+            Your check-in will be manually recorded by staff. Confirm to
+            proceed.
           </p>
           <button
             type="button"
@@ -136,7 +254,9 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
             disabled={loading}
             className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            {loading ? "Recording..." : "Confirm Manual Check-in"}
+            {loading
+              ? "Verifying Location & Recording..."
+              : "Confirm Manual Check-in"}
           </button>
         </div>
       )}
@@ -144,20 +264,20 @@ export default function CheckInComponent({ bookingId, onCheckInSuccess, onClose 
       {/* Info Box */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
         <p className="text-xs text-amber-800">
-          <span className="font-semibold">ℹ️ Note:</span> Check-in must be completed within the
-          booking time window. Late check-ins may be marked as no-shows.
+          <span className="font-semibold">ℹ️ Geofencing:</span> Your GPS
+          location is verified to ensure you're at the facility. Location
+          services must be enabled.
         </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <button
-          onClick={onClose}
-          className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 transition-colors font-medium"
-        >
-          Cancel
-        </button>
-      </div>
+      {/* Close button */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors font-medium"
+      >
+        Close
+      </button>
     </div>
   );
 }

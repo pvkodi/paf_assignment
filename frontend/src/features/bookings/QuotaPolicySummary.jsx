@@ -82,7 +82,7 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-sm font-semibold text-blue-900 mb-2">
-          📊 Your Quota Status ({quota.effectiveRole || userRole})
+          Your Quota Status ({quota.effectiveRole || userRole})
         </p>
         <div className="space-y-1 text-xs text-blue-800">
           <p>
@@ -109,7 +109,7 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-slate-900 mb-1">📊 Quota Policy Summary</h3>
+        <h3 className="text-lg font-bold text-slate-900 mb-1">Quota Policy Summary</h3>
         <p className="text-sm text-slate-600">Role: <span className="font-semibold">{quota.effectiveRole || userRole}</span></p>
       </div>
 

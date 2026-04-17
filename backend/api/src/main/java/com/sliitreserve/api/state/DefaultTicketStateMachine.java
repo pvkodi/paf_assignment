@@ -19,12 +19,14 @@ import java.util.Set;
  *
  * <p><b>Valid Transitions</b>:
  * <ul>
- *   <li>OPEN → {IN_PROGRESS, REJECTED}
- *   <li>IN_PROGRESS → {RESOLVED, REJECTED}
+ *   <li>OPEN → {IN_PROGRESS, RESOLVED, CLOSED, REJECTED}
+ *   <li>IN_PROGRESS → {RESOLVED, CLOSED, REJECTED}
  *   <li>RESOLVED → {CLOSED}
  *   <li>CLOSED → {} (terminal, no transitions)
  *   <li>REJECTED → {} (terminal, no transitions)
  * </ul>
+ *
+ * <p><b>Admin Bypass</b>: Admins can skip intermediate steps (e.g., OPEN → CLOSED).
  *
  * <p><b>Idempotent Behavior</b>: Transitions to the same state are allowed (no-op).
  *
@@ -49,16 +51,21 @@ public class DefaultTicketStateMachine implements TicketStateMachine {
     Map<TicketStatus, Set<TicketStatus>> matrix = new HashMap<>();
 
     // OPEN state: can transition to IN_PROGRESS or REJECTED
+    // Admin bypass: also allow RESOLVED, CLOSED
     Set<TicketStatus> openTransitions = new HashSet<>();
     openTransitions.add(TicketStatus.OPEN); // Idempotent
     openTransitions.add(TicketStatus.IN_PROGRESS);
+    openTransitions.add(TicketStatus.RESOLVED); // Admin bypass
+    openTransitions.add(TicketStatus.CLOSED); // Admin bypass
     openTransitions.add(TicketStatus.REJECTED);
     matrix.put(TicketStatus.OPEN, openTransitions);
 
     // IN_PROGRESS state: can transition to RESOLVED or REJECTED
+    // Admin bypass: also allow CLOSED
     Set<TicketStatus> inProgressTransitions = new HashSet<>();
     inProgressTransitions.add(TicketStatus.IN_PROGRESS); // Idempotent
     inProgressTransitions.add(TicketStatus.RESOLVED);
+    inProgressTransitions.add(TicketStatus.CLOSED); // Admin bypass
     inProgressTransitions.add(TicketStatus.REJECTED);
     matrix.put(TicketStatus.IN_PROGRESS, inProgressTransitions);
 
@@ -141,8 +148,7 @@ public class DefaultTicketStateMachine implements TicketStateMachine {
     // Log the transition
     log.debug("Transitioning ticket {} from {} to {}", ticket.getId(), currentStatus, targetStatus);
 
-    // The actual status update is the caller's responsibility,
-    // but we can provide additional business logic here if needed.
-    // For now, the state machine is purely a validator.
+    // Update the ticket status
+    ticket.setStatus(targetStatus);
   }
 }

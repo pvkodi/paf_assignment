@@ -4,12 +4,27 @@ import { apiClient } from "../../services/apiClient";
 import { useAuth } from "../../contexts/AuthContext";
 import TicketAssignmentDialog from "./TicketAssignmentDialog";
 import TicketStatusUpdate from "./TicketStatusUpdate";
+import { TicketEditModal } from "./TicketEditModal";
 
 /**
  * Ticket Detail View Component
  * Displays full ticket information with comments, attachments, and escalation history
  * Implements US4 requirement: Ticket detail view with comments, attachments, and SLA display
  */
+
+// Utility function to shorten UUID
+const shortenTicketId = (fullId) => {
+  if (!fullId) return "";
+  return fullId.substring(0, 8);
+};
+
+// Utility function to copy to clipboard
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    // Could add a toast notification here
+    console.log("Copied to clipboard:", text);
+  });
+};
 
 export function TicketDetailView() {
   const { id } = useParams();
@@ -19,13 +34,18 @@ export function TicketDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
   const fetchTicket = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log("fetchTicket called - fetching ticket data");
       const response = await apiClient.get(`/tickets/${id}`);
+      console.log("Ticket data fetched:", response.data);
+      console.log("Attachments count:", response.data?.attachments?.length);
       setTicket(response.data);
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
@@ -42,16 +62,46 @@ export function TicketDetailView() {
     fetchTicket();
   }, [fetchTicket]);
 
+  const handleDeleteTicket = async () => {
+    if (!window.confirm("Are you sure you want to delete this ticket? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      await apiClient.delete(`/tickets/${id}`);
+      navigate("/tickets");
+    } catch (err) {
+      console.error("Failed to delete ticket:", err);
+      alert(err.response?.data?.message || "Failed to delete ticket. Please try again.");
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleTicketUpdated = (updatedTicket) => {
+    setTicket(updatedTicket);
+  };
+
   const isStaff = user?.roles?.some((role) =>
-    ["FACILITY_MANAGER", "ADMIN"].includes(role),
+    ["FACILITY_MANAGER", "ADMIN", "TECHNICIAN"].includes(role),
   );
 
   const canAssign =
-    isStaff &&
-    user?.facilityId === ticket?.facilityId;
+    user?.roles?.includes("ADMIN") ||
+    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId);
 
   const canUpdateStatus =
-    isStaff && user?.facilityId === ticket?.facilityId;
+    user?.roles?.includes("ADMIN") ||
+    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId) ||
+    (user?.roles?.includes("TECHNICIAN") && user?.id === ticket?.assignedTechnicianId);
+
+  const canEdit =
+    ticket?.status === "OPEN" &&
+    (user?.id === ticket?.createdById || user?.roles?.includes("ADMIN"));
+
+  const canDelete =
+    ticket?.status === "OPEN" &&
+    (user?.id === ticket?.createdById || user?.roles?.includes("ADMIN"));
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -68,7 +118,6 @@ export function TicketDetailView() {
     const colors = {
       OPEN: "bg-blue-100 text-blue-800",
       IN_PROGRESS: "bg-purple-100 text-purple-800",
-      ON_HOLD: "bg-orange-100 text-orange-800",
       RESOLVED: "bg-green-100 text-green-800",
       CLOSED: "bg-gray-100 text-gray-800",
       REJECTED: "bg-red-100 text-red-800",
@@ -152,10 +201,22 @@ export function TicketDetailView() {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                #{ticket.id} - {ticket.title}
-              </h1>
-              <p className="text-gray-600 mt-2">{ticket.description}</p>
+              <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  #{shortenTicketId(ticket.id)}
+                </h1>
+                <button
+                  onClick={() => copyToClipboard(ticket.id)}
+                  title="Copy full ticket ID"
+                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-700 mb-2">{ticket.title}</h2>
+              <p className="text-gray-600">{ticket.description}</p>
             </div>
             <div className="flex gap-2">
               {canAssign && (
@@ -164,6 +225,29 @@ export function TicketDetailView() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
                 >
                   Assign Technician
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={handleDeleteTicket}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {deleteLoading ? "Deleting..." : "Delete"}
                 </button>
               )}
             </div>
@@ -181,6 +265,16 @@ export function TicketDetailView() {
               {ticket.category}
             </span>
           </div>
+
+          {/* Rejection Reason (if ticket was rejected) */}
+          {ticket.status === "REJECTED" && (
+            <div className="mt-4 p-4 rounded-lg border border-red-200 bg-red-50">
+              <h3 className="text-sm font-semibold text-red-800 mb-2">Rejection Reason</h3>
+              <p className="text-red-700 text-sm">
+                {ticket.rejectionReason || "No reason provided"}
+              </p>
+            </div>
+          )}
 
           {/* SLA Deadline (if available) */}
           {ticket.slaDeadline && (
@@ -236,7 +330,7 @@ export function TicketDetailView() {
                       <label className="text-sm font-medium text-gray-600">
                         Created By
                       </label>
-                      <p className="text-gray-900 mt-1">{ticket.creatorName}</p>
+                      <p className="text-gray-900 mt-1">{ticket.createdByName}</p>
                     </div>
                   </div>
 
@@ -285,7 +379,9 @@ export function TicketDetailView() {
               {activeTab === "attachments" && (
                 <AttachmentsSection
                   ticketId={ticket.id}
+                  ticket={ticket}
                   attachments={ticket.attachments}
+                  user={user}
                   isAdmin={user?.roles?.includes("ADMIN")}
                   onAttachmentDeleted={fetchTicket}
                 />
@@ -301,20 +397,23 @@ export function TicketDetailView() {
               Escalation History
             </h3>
             {ticket.escalationHistory && ticket.escalationHistory.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {ticket.escalationHistory.map((escalation, index) => (
                   <div
                     key={index}
-                    className="pb-3 border-b border-gray-200 last:border-b-0"
+                    className={`pb-4 border-b border-gray-200 last:border-b-0 ${getEscalationColor(escalation.toLevel)}`}
                   >
-                    <p className="text-sm font-medium text-gray-900">
-                      Level {escalation.escalationLevel}
+                    <p className="text-sm font-semibold text-gray-900 mb-2">
+                      {escalation.fromLevel} → {escalation.toLevel}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mb-2">
                       {formatDate(escalation.escalatedAt)}
                     </p>
-                    <p className="text-xs text-gray-700 mt-2">
-                      {escalation.escalationReason}
+                    <p className="text-xs text-gray-700 mb-2">
+                      <span className="font-medium">By:</span> {escalation.escalatedByName}
+                    </p>
+                    <p className="text-xs text-gray-700">
+                      <span className="font-medium">Reason:</span> {escalation.reason}
                     </p>
                   </div>
                 ))}
@@ -338,6 +437,14 @@ export function TicketDetailView() {
           onClose={() => setShowAssignmentDialog(false)}
         />
       )}
+
+      {/* Edit Modal */}
+      <TicketEditModal
+        ticket={ticket}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onTicketUpdated={handleTicketUpdated}
+      />
     </div>
   );
 }
@@ -355,6 +462,13 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
   const [error, setError] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
+
+  // Helper to check user roles (handles both string and array formats)
+  const hasRole = (role) => {
+    if (!user?.roles) return false;
+    const userRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
+    return userRoles.includes(role);
+  };
 
   const fetchComments = useCallback(async () => {
     try {
@@ -381,8 +495,8 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
       return;
     }
 
-    if (newComment.length < 1 || newComment.length > 5000) {
-      setError("Comment must be between 1 and 5000 characters");
+    if (newComment.length < 5 || newComment.length > 2000) {
+      setError("Comment must be between 5 and 2000 characters");
       return;
     }
 
@@ -461,7 +575,7 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Add a comment... (1-5000 characters)"
+          placeholder="Add a comment... (5-2000 characters)"
           rows="3"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
@@ -550,27 +664,50 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
               ) : (
                 <>
                   <p className="text-gray-700 text-sm">{comment.content}</p>
-                  {(user?.id === comment.authorId ||
-                    user?.roles?.includes("ADMIN")) && (
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          setEditingCommentId(comment.id);
-                          setEditingContent(comment.content);
-                        }}
-                        className="text-xs text-indigo-600 hover:text-indigo-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDeleteComment(comment.id)}
-                        className="text-xs text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    // Compare IDs as strings for consistency
+                    const userIdStr = user?.id?.toString();
+                    const authorIdStr = comment.authorId?.toString();
+                    const isAuthor = userIdStr && authorIdStr && userIdStr === authorIdStr;
+                    const isAdmin = hasRole("ADMIN");
+                    const isTechnician = hasRole("TECHNICIAN");
+                    
+                    // Check if comment author is admin
+                    const authorRoles = comment.authorRoles || [];
+                    const authorIsAdmin = authorRoles.includes("ADMIN");
+                    
+                    const canEdit = isAuthor; // Only author can edit
+                    // Technician cannot delete admin comments
+                    const canDelete = isAuthor || isAdmin || (isTechnician && !authorIsAdmin);
+                    
+                    if (canEdit || canDelete) {
+                      return (
+                        <div className="flex gap-2 mt-3">
+                          {canEdit && (
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(comment.id);
+                                setEditingContent(comment.content);
+                              }}
+                              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 transition"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() =>
+                                handleDeleteComment(comment.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </>
               )}
             </div>
@@ -584,10 +721,19 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
 /**
  * Attachments Section Component
  */
-function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDeleted }) {
+function AttachmentsSection({ ticketId, ticket, attachments, user, isAdmin, onAttachmentDeleted }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [deleting, setDeleting] = useState(null); // Track which attachment is being deleted
   const [file, setFile] = useState(null);
+  const [attachmentType, setAttachmentType] = useState("PROBLEM"); // PROBLEM or SOLUTION
+
+  // Helper to check user roles (handles both string and array formats)
+  const hasRole = (role) => {
+    if (!user?.roles) return false;
+    const userRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
+    return userRoles.includes(role);
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
@@ -619,6 +765,7 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
       setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("type", attachmentType); // Send attachment type
 
       await apiClient.post(`/tickets/${ticketId}/attachments`, formData, {
         headers: {
@@ -627,6 +774,7 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
       });
 
       setFile(null);
+      setAttachmentType("PROBLEM"); // Reset to default
       onAttachmentDeleted();
     } catch (err) {
       console.error("Failed to upload attachment:", err);
@@ -645,10 +793,19 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
     }
 
     try {
-      await apiClient.delete(`/tickets/${ticketId}/attachments/${attachmentId}`);
+      setDeleting(attachmentId);
+      console.log("Starting delete for attachment:", attachmentId);
+      const response = await apiClient.delete(`/tickets/${ticketId}/attachments/${attachmentId}`);
+      console.log("Delete response:", response);
+      console.log("Calling onAttachmentDeleted callback");
       onAttachmentDeleted();
+      console.log("onAttachmentDeleted callback completed");
     } catch (err) {
       console.error("Failed to delete attachment:", err);
+      console.error("Error response:", err.response);
+      alert(`Failed to delete attachment: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -672,15 +829,31 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
           />
 
           {file && (
-            <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <span className="text-sm text-gray-700">{file.name}</span>
-              <button
-                onClick={handleUpload}
-                disabled={uploading}
-                className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {uploading ? "Uploading..." : "Upload"}
-              </button>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attachment Type
+                </label>
+                <select
+                  value={attachmentType}
+                  onChange={(e) => setAttachmentType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                  <option value="PROBLEM">Problem/Issue Photo</option>
+                  <option value="SOLUTION">Solution/Repair Photo</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm text-gray-700">{file.name}</span>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Upload"}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -712,9 +885,22 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
                       FILE
                     </div>
                   )}
-                  <p className="font-medium text-gray-900 text-sm">
-                    {attachment.originalFilename}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium text-gray-900 text-sm">
+                      {attachment.originalFilename}
+                    </p>
+                    {attachment.type && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          attachment.type === "PROBLEM"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {attachment.type === "PROBLEM" ? " Issue" : " Solution"}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600">
                     {attachment.fileSize} bytes | Checksum: {attachment.checksumHash?.slice(0, 8)}...
                   </p>
@@ -728,13 +914,20 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
                   >
                     Download
                   </a>
-                  {isAdmin && (
+                  {(isAdmin || 
+                    attachment.uploadedById === user?.id || 
+                    (hasRole("TECHNICIAN") && ticket?.assignedTechnicianId === user?.id)) && (
                     <button
                       onClick={() =>
                         handleDelete(attachment.id)}
-                      className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                      disabled={deleting === attachment.id}
+                      className={`px-3 py-1 bg-red-600 text-white rounded text-sm ${
+                        deleting === attachment.id
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-red-700"
+                      }`}
                     >
-                      Delete
+                      {deleting === attachment.id ? "Deleting..." : "Delete"}
                     </button>
                   )}
                 </div>

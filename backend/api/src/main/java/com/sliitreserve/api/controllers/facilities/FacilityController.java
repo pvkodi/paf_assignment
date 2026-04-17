@@ -7,8 +7,11 @@ import com.sliitreserve.api.dto.facility.FacilitySuggestionRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityUtilizationDTO;
 import com.sliitreserve.api.dto.facility.UnderutilizedFacilityDTO;
 import com.sliitreserve.api.dto.facility.TimetableAvailabilityDTO;
+import com.sliitreserve.api.dto.auth.UserProfileResponse;
+import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.facility.FacilityOptimizationService;
 import com.sliitreserve.api.services.facility.FacilityService;
 import com.sliitreserve.api.services.facility.FacilityTimetableService;
@@ -37,6 +40,7 @@ public class FacilityController {
     private final FacilityService facilityService;
     private final FacilityOptimizationService facilityOptimizationService;
     private final FacilityTimetableService facilityTimetableService;
+    private final UserRepository userRepository;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -69,6 +73,28 @@ public class FacilityController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<FacilityResponseDTO> getFacilityById(@PathVariable UUID id) {
         return ResponseEntity.ok(facilityService.getFacilityById(id));
+    }
+
+    @GetMapping("/{id}/technicians")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<UserProfileResponse>> getTechniciansByFacility(@PathVariable UUID id) {
+        // Verify facility exists
+        facilityService.getFacilityById(id);
+        
+        // Fetch all technicians and convert to response DTOs
+        List<UserProfileResponse> technicians = userRepository
+                .findByRoleAndActiveTrue(Role.TECHNICIAN)
+                .stream()
+                .map(user -> new UserProfileResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getDisplayName(),
+                        user.getRoles(),
+                        user.isSuspended()
+                ))
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(technicians);
     }
 
     @PostMapping

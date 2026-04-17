@@ -87,6 +87,26 @@ public class Facility {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * WiFi geofencing fields for location-based check-in verification (FR-020 + geofencing enhancement)
+     */
+    
+    @Column(name = "wifi_ssid", length = 64)
+    private String wifiSSID;
+
+    @Column(name = "wifi_mac_address", length = 17)
+    private String wifiMacAddress;
+
+    @Column(name = "facility_latitude")
+    private Double latitude;
+
+    @Column(name = "facility_longitude")
+    private Double longitude;
+
+    @Column(name = "geofence_radius_meters")
+    @Builder.Default
+    private Integer geofenceRadiusMeters = 100;
+
     @PrePersist
     protected void onCreate() {
         if (status == null) {

@@ -59,13 +59,13 @@ public class FileStorageConfig implements WebMvcConfigurer {
     /**
      * Allowed file extensions (comma-separated)
      */
-    @Value("${app.file-storage.allowed-extensions:jpg,jpeg,png,gif,webp}")
+    @Value("${app.file-storage.allowed-extensions:jpg,jpeg,png,gif,webp,pdf}")
     private String allowedExtensions;
 
     /**
      * Allowed MIME types (comma-separated)
      */
-    @Value("${app.file-storage.allowed-mime-types:image/jpeg,image/png,image/gif,image/webp}")
+    @Value("${app.file-storage.allowed-mime-types:image/jpeg,image/png,image/gif,image/webp,application/pdf}")
     private String allowedMimeTypes;
 
     /**

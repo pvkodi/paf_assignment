@@ -45,9 +45,10 @@ public class BookingController {
         UUID bookedFor = requestedBy;
 
         if (request.getBookedForUserId() != null && !request.getBookedForUserId().equals(requestedBy)) {
-            boolean isAdmin = currentUser.getRoles().contains(Role.ADMIN);
-            if (!isAdmin) {
-                throw new ForbiddenException("Only ADMIN users can book on behalf of others");
+            boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                               currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+            if (!isAdminOrFacilityManager) {
+                throw new ForbiddenException("Only ADMIN and FACILITY_MANAGER users can book on behalf of others");
             }
             bookedFor = request.getBookedForUserId();
         }
@@ -184,6 +185,43 @@ public class BookingController {
     }
 
     /**
+     * Cancel an approved booking.
+     * ADMIN and FACILITY_MANAGER can cancel any booking.
+     * Students (USER) can only cancel their own bookings.
+     */
+    @PostMapping("/{bookingId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BookingResponseDTO> cancelBooking(
+            @PathVariable UUID bookingId,
+            @RequestParam(required = false) String note,
+            @RequestParam(required = false) Long version,
+            Authentication authentication) {
+
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        Booking booking = bookingService.getBooking(bookingId);
+        
+        // Check authorization: ADMIN/FACILITY_MANAGER can cancel any booking, USER can only cancel their own
+        boolean isAdminOrFacilityManager = currentUser.getRoles().contains(Role.ADMIN) || 
+                                           currentUser.getRoles().contains(Role.FACILITY_MANAGER);
+        boolean isOwnBooking = booking.getRequestedBy().getId().equals(currentUser.getId()) || 
+                               booking.getBookedFor().getId().equals(currentUser.getId());
+        
+        if (!isAdminOrFacilityManager && !isOwnBooking) {
+            throw new ForbiddenException("You can only cancel your own bookings");
+        }
+        
+        Long expectedVersion = version != null ? version : booking.getVersion();
+        
+        Booking cancelledBooking = bookingService.cancelBooking(bookingId, expectedVersion, note);
+        
+        BookingResponseDTO response = bookingMapper.toResponseDTO(cancelledBooking);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Get available timeslots for a facility on a specific date.
      * Used by booking form to show available/booked times visually.
      * 
@@ -218,7 +256,7 @@ public class BookingController {
      */
     @GetMapping("/admin/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'FACILITY_MANAGER')")
-    public ResponseEntity<java.util.List<BookingResponseDTO>> getAdminBookings(
+    public ResponseEntity<java.util.List<BookingDetailedResponseDTO>> getAdminBookings(
             @RequestParam(required = false) UUID facilityId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String from,
@@ -246,8 +284,8 @@ public class BookingController {
             }
 
             java.util.List<Booking> bookings = bookingService.getAdminBookings(facilityId, statuses, startDate, endDate);
-            java.util.List<BookingResponseDTO> response = bookings.stream()
-                    .map(bookingMapper::toResponseDTO)
+            java.util.List<BookingDetailedResponseDTO> response = bookings.stream()
+                    .map(bookingMapper::toDetailedResponseDTO)
                     .toList();
 
             return ResponseEntity.ok(response);

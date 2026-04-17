@@ -6,8 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.sliitreserve.api.entities.ticket.TicketCommentVisibility;
+import com.sliitreserve.api.entities.auth.Role;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -34,6 +36,7 @@ public class TicketCommentResponseDTO {
 
   private UUID authorId;
   private String authorName;
+  private List<Role> authorRoles;
 
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;

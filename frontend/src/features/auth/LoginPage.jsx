@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 /**
@@ -7,10 +7,14 @@ import { useAuth } from "../../contexts/AuthContext";
  * Handles both Google OAuth and email/password login
  * Implements FR-001: OAuth authentication via Google
  * Implements email/password authentication
+ * Supports redirect parameter for post-login navigation (e.g., QR check-in flow)
  */
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
   const {
     loginWithEmailPassword,
     registerWithEmailPassword,
@@ -93,7 +97,7 @@ export function LoginPage() {
     try {
       setIsProcessing(true);
       await loginWithEmailPassword(email, password);
-      navigate("/dashboard");
+      navigate(redirectUrl);
     } catch (err) {
       setError(
         err.message || err.code === "INVALID_CREDENTIALS"
@@ -135,7 +139,7 @@ export function LoginPage() {
         password,
         confirmPassword,
       );
-      navigate("/dashboard");
+      navigate(redirectUrl);
     } catch (err) {
       setError(
         err.message ||

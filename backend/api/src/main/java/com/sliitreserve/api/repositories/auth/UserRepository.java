@@ -1,5 +1,6 @@
 package com.sliitreserve.api.repositories.auth;
 
+import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,4 +29,28 @@ public interface UserRepository extends com.sliitreserve.api.repositories.BaseRe
      */
     @Query("SELECT u FROM User u WHERE u.suspendedUntil IS NOT NULL AND u.suspendedUntil < :cutoff")
     List<User> findBySuspendedUntilNotNullAndSuspendedUntilBefore(@Param("cutoff") LocalDateTime cutoffDateTime);
+
+    /**
+     * Find all active users with a specific role.
+     * Queries the user_roles element collection to find users with the given role.
+     *
+     * @param role The role to search for (e.g., TECHNICIAN, FACILITY_MANAGER, ADMIN)
+     * @return List of active users with the specified role
+     */
+    @Query("SELECT u FROM User u WHERE :role MEMBER OF u.roles AND u.active = true")
+    List<User> findByRoleAndActiveTrue(@Param("role") Role role);
+
+    /**
+     * Search users by email or display name (case-insensitive).
+     * Used by facility managers and admins to find users when booking for someone else.
+     * 
+     * @param emailPattern Email search pattern (will be wrapped with wildcards)
+     * @param displayNamePattern Display name search pattern (will be wrapped with wildcards)
+     * @return List of matching users
+     */
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :emailPattern, '%')) " +
+           "OR LOWER(u.displayName) LIKE LOWER(CONCAT('%', :displayNamePattern, '%')) " +
+           "ORDER BY u.displayName ASC, u.email ASC")
+    List<User> searchByEmailOrDisplayName(@Param("emailPattern") String emailPattern, 
+                                          @Param("displayNamePattern") String displayNamePattern);
 }

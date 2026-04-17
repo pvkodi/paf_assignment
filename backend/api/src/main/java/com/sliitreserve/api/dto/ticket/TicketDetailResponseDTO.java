@@ -45,6 +45,7 @@ public class TicketDetailResponseDTO {
   private TicketCategory category;
   private TicketPriority priority;
   private TicketStatus status;
+  private String rejectionReason; // Reason if ticket was rejected
 
   private Integer escalationLevel;
   private LocalDateTime slaDueAt;

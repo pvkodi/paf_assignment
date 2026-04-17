@@ -197,7 +197,10 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
      * @param endDate End of date range
      * @return List of bookings sorted by date and time
      */
-    @Query("SELECT b FROM Booking b " +
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "LEFT JOIN FETCH b.facility f " +
+           "LEFT JOIN FETCH b.requestedBy u1 " +
+           "LEFT JOIN FETCH b.bookedFor u2 " +
            "WHERE (:facilityId IS NULL OR b.facility.id = :facilityId) " +
            "AND b.status IN (:statusList) " +
            "AND b.bookingDate >= :startDate " +

@@ -3,52 +3,62 @@ import { apiClient } from "../../services/apiClient";
 
 /**
  * AdminBookForUserSelector Component
- * Allows admin users to select which user to book on behalf of.
+ * Allows admin and facility manager users to select which user to book on behalf of.
  * Only appears for ADMIN and FACILITY_MANAGER roles.
  */
 export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
-  const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   const canUseSelector = userRole && ["ADMIN", "FACILITY_MANAGER"].includes(userRole);
 
+  // Perform search when search term changes
   useEffect(() => {
-    if (canUseSelector && showDropdown) {
-      fetchUsers();
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
     }
-  }, [showDropdown, canUseSelector]);
 
-  useEffect(() => {
-    // Filter users based on search term
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      const filtered = users.filter(
-        (user) =>
-          user.displayName?.toLowerCase().includes(term) ||
-          user.email?.toLowerCase().includes(term),
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
+    if (searchTerm.trim().length === 0) {
+      setFilteredUsers([]);
+      return;
     }
-  }, [searchTerm, users]);
 
-  const fetchUsers = async () => {
+    // Debounce search requests (500ms)
+    const timeout = setTimeout(() => {
+      searchUsers(searchTerm);
+    }, 500);
+
+    setSearchTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [searchTerm]);
+
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setFilteredUsers([]);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get("/v1/users");
-      setUsers(Array.isArray(response.data) ? response.data : []);
+      const response = await apiClient.get("/v1/users/search", {
+        params: { query: query.trim() }
+      });
+      console.log("Search response:", response.data);
+      console.log("First user:", response.data?.[0]);
       setFilteredUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      console.error("Failed to fetch users:", err);
-      setError("Failed to load users. Please try again.");
-      setUsers([]);
+      console.error("Failed to search users:", err);
+      setError("Failed to search users. Please try again.");
       setFilteredUsers([]);
     } finally {
       setLoading(false);
@@ -59,6 +69,7 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
     setSelectedUserId(user.id);
     setSearchTerm(user.displayName || user.email);
     setShowDropdown(false);
+    setFilteredUsers([]);
     if (onUserSelect) {
       onUserSelect(user.id);
     }
@@ -68,6 +79,7 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
     setSelectedUserId("");
     setSearchTerm("");
     setShowDropdown(false);
+    setFilteredUsers([]);
     if (onUserSelect) {
       onUserSelect(null);
     }
@@ -81,10 +93,10 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <label className="block text-sm font-medium text-slate-700">
-          Book on behalf of (Optional - Admin only)
+          Book on behalf of (Optional - Admin & Facility Manager only)
         </label>
         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
-          ADMIN ONLY
+          {userRole}
         </span>
       </div>
 
@@ -96,23 +108,33 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setShowDropdown(true);
+                if (e.target.value.trim()) {
+                  setShowDropdown(true);
+                }
               }}
-              onFocus={() => setShowDropdown(true)}
+              onFocus={() => {
+                if (searchTerm.trim()) {
+                  setShowDropdown(true);
+                }
+              }}
+              onBlur={() => {
+                // Delay hiding dropdown to allow click on user to register
+                setTimeout(() => setShowDropdown(false), 200);
+              }}
               placeholder="Search by name or email..."
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
 
             {/* Dropdown */}
-            {showDropdown && (
+            {showDropdown && searchTerm.trim() && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
                 {loading ? (
-                  <div className="p-3 text-sm text-slate-600">Loading users...</div>
+                  <div className="p-3 text-sm text-slate-600">Searching users...</div>
                 ) : error ? (
                   <div className="p-3 text-sm text-red-600">{error}</div>
                 ) : filteredUsers.length === 0 ? (
                   <div className="p-3 text-sm text-slate-600">
-                    {searchTerm ? "No users found" : "No users available"}
+                    No users found matching "{searchTerm}"
                   </div>
                 ) : (
                   <div>
@@ -125,7 +147,7 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
                       >
                         <div>
                           <p className="text-sm font-medium text-slate-900">
-                            {user.displayName || "Unknown"}
+                            {(user.displayName && user.displayName.trim()) ? user.displayName : (user.email || "Unknown")}
                           </p>
                           <p className="text-xs text-slate-600">{user.email}</p>
                         </div>

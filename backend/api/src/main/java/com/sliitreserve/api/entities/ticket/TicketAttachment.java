@@ -115,6 +115,10 @@ public class TicketAttachment {
   @Column(name = "checksum_hash", nullable = false, length = 64)
   private String checksumHash;
 
+  @Column(name = "type", nullable = false, length = 50)
+  @Builder.Default
+  private String type = "PROBLEM"; // PROBLEM or SOLUTION
+
   @CreationTimestamp
   @Column(name = "uploaded_at", nullable = false, updatable = false)
   private LocalDateTime uploadedAt;

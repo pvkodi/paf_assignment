@@ -134,17 +134,27 @@ public class LocalFileStorageService {
             Files.copy(file.getInputStream(), originalPath);
             log.info("Stored original file at: {}", originalPath.toAbsolutePath());
 
-            // 7. Generate and store thumbnail
-            String thumbnailFilename = uuid + "-" + sanitizedFilename; // Same name, different directory
-            Path thumbnailPath = Paths.get(storageProperties.uploadDir, "thumbnails", thumbnailFilename);
-            
-            generateThumbnail(file.getInputStream(), thumbnailPath);
-            log.info("Generated thumbnail at: {}", thumbnailPath.toAbsolutePath());
+            // 7. Generate and store thumbnail (only for image files)
+            String thumbnailUrl = null;
+            if (isImageFile(contentType)) {
+                String thumbnailFilename = uuid + "-" + sanitizedFilename; // Same name, different directory
+                Path thumbnailPath = Paths.get(storageProperties.uploadDir, "thumbnails", thumbnailFilename);
+                
+                try {
+                    generateThumbnail(file.getInputStream(), thumbnailPath);
+                    log.info("Generated thumbnail at: {}", thumbnailPath.toAbsolutePath());
+                    thumbnailUrl = "/api/uploads/thumbnails/" + thumbnailFilename;
+                } catch (Exception e) {
+                    log.warn("Failed to generate thumbnail for {}: {}", file.getOriginalFilename(), e.getMessage());
+                    // Continue without thumbnail - it's not critical
+                }
+            } else {
+                log.debug("Skipping thumbnail generation for non-image file: {}", contentType);
+            }
 
             // Construct URLs for API access
-            String originalUrl = "/backend/api/uploads/original/" + storageFilename;
-            String thumbnailUrl = "/backend/api/uploads/thumbnails/" + thumbnailFilename;
-
+            String originalUrl = "/api/uploads/original/" + storageFilename;
+            
             FileUploadResult result = new FileUploadResult(
                 storageFilename,
                 originalUrl,
@@ -154,8 +164,8 @@ public class LocalFileStorageService {
                 contentType
             );
 
-            log.info("File upload successful: {} (stored as: {}, original URL: {}, thumbnail URL: {})",
-                file.getOriginalFilename(), storageFilename, originalUrl, thumbnailUrl);
+            log.info("File upload successful: {} (stored as: {}, original URL: {})",
+                file.getOriginalFilename(), storageFilename, originalUrl);
 
             return result;
 
@@ -172,12 +182,6 @@ public class LocalFileStorageService {
 
     /**
      * Delete a file and its thumbnail by storage filename.
-     * 
-     * @param storageFilename The storage filename returned from uploadFile
-     * @return true if both files were deleted, false if either doesn't exist
-     * @throws FileStorageException if deletion fails due to I/O errors
-     */
-    public boolean deleteFile(String storageFilename) {
         log.info("Deleting file: {}", storageFilename);
 
         try {
@@ -249,6 +253,21 @@ public class LocalFileStorageService {
         }
 
         return false;
+    }
+
+    /**
+     * Check if MIME type is an image that can have a thumbnail generated.
+     * 
+     * @param mimeType the MIME type to check
+     * @return true if the MIME type is a supported image format
+     */
+    private boolean isImageFile(String mimeType) {
+        if (mimeType == null || mimeType.isEmpty()) {
+            return false;
+        }
+        
+        String lowerType = mimeType.toLowerCase().trim();
+        return lowerType.startsWith("image/");
     }
 
     /**
