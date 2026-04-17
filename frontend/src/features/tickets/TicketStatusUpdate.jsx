@@ -13,6 +13,8 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
   const { user } = useAuth();
   const [newStatus, setNewStatus] = useState(currentStatus);
   const [rejectReason, setRejectReason] = useState("");
+  const [workNote, setWorkNote] = useState("");
+  const [solutionSummary, setSolutionSummary] = useState("");
   const [showRejectOption, setShowRejectOption] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -74,6 +76,22 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       }
     }
 
+    // Validate solution summary for RESOLVED status
+    if (newStatus === "RESOLVED" && !showRejectOption) {
+      if (!solutionSummary.trim()) {
+        setError("Please provide a solution summary for the student");
+        return;
+      }
+      if (solutionSummary.length < 20) {
+        setError("Solution summary must be at least 20 characters");
+        return;
+      }
+      if (solutionSummary.length > 2000) {
+        setError("Solution summary must not exceed 2000 characters");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       const payload = { status: newStatus };
@@ -83,9 +101,33 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       
       await apiClient.put(`/tickets/${ticketId}/status`, payload);
 
+      // Create comments based on status change
+      try {
+        // For RESOLVED status, create PUBLIC solution summary comment (student-facing)
+        if (newStatus === "RESOLVED" && !showRejectOption) {
+          await apiClient.post(`/tickets/${ticketId}/comments`, {
+            content: `**SOLUTION:** ${solutionSummary}`,
+            visibility: "PUBLIC",
+          });
+        }
+
+        // Create PUBLIC work note comment for all status changes (visible to everyone)
+        if (workNote.trim() && !showRejectOption) {
+          await apiClient.post(`/tickets/${ticketId}/comments`, {
+            content: `Status updated to ${newStatus}: ${workNote}`,
+            visibility: "PUBLIC",
+          });
+        }
+      } catch (commentErr) {
+        console.error("Failed to create status change comment:", commentErr);
+        // Don't fail the whole operation if comment creation fails
+      }
+
       setSuccess(true);
       setShowRejectOption(false);
       setRejectReason("");
+      setWorkNote("");
+      setSolutionSummary("");
       setTimeout(() => {
         setSuccess(false);
         onStatusUpdated();
@@ -165,6 +207,44 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {allowedNextStatuses.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Work Note (Optional)
+                    </label>
+                    <textarea
+                      value={workNote}
+                      onChange={(e) => setWorkNote(e.target.value)}
+                      placeholder="Add a note about this status change (visible to everyone)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      rows="2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      💬 This will be visible to the student | {workNote.length}/500 characters
+                    </p>
+                  </div>
+                )}
+
+                {newStatus === "RESOLVED" && allowedNextStatuses.length > 0 && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-900 mb-2">
+                        Solution Summary for Student <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={solutionSummary}
+                        onChange={(e) => setSolutionSummary(e.target.value)}
+                        placeholder="Explain the solution to the student (e.g., 'Replaced faulty power supply. Tested and confirmed working.')"
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        rows="3"
+                      />
+                      <p className="text-xs text-blue-700 mt-2">
+                        ✓ Student will see this explanation | Min 20 chars | {solutionSummary.length}/2000
+                      </p>
+                    </div>
                   </div>
                 )}
 

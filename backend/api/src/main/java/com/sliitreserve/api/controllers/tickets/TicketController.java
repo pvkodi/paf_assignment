@@ -155,6 +155,69 @@ public class TicketController {
     return ResponseEntity.ok(response);
   }
 
+  @PutMapping("/{ticketId}")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<TicketResponseDTO> updateTicket(
+      @PathVariable UUID ticketId,
+      @Valid @RequestBody TicketUpdateRequest request,
+      Authentication auth) {
+    log.info("Updating ticket {} details", ticketId);
+
+    MaintenanceTicket ticket = ticketRepository.findById(ticketId)
+        .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
+
+    User currentUser = getCurrentUser(auth);
+
+    // Validate: only creator (OPEN status) or ADMIN can edit
+    boolean isCreator = ticket.getCreatedBy().getId().equals(currentUser.getId());
+    boolean isAdmin = currentUser.getRoles().stream()
+        .anyMatch(role -> role.name().equals("ADMIN"));
+
+    if (!isCreator && !isAdmin) {
+      throw new IllegalArgumentException("Not authorized to edit this ticket");
+    }
+
+    // If not admin, only OPEN tickets can be edited
+    if (!isAdmin && !ticket.getStatus().name().equals("OPEN")) {
+      throw new IllegalArgumentException("Cannot edit ticket that is not in OPEN status");
+    }
+
+    MaintenanceTicket updated = ticketService.updateTicketDetails(ticket, request);
+
+    TicketResponseDTO response = mapToResponseDTO(updated);
+    return ResponseEntity.ok(response);
+  }
+
+  @DeleteMapping("/{ticketId}")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<Void> deleteTicket(
+      @PathVariable UUID ticketId,
+      Authentication auth) {
+    log.info("Deleting ticket {}", ticketId);
+
+    MaintenanceTicket ticket = ticketRepository.findById(ticketId)
+        .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
+
+    User currentUser = getCurrentUser(auth);
+
+    // Validate: only creator (OPEN status) or ADMIN can delete
+    boolean isCreator = ticket.getCreatedBy().getId().equals(currentUser.getId());
+    boolean isAdmin = currentUser.getRoles().stream()
+        .anyMatch(role -> role.name().equals("ADMIN"));
+
+    if (!isCreator && !isAdmin) {
+      throw new IllegalArgumentException("Not authorized to delete this ticket");
+    }
+
+    // If not admin, only OPEN tickets can be deleted
+    if (!isAdmin && !ticket.getStatus().name().equals("OPEN")) {
+      throw new IllegalArgumentException("Cannot delete ticket that is not in OPEN status");
+    }
+
+    ticketService.deleteTicket(ticket);
+    return ResponseEntity.noContent().build();
+  }
+
   @PostMapping("/{ticketId}/assign")
   @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'ADMIN')")
   public ResponseEntity<TicketResponseDTO> assignTicket(
@@ -288,15 +351,16 @@ public class TicketController {
   public ResponseEntity<TicketAttachmentResponseDTO> attachFile(
       @PathVariable UUID ticketId,
       @RequestParam("file") MultipartFile file,
+      @RequestParam(value = "type", required = false) String type,
       Authentication auth) {
-    log.info("Attaching file {} to ticket {}", file.getOriginalFilename(), ticketId);
+    log.info("Attaching file {} to ticket {} with type {}", file.getOriginalFilename(), ticketId, type);
 
     MaintenanceTicket ticket = ticketRepository.findById(ticketId)
         .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
 
     User currentUser = getCurrentUser(auth);
 
-    TicketAttachment attachment = attachmentService.attachFileToTicket(ticket, file, currentUser);
+    TicketAttachment attachment = attachmentService.attachFileToTicket(ticket, file, currentUser, type);
 
     TicketAttachmentResponseDTO response = mapAttachmentToResponseDTO(attachment);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -486,6 +550,7 @@ public class TicketController {
         .mimeType(attachment.getMimeType())
         .fileSize(attachment.getFileSize())
         .checksumHash(attachment.getChecksumHash())
+        .type(attachment.getType())
         .filePath(attachment.getFilePath())
         .thumbnailPath(attachment.getThumbnailPath())
         .uploadedById(attachment.getUploadedBy().getId())

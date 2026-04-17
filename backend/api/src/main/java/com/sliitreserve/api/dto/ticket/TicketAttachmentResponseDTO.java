@@ -26,6 +26,7 @@ public class TicketAttachmentResponseDTO {
   private String mimeType;
   private Long fileSize;
   private String checksumHash;
+  private String type; // PROBLEM or SOLUTION
 
   private String filePath;
   private String thumbnailPath;

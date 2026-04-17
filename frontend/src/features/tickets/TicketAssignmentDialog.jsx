@@ -15,6 +15,7 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   const fetchTechnicians = useCallback(async () => {
     try {
@@ -58,6 +59,7 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (!selectedTechnicianId) {
       setError("Please select a technician");
@@ -66,12 +68,23 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
 
     try {
       setSubmitting(true);
-      await apiClient.post(`/tickets/${ticketId}/assign`, {
+      console.log("Assigning ticket to technician:", selectedTechnicianId);
+      const response = await apiClient.post(`/tickets/${ticketId}/assign`, {
         technicianId: selectedTechnicianId,
       });
 
-      onAssigned();
-      onClose();
+      console.log("Assignment response:", response.data);
+      const technicianName = response.data?.assignedTechnicianName || "Technician";
+      const successMsg = `✓ ${technicianName} assigned successfully!`;
+      console.log("Setting success message:", successMsg);
+      setSuccess(successMsg);
+      
+      // Keep dialog open for 2 seconds to show success, then close
+      setTimeout(() => {
+        console.log("Closing dialog after success");
+        onAssigned();
+        onClose();
+      }, 2000);
     } catch (err) {
       console.error("Failed to assign technician:", err);
       setError(
@@ -94,6 +107,12 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700 font-medium">{success}</p>
             </div>
           )}
 

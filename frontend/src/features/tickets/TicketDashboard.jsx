@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../../services/apiClient";
+import { AuthContext } from "../../contexts/AuthContext";
 
 /**
  * Ticket Dashboard Component
@@ -8,8 +9,22 @@ import { apiClient } from "../../services/apiClient";
  * Implements US4 requirement: Ticket list/dashboard with filters and search
  */
 
+// Utility function to shorten UUID
+const shortenTicketId = (fullId) => {
+  if (!fullId) return "";
+  return fullId.substring(0, 8);
+};
+
+// Utility function to copy to clipboard
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log("Copied to clipboard:", text);
+  });
+};
+
 export function TicketDashboard() {
   const navigate = useNavigate();
+  const { hasRole } = useContext(AuthContext);
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,12 +155,14 @@ export function TicketDashboard() {
             View and manage maintenance tickets
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-        >
-          {showCreateForm ? "Cancel" : "Create Ticket"}
-        </button>
+        {(hasRole("USER") || hasRole("STUDENT") || hasRole("LECTURER") || hasRole("ADMIN")) && (
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            {showCreateForm ? "Cancel" : "Create Ticket"}
+          </button>
+        )}
       </div>
 
       {/* Error Message */}
@@ -277,7 +294,21 @@ export function TicketDashboard() {
                     className="hover:bg-gray-50 transition cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{ticket.id}
+                      <div className="flex items-center gap-2">
+                        <span className="text-indigo-600 font-semibold">#{shortenTicketId(ticket.id)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(ticket.id);
+                          }}
+                          title="Copy full ticket ID"
+                          className="p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
                       {ticket.title}

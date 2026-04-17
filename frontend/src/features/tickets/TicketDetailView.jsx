@@ -4,12 +4,27 @@ import { apiClient } from "../../services/apiClient";
 import { useAuth } from "../../contexts/AuthContext";
 import TicketAssignmentDialog from "./TicketAssignmentDialog";
 import TicketStatusUpdate from "./TicketStatusUpdate";
+import { TicketEditModal } from "./TicketEditModal";
 
 /**
  * Ticket Detail View Component
  * Displays full ticket information with comments, attachments, and escalation history
  * Implements US4 requirement: Ticket detail view with comments, attachments, and SLA display
  */
+
+// Utility function to shorten UUID
+const shortenTicketId = (fullId) => {
+  if (!fullId) return "";
+  return fullId.substring(0, 8);
+};
+
+// Utility function to copy to clipboard
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    // Could add a toast notification here
+    console.log("Copied to clipboard:", text);
+  });
+};
 
 export function TicketDetailView() {
   const { id } = useParams();
@@ -19,6 +34,8 @@ export function TicketDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
   const fetchTicket = useCallback(async () => {
@@ -45,8 +62,28 @@ export function TicketDetailView() {
     fetchTicket();
   }, [fetchTicket]);
 
+  const handleDeleteTicket = async () => {
+    if (!window.confirm("Are you sure you want to delete this ticket? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      await apiClient.delete(`/tickets/${id}`);
+      navigate("/tickets");
+    } catch (err) {
+      console.error("Failed to delete ticket:", err);
+      alert(err.response?.data?.message || "Failed to delete ticket. Please try again.");
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleTicketUpdated = (updatedTicket) => {
+    setTicket(updatedTicket);
+  };
+
   const isStaff = user?.roles?.some((role) =>
-    ["FACILITY_MANAGER", "ADMIN"].includes(role),
+    ["FACILITY_MANAGER", "ADMIN", "TECHNICIAN"].includes(role),
   );
 
   const canAssign =
@@ -55,7 +92,16 @@ export function TicketDetailView() {
 
   const canUpdateStatus =
     user?.roles?.includes("ADMIN") ||
-    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId);
+    (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId) ||
+    (user?.roles?.includes("TECHNICIAN") && user?.id === ticket?.assignedTechnicianId);
+
+  const canEdit =
+    ticket?.status === "OPEN" &&
+    (user?.id === ticket?.createdById || user?.roles?.includes("ADMIN"));
+
+  const canDelete =
+    ticket?.status === "OPEN" &&
+    (user?.id === ticket?.createdById || user?.roles?.includes("ADMIN"));
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -155,10 +201,22 @@ export function TicketDetailView() {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                #{ticket.id} - {ticket.title}
-              </h1>
-              <p className="text-gray-600 mt-2">{ticket.description}</p>
+              <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  #{shortenTicketId(ticket.id)}
+                </h1>
+                <button
+                  onClick={() => copyToClipboard(ticket.id)}
+                  title="Copy full ticket ID"
+                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-700 mb-2">{ticket.title}</h2>
+              <p className="text-gray-600">{ticket.description}</p>
             </div>
             <div className="flex gap-2">
               {canAssign && (
@@ -167,6 +225,29 @@ export function TicketDetailView() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
                 >
                   Assign Technician
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={handleDeleteTicket}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {deleteLoading ? "Deleting..." : "Delete"}
                 </button>
               )}
             </div>
@@ -315,20 +396,23 @@ export function TicketDetailView() {
               Escalation History
             </h3>
             {ticket.escalationHistory && ticket.escalationHistory.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {ticket.escalationHistory.map((escalation, index) => (
                   <div
                     key={index}
-                    className="pb-3 border-b border-gray-200 last:border-b-0"
+                    className={`pb-4 border-b border-gray-200 last:border-b-0 ${getEscalationColor(escalation.toLevel)}`}
                   >
-                    <p className="text-sm font-medium text-gray-900">
-                      Level {escalation.escalationLevel}
+                    <p className="text-sm font-semibold text-gray-900 mb-2">
+                      {escalation.fromLevel} → {escalation.toLevel}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mb-2">
                       {formatDate(escalation.escalatedAt)}
                     </p>
-                    <p className="text-xs text-gray-700 mt-2">
-                      {escalation.escalationReason}
+                    <p className="text-xs text-gray-700 mb-2">
+                      <span className="font-medium">By:</span> {escalation.escalatedByName}
+                    </p>
+                    <p className="text-xs text-gray-700">
+                      <span className="font-medium">Reason:</span> {escalation.reason}
                     </p>
                   </div>
                 ))}
@@ -352,6 +436,14 @@ export function TicketDetailView() {
           onClose={() => setShowAssignmentDialog(false)}
         />
       )}
+
+      {/* Edit Modal */}
+      <TicketEditModal
+        ticket={ticket}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onTicketUpdated={handleTicketUpdated}
+      />
     </div>
   );
 }
@@ -603,6 +695,7 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
   const [uploadError, setUploadError] = useState(null);
   const [deleting, setDeleting] = useState(null); // Track which attachment is being deleted
   const [file, setFile] = useState(null);
+  const [attachmentType, setAttachmentType] = useState("PROBLEM"); // PROBLEM or SOLUTION
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
@@ -634,6 +727,7 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
       setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("type", attachmentType); // Send attachment type
 
       await apiClient.post(`/tickets/${ticketId}/attachments`, formData, {
         headers: {
@@ -642,6 +736,7 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
       });
 
       setFile(null);
+      setAttachmentType("PROBLEM"); // Reset to default
       onAttachmentDeleted();
     } catch (err) {
       console.error("Failed to upload attachment:", err);
@@ -696,15 +791,31 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
           />
 
           {file && (
-            <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <span className="text-sm text-gray-700">{file.name}</span>
-              <button
-                onClick={handleUpload}
-                disabled={uploading}
-                className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {uploading ? "Uploading..." : "Upload"}
-              </button>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attachment Type
+                </label>
+                <select
+                  value={attachmentType}
+                  onChange={(e) => setAttachmentType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                  <option value="PROBLEM">Problem/Issue Photo</option>
+                  <option value="SOLUTION">Solution/Repair Photo</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm text-gray-700">{file.name}</span>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Upload"}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -736,9 +847,22 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
                       FILE
                     </div>
                   )}
-                  <p className="font-medium text-gray-900 text-sm">
-                    {attachment.originalFilename}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium text-gray-900 text-sm">
+                      {attachment.originalFilename}
+                    </p>
+                    {attachment.type && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          attachment.type === "PROBLEM"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {attachment.type === "PROBLEM" ? "🔴 Issue" : "✅ Solution"}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600">
                     {attachment.fileSize} bytes | Checksum: {attachment.checksumHash?.slice(0, 8)}...
                   </p>

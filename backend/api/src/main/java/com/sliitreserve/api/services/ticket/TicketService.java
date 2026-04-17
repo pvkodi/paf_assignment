@@ -538,4 +538,81 @@ public class TicketService {
     }
     return commentRepository.countByTicketAndDeletedAtIsNull(ticket);
   }
+
+  /**
+   * Update ticket details (title, description, category, priority).
+   *
+   * <p><b>Authorization Rules</b>:
+   * <ul>
+   *   <li>Creator can edit only OPEN tickets
+   *   <li>ADMIN can edit anytime
+   *   <li>Controller validates authorization before calling this method
+   * </ul>
+   *
+   * @param ticket the ticket to update
+   * @param request the update request with new values
+   * @return updated MaintenanceTicket
+   * @throws IllegalArgumentException if ticket or request is null
+   */
+  public MaintenanceTicket updateTicketDetails(
+      MaintenanceTicket ticket,
+      com.sliitreserve.api.dto.ticket.TicketUpdateRequest request) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+    if (request == null) {
+      throw new IllegalArgumentException("Update request cannot be null");
+    }
+
+    log.info("Updating ticket {} details", ticket.getId());
+
+    if (request.getTitle() != null && !request.getTitle().isBlank()) {
+      ticket.setTitle(request.getTitle());
+    }
+    if (request.getDescription() != null && !request.getDescription().isBlank()) {
+      ticket.setDescription(request.getDescription());
+    }
+    if (request.getCategory() != null) {
+      ticket.setCategory(request.getCategory());
+    }
+    if (request.getPriority() != null) {
+      ticket.setPriority(request.getPriority());
+    }
+
+    MaintenanceTicket updated = ticketRepository.save(ticket);
+    log.info("Ticket {} details updated successfully", ticket.getId());
+
+    return updated;
+  }
+
+  /**
+   * Delete a ticket (hard delete).
+   *
+   * <p><b>Authorization Rules</b>:
+   * <ul>
+   *   <li>Creator can delete only OPEN tickets that are not assigned
+   *   <li>ADMIN can delete anytime
+   *   <li>Controller validates authorization before calling this method
+   * </ul>
+   *
+   * @param ticket the ticket to delete
+   * @throws IllegalArgumentException if ticket is null
+   */
+  public void deleteTicket(MaintenanceTicket ticket) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+
+    log.info("Deleting ticket {}", ticket.getId());
+
+    // Delete associated comments first
+    List<TicketComment> comments = commentRepository.findByTicketAndDeletedAtIsNullOrderByCreatedAtAsc(ticket);
+    for (TicketComment comment : comments) {
+      commentRepository.delete(comment);
+    }
+
+    // Delete the ticket
+    ticketRepository.delete(ticket);
+    log.info("Ticket {} deleted successfully", ticket.getId());
+  }
 }

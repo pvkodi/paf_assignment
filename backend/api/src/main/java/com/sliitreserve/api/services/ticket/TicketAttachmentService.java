@@ -102,7 +102,7 @@ public class TicketAttachmentService {
    * @throws RuntimeException if checksum computation fails or file storage fails
    */
   public TicketAttachment attachFileToTicket(
-      MaintenanceTicket ticket, MultipartFile file, User uploadedBy) {
+      MaintenanceTicket ticket, MultipartFile file, User uploadedBy, String type) {
     // Validation
     if (ticket == null) {
       throw new IllegalArgumentException("Ticket cannot be null");
@@ -112,6 +112,12 @@ public class TicketAttachmentService {
     }
     if (uploadedBy == null) {
       throw new IllegalArgumentException("Uploaded by user cannot be null");
+    }
+
+    // Default type to PROBLEM if not provided
+    String attachmentType = type != null ? type : "PROBLEM";
+    if (!attachmentType.equals("PROBLEM") && !attachmentType.equals("SOLUTION")) {
+      attachmentType = "PROBLEM";
     }
 
     String contentType = file.getContentType();
@@ -168,6 +174,7 @@ public class TicketAttachmentService {
             .filePath(filePath)
             .thumbnailPath(thumbnailPath)
             .checksumHash(checksum)
+            .type(attachmentType)
             .build();
 
     TicketAttachment savedAttachment = attachmentRepository.save(attachment);
