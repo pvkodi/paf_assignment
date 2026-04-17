@@ -32,7 +32,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Registration form state (new)
   const [roleRequested, setRoleRequested] = useState("USER");
   const [registrationNumber, setRegistrationNumber] = useState("");

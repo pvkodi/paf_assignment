@@ -41,7 +41,10 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
-          <Route path="/registration-pending" element={<RegistrationPendingPage />} />
+          <Route
+            path="/registration-pending"
+            element={<RegistrationPendingPage />}
+          />
 
           {/* Protected Routes */}
           <Route

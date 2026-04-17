@@ -97,7 +97,7 @@ export function AuthProvider({ children }) {
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
-        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+        response.expiresAt, // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state
@@ -125,14 +125,17 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      const response = await authService.loginWithEmailPassword(email, password);
+      const response = await authService.loginWithEmailPassword(
+        email,
+        password,
+      );
 
       // Store tokens and user with expiration from backend
       authService.setAuthTokens(
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
-        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+        response.expiresAt, // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state
@@ -157,7 +160,15 @@ export function AuthProvider({ children }) {
    * User will see a pending message and receive email upon approval/rejection
    */
   const registerWithEmailPassword = useCallback(
-    async (email, displayName, password, confirmPassword, roleRequested, registrationNumber, employeeNumber) => {
+    async (
+      email,
+      displayName,
+      password,
+      confirmPassword,
+      roleRequested,
+      registrationNumber,
+      employeeNumber,
+    ) => {
       try {
         setLoading(true);
         setError(null);
@@ -169,7 +180,7 @@ export function AuthProvider({ children }) {
           confirmPassword,
           roleRequested,
           registrationNumber,
-          employeeNumber
+          employeeNumber,
         );
 
         // Registration successful - returns status and registration ID, NOT authentication tokens
@@ -188,7 +199,7 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   /**

@@ -15,11 +15,33 @@ export default function AdminUserManagementPanel() {
   const [activeTab, setActiveTab] = useState("registrations"); // "registrations" or "userData"
   const [requestStatus, setRequestStatus] = useState("PENDING"); // PENDING, APPROVED, REJECTED
   const [requests, setRequests] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const [actionData, setActionData] = useState({}); // Store notes/reasons for actions
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  // User filtering state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRoles, setSelectedRoles] = useState([]);
+
+  // Map display roles to backend role values
+  const roleMapping = {
+    STUDENT: "USER", // UI shows "STUDENT" but backend uses "USER"
+    LECTURER: "LECTURER",
+    TECHNICIAN: "TECHNICIAN",
+    FACILITY_MANAGER: "FACILITY_MANAGER",
+    ADMIN: "ADMIN",
+  };
+  const availableRoles = [
+    "ADMIN",
+    "STUDENT",
+    "LECTURER",
+    "TECHNICIAN",
+    "FACILITY_MANAGER",
+  ];
 
   // Check admin access
   useEffect(() => {
@@ -27,9 +49,13 @@ export default function AdminUserManagementPanel() {
       setError("You do not have permission to access this panel");
       setLoading(false);
     } else {
-      fetchRequests();
+      if (activeTab === "registrations") {
+        fetchRequests();
+      } else {
+        fetchUsers();
+      }
     }
-  }, [requestStatus]);
+  }, [requestStatus, activeTab, searchQuery, selectedRoles]);
 
   const fetchRequests = async () => {
     try {
@@ -37,19 +63,96 @@ export default function AdminUserManagementPanel() {
       setError(null);
 
       const response = await apiClient.get(
-        `/v1/admin/user-management/registration-requests?status=${requestStatus}&page=0&size=20`
+        `/v1/admin/user-management/registration-requests?status=${requestStatus}&page=0&size=20`,
       );
 
       setRequests(response.data.content || response.data || []);
     } catch (err) {
       console.error("Failed to fetch registration requests:", err);
       setError(
-        err.response?.data?.message || "Failed to load registration requests"
+        err.response?.data?.message || "Failed to load registration requests",
       );
       setRequests([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query string with search and role filters
+      const params = new URLSearchParams();
+      params.append("page", "0");
+      params.append("size", "50");
+
+      if (searchQuery.trim()) {
+        params.append("query", searchQuery.trim());
+      }
+
+      // Map display roles to backend role values and send to API
+      selectedRoles.forEach((role) => {
+        const backendRole = roleMapping[role];
+        params.append("role", backendRole);
+      });
+
+      const response = await apiClient.get(
+        `/v1/admin/user-management/users?${params.toString()}`,
+      );
+
+      setUsers(response.data.content || response.data || []);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+      setError(err.response?.data?.message || "Failed to load users");
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUserId(user.id);
+    setEditFormData({
+      displayName: user.displayName,
+      email: user.email,
+      noShowCount: user.noShowCount,
+      suspendedUntil: user.suspendedUntil
+        ? new Date(user.suspendedUntil).toISOString().slice(0, 16)
+        : "",
+    });
+  };
+
+  const handleSaveUser = async (userId) => {
+    try {
+      setProcessingId(userId);
+
+      const payload = {
+        displayName: editFormData.displayName,
+        email: editFormData.email,
+        noShowCount: parseInt(editFormData.noShowCount),
+        suspendedUntil: editFormData.suspendedUntil
+          ? new Date(editFormData.suspendedUntil).toISOString()
+          : null,
+      };
+
+      await apiClient.put(`/v1/admin/user-management/users/${userId}`, payload);
+
+      toast.success("User updated successfully");
+      setEditingUserId(null);
+      setEditFormData({});
+      await fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update user");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUserId(null);
+    setEditFormData({});
   };
 
   const handleApprove = async (requestId) => {
@@ -59,7 +162,7 @@ export default function AdminUserManagementPanel() {
 
       await apiClient.post(
         `/v1/admin/user-management/registration-requests/${requestId}/approve`,
-        { note }
+        { note },
       );
 
       toast.success("Registration request approved successfully");
@@ -71,7 +174,7 @@ export default function AdminUserManagementPanel() {
       await fetchRequests();
     } catch (err) {
       toast.error(
-        err.response?.data?.message || "Failed to approve registration request"
+        err.response?.data?.message || "Failed to approve registration request",
       );
     } finally {
       setProcessingId(null);
@@ -95,7 +198,7 @@ export default function AdminUserManagementPanel() {
 
       await apiClient.post(
         `/v1/admin/user-management/registration-requests/${requestId}/reject`,
-        { reason }
+        { reason },
       );
 
       toast.success("Registration request rejected successfully");
@@ -107,7 +210,7 @@ export default function AdminUserManagementPanel() {
       await fetchRequests();
     } catch (err) {
       toast.error(
-        err.response?.data?.message || "Failed to reject registration request"
+        err.response?.data?.message || "Failed to reject registration request",
       );
     } finally {
       setProcessingId(null);
@@ -188,7 +291,9 @@ export default function AdminUserManagementPanel() {
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-slate-500">Loading registration requests...</div>
+                  <div className="text-slate-500">
+                    Loading registration requests...
+                  </div>
                 </div>
               )}
 
@@ -257,7 +362,7 @@ export default function AdminUserManagementPanel() {
                           <button
                             onClick={() =>
                               setExpandedId(
-                                expandedId === request.id ? null : request.id
+                                expandedId === request.id ? null : request.id,
                               )
                             }
                             className="px-3 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm transition-colors"
@@ -327,7 +432,11 @@ export default function AdminUserManagementPanel() {
                                 : ""}
                             </label>
                             <textarea
-                              value={actionData[request.id]?.note || actionData[request.id]?.reason || ""}
+                              value={
+                                actionData[request.id]?.note ||
+                                actionData[request.id]?.reason ||
+                                ""
+                              }
                               onChange={(e) => {
                                 const isRejection = false; // Determine if this is for rejection
                                 setActionData((prev) => ({
@@ -361,7 +470,9 @@ export default function AdminUserManagementPanel() {
                               disabled={processingId === request.id}
                               className="flex-1 px-4 py-2 text-sm text-red-600 border-2 border-red-600 hover:bg-red-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {processingId === request.id ? "Processing..." : "Reject"}
+                              {processingId === request.id
+                                ? "Processing..."
+                                : "Reject"}
                             </button>
                           </div>
                         </div>
@@ -375,29 +486,287 @@ export default function AdminUserManagementPanel() {
 
           {/* User Data Tab */}
           {activeTab === "userData" && (
-            <div className="text-center py-12">
-              <div className="text-slate-400 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto opacity-30"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 4.354a4 4 0 110 5.292M19 14H5m14 0a2 2 0 012 2v3H3v-3a2 2 0 012-2m0-5a4 4 0 11-8 0 4 4 0 018 0z"
+            <div>
+              {/* Search and Filter */}
+              <div className="mb-6 space-y-4">
+                {/* Search Bar */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Search by Email or Username
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter email or display name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   />
-                </svg>
+                </div>
+
+                {/* Role Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Filter by Roles
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableRoles.map((role) => (
+                      <label
+                        key={role}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-300 cursor-pointer hover:bg-slate-50 transition"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRoles.includes(role)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRoles([...selectedRoles, role]);
+                            } else {
+                              setSelectedRoles(
+                                selectedRoles.filter((r) => r !== role),
+                              );
+                            }
+                          }}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-slate-700">
+                          {role}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {selectedRoles.length > 0 && (
+                    <button
+                      onClick={() => setSelectedRoles([])}
+                      className="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
+                    >
+                      Clear all roles
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-slate-600 font-medium text-lg">
-                User Data Management
-              </p>
-              <p className="text-slate-500 text-sm mt-2">
-                Coming soon. This section will allow you to view user profiles,
-                booking history, and other user data.
-              </p>
+
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-slate-500">Loading users...</div>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-4">
+                  <p className="text-sm font-medium text-red-900">{error}</p>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!loading && users.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="text-slate-400 mb-2">
+                    <svg
+                      className="w-12 h-12 mx-auto mb-2 opacity-50"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M12 4.354a4 4 0 110 5.292M19 14H5m14 0a2 2 0 012 2v3H3v-3a2 2 0 012-2m0-5a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-slate-600 font-medium">No users found</p>
+                </div>
+              )}
+
+              {/* Users List */}
+              {!loading && users.length > 0 && (
+                <div className="space-y-4">
+                  {users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="rounded-lg border border-slate-200 bg-white overflow-hidden"
+                    >
+                      {/* User Summary */}
+                      {editingUserId !== user.id ? (
+                        <div className="p-6">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-slate-900">
+                                {user.displayName}
+                              </h3>
+                              <p className="text-sm text-slate-600 mt-1">
+                                {user.email}
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {user.roles &&
+                                  user.roles.map((role) => (
+                                    <span
+                                      key={role}
+                                      className="px-3 py-1 bg-blue-100 rounded text-blue-700 text-xs font-medium"
+                                    >
+                                      {role}
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleEditUser(user)}
+                              className="px-4 py-2 text-sm text-indigo-600 border-2 border-indigo-600 hover:bg-indigo-50 font-medium rounded-lg transition"
+                            >
+                              Edit
+                            </button>
+                          </div>
+
+                          {/* User Details */}
+                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase">
+                                No-Shows
+                              </p>
+                              <p className="text-slate-900 mt-1">
+                                {user.noShowCount}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase">
+                                Status
+                              </p>
+                              <p className="text-slate-900 mt-1">
+                                {user.suspendedUntil &&
+                                new Date(user.suspendedUntil) > new Date() ? (
+                                  <span className="text-red-600 font-semibold">
+                                    🚫 Suspended
+                                  </span>
+                                ) : (
+                                  <span className="text-green-600 font-semibold">
+                                    ✅ Active
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase">
+                                Created
+                              </p>
+                              <p className="text-slate-900 mt-1">
+                                {new Date(user.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase">
+                                Updated
+                              </p>
+                              <p className="text-slate-900 mt-1">
+                                {new Date(user.updatedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Edit Form */
+                        <div className="p-6 bg-slate-50 border-t border-slate-200">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                            Edit User
+                          </h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                Display Name
+                              </label>
+                              <input
+                                type="text"
+                                value={editFormData.displayName}
+                                onChange={(e) =>
+                                  setEditFormData({
+                                    ...editFormData,
+                                    displayName: e.target.value,
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                Email
+                              </label>
+                              <input
+                                type="email"
+                                value={editFormData.email}
+                                onChange={(e) =>
+                                  setEditFormData({
+                                    ...editFormData,
+                                    email: e.target.value,
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                No-Show Count
+                              </label>
+                              <input
+                                type="number"
+                                value={editFormData.noShowCount}
+                                onChange={(e) =>
+                                  setEditFormData({
+                                    ...editFormData,
+                                    noShowCount: e.target.value,
+                                  })
+                                }
+                                min="0"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                Suspended Until (leave empty to unsuspend)
+                              </label>
+                              <input
+                                type="datetime-local"
+                                value={editFormData.suspendedUntil}
+                                onChange={(e) =>
+                                  setEditFormData({
+                                    ...editFormData,
+                                    suspendedUntil: e.target.value,
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                              />
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex gap-3 pt-4">
+                              <button
+                                onClick={() => handleSaveUser(user.id)}
+                                disabled={processingId === user.id}
+                                className="flex-1 px-4 py-2 text-sm text-green-600 border-2 border-green-600 hover:bg-green-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {processingId === user.id
+                                  ? "Saving..."
+                                  : "Save Changes"}
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={processingId === user.id}
+                                className="flex-1 px-4 py-2 text-sm text-slate-600 border-2 border-slate-300 hover:bg-slate-50 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

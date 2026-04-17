@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -217,6 +218,156 @@ public class AdminUserManagementController {
       log.error("Error rejecting registration request: {}", e.getMessage(), e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(createErrorResponse("REJECTION_ERROR", "Failed to reject registration request"));
+    }
+  }
+
+  /**
+   * Get all users with filtering and pagination.
+   *
+   * <p>Query parameters:
+   * <ul>
+   *   <li>query: Search by email or display name (optional)</li>
+   *   <li>role: Filter by role - can be repeated for multiple roles (optional)</li>
+   *   <li>page: 0-based page number (default: 0)</li>
+   *   <li>size: page size (default: 20)</li>
+   *   <li>sort: sort field and direction (default: createdAt,desc)</li>
+   * </ul>
+   *
+   * @param query Search query for email or display name (optional)
+   * @param role List of roles to filter by (optional)
+   * @param pageable Pagination parameters
+   * @return Page of users
+   */
+  @GetMapping("/users")
+  public ResponseEntity<?> getAllUsers(
+      @RequestParam(required = false) String query,
+      @RequestParam(required = false, name = "role") java.util.List<String> role,
+      @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+          Pageable pageable) {
+    log.info("Admin fetching users - query: {}, roles: {}", query, role);
+
+    try {
+      java.util.List<com.sliitreserve.api.entities.auth.User> users;
+
+      // Search by email or display name if query provided
+      if (query != null && !query.trim().isEmpty()) {
+        users = userRepository.searchByEmailOrDisplayName(query.trim(), query.trim());
+      } else {
+        users = userRepository.findAll();
+      }
+
+      // Filter by roles if provided
+      if (role != null && !role.isEmpty()) {
+        users = users.stream()
+            .filter(user -> user.getRoles() != null && user.getRoles().stream()
+                .anyMatch(userRole -> role.contains(userRole.name())))
+            .toList();
+      }
+
+      // Manual pagination since we filtered in memory
+      int start = (int) pageable.getOffset();
+      int end = Math.min(start + pageable.getPageSize(), users.size());
+      java.util.List<com.sliitreserve.api.dto.auth.UserDTO> pagedUsers = users.subList(start, end)
+          .stream()
+          .map(user -> com.sliitreserve.api.dto.auth.UserDTO.fromEntity(user))
+          .toList();
+
+      org.springframework.data.domain.Page<com.sliitreserve.api.dto.auth.UserDTO> page =
+          new org.springframework.data.domain.PageImpl<>(
+              pagedUsers,
+              pageable,
+              users.size());
+
+      log.debug("Retrieved {} users for admin", page.getNumberOfElements());
+
+      return ResponseEntity.ok(page);
+
+    } catch (Exception e) {
+      log.error("Error fetching users: {}", e.getMessage(), e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(createErrorResponse("FETCH_ERROR", "Failed to fetch users"));
+    }
+  }
+
+  /**
+   * Get a single user by ID.
+   *
+   * @param id User ID
+   * @return User details
+   */
+  @GetMapping("/users/{id}")
+  public ResponseEntity<?> getUserById(@PathVariable UUID id) {
+    log.info("Admin fetching user: {}", id);
+
+    try {
+      var userOpt = userRepository.findById(id);
+      if (userOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(createErrorResponse("NOT_FOUND", "User not found"));
+      }
+
+      return ResponseEntity.ok(com.sliitreserve.api.dto.auth.UserDTO.fromEntity(userOpt.get()));
+
+    } catch (Exception e) {
+      log.error("Error fetching user: {}", e.getMessage(), e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(createErrorResponse("FETCH_ERROR", "Failed to fetch user"));
+    }
+  }
+
+  /**
+   * Update user details.
+   *
+   * @param id User ID
+   * @param updateDto User update DTO
+   * @return Updated user
+   */
+  @PutMapping("/users/{id}")
+  public ResponseEntity<?> updateUser(
+      @PathVariable UUID id,
+      @Valid @RequestBody com.sliitreserve.api.dto.auth.UpdateUserDTO updateDto) {
+    log.info("Admin updating user: {}", id);
+
+    try {
+      var userOpt = userRepository.findById(id);
+      if (userOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(createErrorResponse("NOT_FOUND", "User not found"));
+      }
+
+      com.sliitreserve.api.entities.auth.User user = userOpt.get();
+
+      // Update fields
+      if (updateDto.getDisplayName() != null && !updateDto.getDisplayName().isBlank()) {
+        user.setDisplayName(updateDto.getDisplayName());
+      }
+
+      if (updateDto.getEmail() != null && !updateDto.getEmail().isBlank()) {
+        user.setEmail(updateDto.getEmail());
+      }
+
+      if (updateDto.getSuspendedUntil() != null) {
+        user.setSuspendedUntil(updateDto.getSuspendedUntil());
+      }
+
+      if (updateDto.getNoShowCount() != null) {
+        user.setNoShowCount(updateDto.getNoShowCount());
+      }
+
+      user.setUpdatedAt(java.time.LocalDateTime.now());
+      com.sliitreserve.api.entities.auth.User updated = userRepository.save(user);
+
+      log.info("User updated: {}", id);
+
+      return ResponseEntity.ok(
+          Map.of(
+              "message", "User updated successfully",
+              "user", com.sliitreserve.api.dto.auth.UserDTO.fromEntity(updated)));
+
+    } catch (Exception e) {
+      log.error("Error updating user: {}", e.getMessage(), e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(createErrorResponse("UPDATE_ERROR", "Failed to update user"));
     }
   }
 
