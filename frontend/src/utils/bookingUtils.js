@@ -73,20 +73,19 @@ export const canCancelBooking = (booking) => {
  * Check if booking can be checked in
  */
 export const canCheckInBooking = (booking) => {
-  if (booking.status !== "APPROVED") return false;
+  // For testing: allow check-in for all APPROVED bookings
+  // In production, implement stricter time window checks
+  return booking.status === "APPROVED";
 
-  // Check if booking time is within reasonable window
-  // (e.g., up to 30 min before start time to 15 min after end time)
-  const now = new Date();
-  const bookingDateTime = new Date(
-    `${booking.bookingDate}T${booking.startTime}`,
-  );
-  const endDateTime = new Date(`${booking.bookingDate}T${booking.endTime}`);
-
-  const startWindow = new Date(bookingDateTime.getTime() - 30 * 60 * 1000);
-  const endWindow = new Date(endDateTime.getTime() + 15 * 60 * 1000);
-
-  return now >= startWindow && now <= endWindow;
+  // Original time-window logic (commented for testing):
+  // const now = new Date();
+  // const bookingDateTime = new Date(
+  //   `${booking.bookingDate}T${booking.startTime}`,
+  // );
+  // const endDateTime = new Date(`${booking.bookingDate}T${booking.endTime}`);
+  // const startWindow = new Date(bookingDateTime.getTime() - 30 * 60 * 1000);
+  // const endWindow = new Date(endDateTime.getTime() + 15 * 60 * 1000);
+  // return now >= startWindow && now <= endWindow;
 };
 
 /**

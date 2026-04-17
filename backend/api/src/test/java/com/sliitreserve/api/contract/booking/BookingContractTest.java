@@ -11,7 +11,10 @@ import com.sliitreserve.api.exception.ConflictException;
 import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
 import com.sliitreserve.api.services.booking.BookingService;
+import com.sliitreserve.api.services.booking.CheckInService;
 import com.sliitreserve.api.util.mapping.BookingMapper;
+
+import org.hibernate.annotations.Check;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +50,9 @@ class BookingContractTest {
 
     @Mock
     private BookingService bookingService;
+
+    @Mock
+    private CheckInService checkInService;
 
     @Mock
     private UserRepository userRepository;

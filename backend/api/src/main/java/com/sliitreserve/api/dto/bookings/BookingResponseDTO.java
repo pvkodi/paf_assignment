@@ -60,4 +60,7 @@ public class BookingResponseDTO extends com.sliitreserve.api.dto.BaseResponseDTO
 
     @JsonProperty("version")
     private Long version;
+
+    @JsonProperty("has_checked_in")
+    private Boolean hasCheckedIn;
 }

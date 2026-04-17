@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
+import QRCodePdfModal from "./QRCodePdfModal";
 import { toast } from "react-toastify";
 import { formatBookingDate } from "../../utils/bookingUtils";
 
@@ -17,8 +18,35 @@ export default function BookingApprovalQueue() {
   const [actionLoading, setActionLoading] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState({});
   const [expandedId, setExpandedId] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [lastApprovedBooking, setLastApprovedBooking] = useState(null);
 
-  const canApprove = hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
+  // DEBUG: Log component mount and user info
+  useEffect(() => {
+    console.log("🔍 BookingApprovalQueue MOUNTED");
+    console.log("👤 User:", user);
+    console.log("📋 User email:", user?.email);
+    console.log("🔐 User roles:", user?.roles);
+    console.log(
+      "✅ hasRole function available:",
+      typeof hasRole === "function",
+    );
+  }, []);
+
+  const canApprove =
+    hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
+
+  // DEBUG: Log role checks
+  useEffect(() => {
+    console.log("🎭 Role Check Results:");
+    console.log("  - hasRole('LECTURER'):", hasRole("LECTURER"));
+    console.log(
+      "  - hasRole('FACILITY_MANAGER'):",
+      hasRole("FACILITY_MANAGER"),
+    );
+    console.log("  - hasRole('ADMIN'):", hasRole("ADMIN"));
+    console.log("  - canApprove:", canApprove);
+  }, [canApprove]);
 
   useEffect(() => {
     if (canApprove) {
@@ -30,12 +58,27 @@ export default function BookingApprovalQueue() {
 
   const fetchPendingBookings = async () => {
     try {
+      console.log(
+        "📡 Fetching pending approvals from /v1/bookings/pending-approvals",
+      );
       setLoading(true);
       setError(null);
       const response = await apiClient.get("/v1/bookings/pending-approvals");
       setPendingBookings(Array.isArray(response.data) ? response.data : []);
+      console.log(
+        "✅ State updated with",
+        Array.isArray(response.data) ? response.data.length : 0,
+        "bookings",
+      );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load pending approvals");
+      console.error("❌ Failed to fetch pending approvals");
+      console.error("Error object:", err);
+      console.error("Response status:", err.response?.status);
+      console.error("Response data:", err.response?.data);
+      console.error("Error message:", err.message);
+      setError(
+        err.response?.data?.message || "Failed to load pending approvals",
+      );
       setPendingBookings([]);
       toast.error("Failed to load pending approvals");
     } finally {
@@ -58,6 +101,14 @@ export default function BookingApprovalQueue() {
       await apiClient.post(url);
       toast.success("Booking approved successfully");
 
+      // Find the approved booking to show in modal
+      const approvedBooking = pendingBookings.find((b) => b.id === bookingId);
+      if (approvedBooking) {
+        setLastApprovedBooking(approvedBooking);
+        setShowQrModal(true);
+      }
+
+      // Refresh list
       await fetchPendingBookings();
       setApprovalNotes((prev) => {
         const updated = { ...prev };
@@ -108,10 +159,17 @@ export default function BookingApprovalQueue() {
   };
 
   if (!canApprove) {
+    console.warn(
+      "🚫 User lacks approval permissions - rendering no-permission message",
+    );
     return (
       <div className="bg-white rounded-lg p-6 border border-slate-200">
         <p className="text-slate-600">
-          You do not have permission to approve bookings. Only LECTURER, FACILITY_MANAGER, and ADMIN roles can approve.
+          You do not have permission to approve bookings. Only LECTURER,
+          FACILITY_MANAGER, and ADMIN roles can approve.
+        </p>
+        <p className="text-sm text-slate-500 mt-2">
+          DEBUG: Your roles: {user?.roles?.join(", ") || "None"}
         </p>
       </div>
     );
@@ -125,17 +183,35 @@ export default function BookingApprovalQueue() {
     );
   }
 
+  console.log(
+    "🎨 Rendering BookingApprovalQueue - pendingBookings:",
+    pendingBookings,
+  );
+
   return (
     <div className="space-y-6">
+      {/* DEBUG INFO */}
+      <div className="bg-blue-50 rounded-lg shadow-md p-4 border border-blue-200">
+        <h3 className="font-semibold text-blue-900 mb-2">🔍 Debug Info</h3>
+        <div className="text-xs text-blue-800 space-y-1 font-mono bg-white p-2 rounded border border-blue-100">
+          <div>✅ canApprove: {String(canApprove)}</div>
+          <div>👤 User email: {user?.email || "NOT SET"}</div>
+          <div>🔐 User roles: {user?.roles?.join(", ") || "NONE"}</div>
+          <div>📋 Pending bookings: {pendingBookings.length}</div>
+          <div>⏳ Loading: {String(loading)}</div>
+          <div>❌ Error: {error || "NONE"}</div>
+        </div>
+        <p className="text-xs text-blue-600 mt-2">
+          Check browser console (F12) for detailed logs
+        </p>
+      </div>
+
       {/* Header */}
-      <div className="border-b border-slate-200 pb-6">
-        <div className="flex items-baseline justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Booking Approvals</h1>
-            <p className="text-slate-600 mt-2">
-              {pendingBookings.length} booking{pendingBookings.length !== 1 ? "s" : ""} awaiting your approval
-            </p>
-          </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-slate-900">
+            Booking Approvals
+          </h2>
           <button
             onClick={fetchPendingBookings}
             className="px-4 py-2 text-slate-900 bg-slate-100 hover:bg-slate-200 font-semibold rounded-md transition-all duration-200 active:scale-95"
@@ -143,6 +219,17 @@ export default function BookingApprovalQueue() {
             Refresh
           </button>
         </div>
+
+        {error && (
+          <div className="rounded-md bg-red-50 p-4 mb-4">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        )}
+
+        <p className="text-sm text-slate-600 font-medium">
+          📋 {pendingBookings.length} booking
+          {pendingBookings.length !== 1 ? "s" : ""} awaiting your approval
+        </p>
       </div>
 
       {/* Error Message */}
@@ -264,10 +351,26 @@ export default function BookingApprovalQueue() {
                                     : "bg-amber-100 text-amber-700"
                               }`}
                             >
-                              {step.decision}
-                            </span>
-                          </div>
-                        ))}
+                              <span className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 text-xs font-bold">
+                                {step.stepOrder}
+                              </span>
+                              <span className="flex-1 font-medium">
+                                {step.approverRole}
+                              </span>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  step.decision === "APPROVED"
+                                    ? "bg-green-100 text-green-700"
+                                    : step.decision === "REJECTED"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {step.decision}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -315,6 +418,13 @@ export default function BookingApprovalQueue() {
           ))}
         </div>
       )}
+
+      {/* QR Code PDF Modal */}
+      <QRCodePdfModal
+        booking={lastApprovedBooking}
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+      />
     </div>
   );
 }

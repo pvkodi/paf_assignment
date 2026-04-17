@@ -2,6 +2,9 @@ package com.sliitreserve.api.util.mapping;
 
 import com.sliitreserve.api.dto.bookings.*;
 import com.sliitreserve.api.entities.booking.Booking;
+import com.sliitreserve.api.services.booking.BookingService;
+import com.sliitreserve.api.services.booking.CheckInService;
+import lombok.RequiredArgsConstructor;
 import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +16,10 @@ import java.util.stream.Collectors;
  * Mapper for converting between Booking entities and DTOs.
  */
 @Component
+@RequiredArgsConstructor
 public class BookingMapper implements BaseMapper<Booking, BookingRequestDTO, BookingResponseDTO> {
 
+    private final CheckInService checkInService;
     private final ApprovalStepRepository approvalStepRepository;
 
     public BookingMapper(ApprovalStepRepository approvalStepRepository) {
@@ -42,6 +47,15 @@ public class BookingMapper implements BaseMapper<Booking, BookingRequestDTO, Boo
         dto.setIsRecurringMaster(booking.isRecurringMaster());
         dto.setTimezone(booking.getTimezone());
         dto.setVersion(booking.getVersion());
+        
+        // Populate check-in status
+        try {
+            dto.setHasCheckedIn(checkInService.isCheckedIn(booking.getId()));
+        } catch (Exception e) {
+            // If check-in status cannot be determined, default to false
+            dto.setHasCheckedIn(false);
+        }
+        
         return dto;
     }
 

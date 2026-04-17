@@ -15,4 +15,6 @@ export { default as RecurrenceSelector } from "./RecurrenceSelector";
 export { default as QuotaPolicySummary } from "./QuotaPolicySummary";
 export { default as AdminBookForUserSelector } from "./AdminBookForUserSelector";
 export { default as CheckInComponent } from "./CheckInComponent";
-
+export { default as QuickCheckInPage } from "./QuickCheckInPage";
+export { default as QRCodeGenerator } from "./QRCodeGenerator";
+export { default as QRCodePdfModal } from "./QRCodePdfModal";
