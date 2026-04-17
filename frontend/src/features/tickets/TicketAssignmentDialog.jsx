@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../services/apiClient";
 
 /**
@@ -16,15 +16,7 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchTechnicians();
-  }, [facilityId]);
-
-  useEffect(() => {
-    applySearch();
-  }, [technicians, searchTerm]);
-
-  const fetchTechnicians = async () => {
+  const fetchTechnicians = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch technicians for the facility
@@ -38,9 +30,9 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
     } finally {
       setLoading(false);
     }
-  };
+  }, [facilityId]);
 
-  const applySearch = () => {
+  const applySearch = useCallback(() => {
     if (!searchTerm.trim()) {
       setFilteredTechnicians(technicians);
       return;
@@ -53,7 +45,15 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
         tech.email?.toLowerCase().includes(term),
     );
     setFilteredTechnicians(filtered);
-  };
+  }, [searchTerm, technicians]);
+
+  useEffect(() => {
+    fetchTechnicians();
+  }, [fetchTechnicians]);
+
+  useEffect(() => {
+    applySearch();
+  }, [applySearch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

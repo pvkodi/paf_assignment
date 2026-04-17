@@ -142,8 +142,8 @@ public class LocalFileStorageService {
             log.info("Generated thumbnail at: {}", thumbnailPath.toAbsolutePath());
 
             // Construct URLs for API access
-            String originalUrl = "/api/uploads/original/" + storageFilename;
-            String thumbnailUrl = "/api/uploads/thumbnails/" + thumbnailFilename;
+            String originalUrl = "/backend/api/uploads/original/" + storageFilename;
+            String thumbnailUrl = "/backend/api/uploads/thumbnails/" + thumbnailFilename;
 
             FileUploadResult result = new FileUploadResult(
                 storageFilename,

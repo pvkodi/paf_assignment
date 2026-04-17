@@ -34,7 +34,7 @@ public class SportsFacility extends Facility {
         super();
         this.setFacilityCode(facilityCode);
         this.setName(name);
-        this.setType(FacilityType.SPORTS_FACILITY);
+        this.setType(FacilityType.SPORTS);
         this.setCapacity(capacity);
         this.setLocation(location);
         this.sportsType = sportsType;

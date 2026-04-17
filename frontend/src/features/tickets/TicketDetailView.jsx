@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../../services/apiClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -21,11 +21,7 @@ export function TicketDetailView() {
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
-  useEffect(() => {
-    fetchTicket();
-  }, [id]);
-
-  const fetchTicket = async () => {
+  const fetchTicket = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -40,7 +36,11 @@ export function TicketDetailView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchTicket();
+  }, [fetchTicket]);
 
   const isStaff = user?.roles?.some((role) =>
     ["FACILITY_MANAGER", "ADMIN"].includes(role),
@@ -129,7 +129,7 @@ export function TicketDetailView() {
           onClick={() => navigate("/tickets")}
           className="text-indigo-600 hover:text-indigo-900 mb-4"
         >
-          ← Back to Tickets
+          Back to Tickets
         </button>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-700">{error || "Ticket not found"}</p>
@@ -146,7 +146,7 @@ export function TicketDetailView() {
           onClick={() => navigate("/tickets")}
           className="text-indigo-600 hover:text-indigo-900 mb-4 flex items-center gap-1"
         >
-          ← Back to Tickets
+          Back to Tickets
         </button>
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -356,11 +356,7 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
 
-  useEffect(() => {
-    fetchComments();
-  }, [ticketId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/tickets/${ticketId}/comments`);
@@ -370,7 +366,11 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ticketId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -709,7 +709,7 @@ function AttachmentsSection({ ticketId, attachments, isAdmin, onAttachmentDelete
                     />
                   ) : (
                     <div className="w-12 h-12 bg-gray-300 rounded mb-2 flex items-center justify-center text-xs">
-                      📄
+                      FILE
                     </div>
                   )}
                   <p className="font-medium text-gray-900 text-sm">

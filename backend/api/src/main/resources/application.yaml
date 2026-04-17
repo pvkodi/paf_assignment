@@ -2,7 +2,7 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://postgres:5432/smartcampus
+    url: jdbc:postgresql://localhost:5432/smartcampus
     username: smartcampus
     password: smartcampus
     driver-class-name: org.postgresql.Driver
@@ -14,6 +14,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 1
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 app:
   auth:
@@ -35,6 +37,8 @@ app:
     peak-hour-start: "08:00" # Peak hour restriction start
     peak-hour-end: "10:00" # Peak hour restriction end
     no-show-grace-minutes: 15 # 15 minutes from booking start to classify as no-show
+  booking:
+    high-capacity-threshold: 200 # Facilities with capacity > 200 require additional approval
 
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost:8080

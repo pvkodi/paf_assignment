@@ -244,18 +244,17 @@ public class EscalationServiceImpl implements EscalationService {
   /**
    * Get or create a system user for recording escalations triggered by the scheduler.
    *
-   * <p>In a real system, this would retrieve a pre-configured system admin user.
-   * For now, we return a placeholder that represents the system.
+   * <p>Uses the system admin user from seed data. This ensures foreign key constraint
+   * is satisfied in the ticket_escalation table.
    *
    * @return a User representing the system
    */
   private User getSystemUser() {
-    // TODO: Retrieve actual system user from database or configuration
-    // For now, return a minimal user object
+    // Use the system admin user from seed data (stable UUID from V2__seed_core_data.sql)
     return User.builder()
-        .id(UUID.fromString("00000000-0000-0000-0000-000000000000"))
-        .email("system@sliitreserve.edu")
-        .displayName("System")
+        .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+        .email("admin@smartcampus.edu")
+        .displayName("System Admin")
         .build();
   }
 }

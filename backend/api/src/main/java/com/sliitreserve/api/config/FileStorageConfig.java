@@ -43,11 +43,11 @@ public class FileStorageConfig implements WebMvcConfigurer {
 
     /**
      * Base upload directory path.
-     * Default: /uploads (configured for Docker environment)
+     * Default: uploads (at workspace root, outside backend folder)
      * Can be overridden via app.file-storage.upload-dir property
      */
-    // Use a workspace-local relative directory by default for development
-    @Value("${app.file-storage.upload-dir:uploads}")
+    // Use workspace root directory by default for development
+    @Value("${app.file-storage.upload-dir:../../../uploads}")
     private String uploadDir;
 
     /**

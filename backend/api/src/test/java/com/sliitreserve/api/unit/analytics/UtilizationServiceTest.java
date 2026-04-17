@@ -4,7 +4,7 @@ import com.sliitreserve.api.dto.analytics.UtilizationResponse;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
-import com.sliitreserve.api.repositories.UtilizationSnapshotRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
 import com.sliitreserve.api.services.analytics.RecommendationService;
 import com.sliitreserve.api.services.analytics.UtilizationAnalyticsService;
 import org.junit.jupiter.api.Test;

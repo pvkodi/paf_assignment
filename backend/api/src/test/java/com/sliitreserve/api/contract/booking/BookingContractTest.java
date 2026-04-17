@@ -1,6 +1,6 @@
 package com.sliitreserve.api.contract.booking;
 
-import com.sliitreserve.api.controllers.BookingController;
+import com.sliitreserve.api.controllers.bookings.BookingController;
 import com.sliitreserve.api.controllers.advice.GlobalExceptionHandler;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
@@ -8,7 +8,8 @@ import com.sliitreserve.api.entities.booking.Booking;
 import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ConflictException;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
 import com.sliitreserve.api.services.booking.BookingService;
 import com.sliitreserve.api.util.mapping.BookingMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +51,13 @@ class BookingContractTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApprovalStepRepository approvalStepRepository;
+
     private MockMvc mockMvc;
     @BeforeEach
     void setUp() {
-        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper());
+        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper(approvalStepRepository));
         mockMvc = MockMvcBuilders.standaloneSetup(bookingController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

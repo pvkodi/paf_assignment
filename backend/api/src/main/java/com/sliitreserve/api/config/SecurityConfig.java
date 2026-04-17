@@ -60,6 +60,9 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private com.sliitreserve.api.config.security.EndpointAuthorizationFilter endpointAuthorizationFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.info("Configuring OAuth2 + JWT security baseline with JWT filter");
@@ -76,16 +79,17 @@ public class SecurityConfig {
                 
                 // Configure URL-based authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public OAuth endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
-                        
-                        // Health check endpoints (for monitoring/load balancers)
-                        .requestMatchers("/ping", "/health").permitAll()
-                        
-                        // All other endpoints require authentication
-                        // JWT will be validated by JwtFilter
-                        .anyRequest().permitAll()  // Will be enforced by JwtFilter per endpoint
+                    // Public OAuth endpoints
+                    .requestMatchers("/api/auth/**").permitAll()
+
+                    // Health check endpoints (for monitoring/load balancers)
+                    .requestMatchers("/ping", "/health").permitAll()
+
+                    // All other endpoints are evaluated by the EndpointAuthorizationFilter
+                    .anyRequest().permitAll()
                 )
+                // Add endpoint-level RBAC filter after JWT authentication
+                .addFilterAfter(endpointAuthorizationFilter, JwtAuthenticationFilter.class)
                 
                 // Exception handling with integration to GlobalExceptionHandler
                 .exceptionHandling(ex -> {

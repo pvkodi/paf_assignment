@@ -13,13 +13,10 @@ export function OAuthCallback() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        setLoading(true);
-
         // Extract authorization code from URL
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
@@ -62,7 +59,6 @@ export function OAuthCallback() {
       } catch (err) {
         console.error("OAuth callback error:", err);
         setError(err.message || "Authentication failed. Please try again.");
-        setLoading(false);
 
         // Redirect to login after 3 seconds
         const timeout = setTimeout(() => {
@@ -78,9 +74,8 @@ export function OAuthCallback() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-red-50">
-        <div className="max-w-md text-center">
-          <div className="text-red-600 text-6xl mb-4">❌</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="max-w-md text-center rounded-lg border border-red-200 bg-white p-6">
           <h1 className="text-2xl font-bold text-red-900 mb-2">
             Authentication Error
           </h1>
@@ -94,7 +89,7 @@ export function OAuthCallback() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
         <h1 className="text-2xl font-bold text-gray-900">
