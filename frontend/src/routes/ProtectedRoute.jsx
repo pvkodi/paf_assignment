@@ -28,9 +28,15 @@ export function ProtectedRoute({
     );
   }
 
-  // Not authenticated - redirect to login
+  // Not authenticated - redirect to login with return URL
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const returnUrl = `${location.pathname}${location.search}`;
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(returnUrl)}`}
+        replace
+      />
+    );
   }
 
   // Check suspension status

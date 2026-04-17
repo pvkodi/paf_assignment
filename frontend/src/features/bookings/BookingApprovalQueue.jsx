@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
+import QRCodePdfModal from "./QRCodePdfModal";
 
 /**
  * BookingApprovalQueue Component
@@ -14,6 +15,8 @@ export default function BookingApprovalQueue() {
   const [actionLoading, setActionLoading] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState({});
   const [expandedId, setExpandedId] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [lastApprovedBooking, setLastApprovedBooking] = useState(null);
 
   // DEBUG: Log component mount and user info
   useEffect(() => {
@@ -21,16 +24,23 @@ export default function BookingApprovalQueue() {
     console.log("👤 User:", user);
     console.log("📋 User email:", user?.email);
     console.log("🔐 User roles:", user?.roles);
-    console.log("✅ hasRole function available:", typeof hasRole === 'function');
+    console.log(
+      "✅ hasRole function available:",
+      typeof hasRole === "function",
+    );
   }, []);
 
-  const canApprove = hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
-  
+  const canApprove =
+    hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
+
   // DEBUG: Log role checks
   useEffect(() => {
     console.log("🎭 Role Check Results:");
     console.log("  - hasRole('LECTURER'):", hasRole("LECTURER"));
-    console.log("  - hasRole('FACILITY_MANAGER'):", hasRole("FACILITY_MANAGER"));
+    console.log(
+      "  - hasRole('FACILITY_MANAGER'):",
+      hasRole("FACILITY_MANAGER"),
+    );
     console.log("  - hasRole('ADMIN'):", hasRole("ADMIN"));
     console.log("  - canApprove:", canApprove);
   }, [canApprove]);
@@ -48,7 +58,9 @@ export default function BookingApprovalQueue() {
 
   const fetchPendingBookings = async () => {
     try {
-      console.log("📡 Fetching pending approvals from /v1/bookings/pending-approvals");
+      console.log(
+        "📡 Fetching pending approvals from /v1/bookings/pending-approvals",
+      );
       setLoading(true);
       setError(null);
       const response = await apiClient.get("/v1/bookings/pending-approvals");
@@ -56,14 +68,20 @@ export default function BookingApprovalQueue() {
       console.log("📊 Data:", response.data);
       console.log("📦 Is array?", Array.isArray(response.data));
       setPendingBookings(Array.isArray(response.data) ? response.data : []);
-      console.log("✅ State updated with", Array.isArray(response.data) ? response.data.length : 0, "bookings");
+      console.log(
+        "✅ State updated with",
+        Array.isArray(response.data) ? response.data.length : 0,
+        "bookings",
+      );
     } catch (err) {
       console.error("❌ Failed to fetch pending approvals");
       console.error("Error object:", err);
       console.error("Response status:", err.response?.status);
       console.error("Response data:", err.response?.data);
       console.error("Error message:", err.message);
-      setError(err.response?.data?.message || "Failed to load pending approvals");
+      setError(
+        err.response?.data?.message || "Failed to load pending approvals",
+      );
       setPendingBookings([]);
     } finally {
       setLoading(false);
@@ -82,11 +100,18 @@ export default function BookingApprovalQueue() {
       if (note.length > 0) {
         params.append("note", note);
       }
-      
+
       const url = `/v1/bookings/${bookingId}/approve${params.toString() ? "?" + params.toString() : ""}`;
       console.log("📡 POST request to:", url);
       await apiClient.post(url);
       console.log("✅ Approve successful");
+
+      // Find the approved booking to show in modal
+      const approvedBooking = pendingBookings.find((b) => b.id === bookingId);
+      if (approvedBooking) {
+        setLastApprovedBooking(approvedBooking);
+        setShowQrModal(true);
+      }
 
       // Refresh list
       await fetchPendingBookings();
@@ -116,7 +141,7 @@ export default function BookingApprovalQueue() {
       if (note.length > 0) {
         params.append("note", note);
       }
-      
+
       const url = `/v1/bookings/${bookingId}/reject${params.toString() ? "?" + params.toString() : ""}`;
       console.log("📡 POST request to:", url);
       await apiClient.post(url);
@@ -144,12 +169,14 @@ export default function BookingApprovalQueue() {
   };
 
   if (!canApprove) {
-    console.warn("🚫 User lacks approval permissions - rendering no-permission message");
+    console.warn(
+      "🚫 User lacks approval permissions - rendering no-permission message",
+    );
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <p className="text-slate-600">
-          You do not have permission to approve bookings. Only LECTURER, FACILITY_MANAGER, and
-          ADMIN roles can approve.
+          You do not have permission to approve bookings. Only LECTURER,
+          FACILITY_MANAGER, and ADMIN roles can approve.
         </p>
         <p className="text-sm text-slate-500 mt-2">
           DEBUG: Your roles: {user?.roles?.join(", ") || "None"}
@@ -167,7 +194,10 @@ export default function BookingApprovalQueue() {
     );
   }
 
-  console.log("🎨 Rendering BookingApprovalQueue - pendingBookings:", pendingBookings);
+  console.log(
+    "🎨 Rendering BookingApprovalQueue - pendingBookings:",
+    pendingBookings,
+  );
 
   return (
     <div className="space-y-6">
@@ -182,13 +212,17 @@ export default function BookingApprovalQueue() {
           <div>⏳ Loading: {String(loading)}</div>
           <div>❌ Error: {error || "NONE"}</div>
         </div>
-        <p className="text-xs text-blue-600 mt-2">Check browser console (F12) for detailed logs</p>
+        <p className="text-xs text-blue-600 mt-2">
+          Check browser console (F12) for detailed logs
+        </p>
       </div>
 
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">Booking Approvals</h2>
+          <h2 className="text-2xl font-bold text-slate-900">
+            Booking Approvals
+          </h2>
           <button
             onClick={fetchPendingBookings}
             className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
@@ -204,8 +238,8 @@ export default function BookingApprovalQueue() {
         )}
 
         <p className="text-sm text-slate-600 font-medium">
-          📋 {pendingBookings.length} booking{pendingBookings.length !== 1 ? "s" : ""} awaiting your
-          approval
+          📋 {pendingBookings.length} booking
+          {pendingBookings.length !== 1 ? "s" : ""} awaiting your approval
         </p>
       </div>
 
@@ -213,7 +247,9 @@ export default function BookingApprovalQueue() {
       {pendingBookings.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
           <p className="text-lg text-slate-600">✅ All caught up!</p>
-          <p className="text-sm text-slate-500 mt-1">No bookings pending your approval</p>
+          <p className="text-sm text-slate-500 mt-1">
+            No bookings pending your approval
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -232,11 +268,15 @@ export default function BookingApprovalQueue() {
                     📅 {formatDate(booking.bookingDate)}
                   </p>
                   <p className="text-sm text-slate-600">
-                    👤 Requested by: {booking.requestedBy?.displayName || booking.requestedBy?.email}
+                    👤 Requested by:{" "}
+                    {booking.requestedBy?.displayName ||
+                      booking.requestedBy?.email}
                   </p>
                 </div>
                 <button
-                  onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
+                  onClick={() =>
+                    setExpandedId(expandedId === booking.id ? null : booking.id)
+                  }
                   className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors text-sm font-medium"
                 >
                   {expandedId === booking.id ? "Hide" : "Expand"}
@@ -276,15 +316,18 @@ export default function BookingApprovalQueue() {
                 <div className="bg-slate-50 rounded-lg p-4 mb-4 space-y-3 border border-slate-200">
                   {/* Facility Info */}
                   <div>
-                    <p className="text-sm font-semibold text-slate-700 mb-1">Facility Details</p>
+                    <p className="text-sm font-semibold text-slate-700 mb-1">
+                      Facility Details
+                    </p>
                     <div className="text-xs text-slate-600 space-y-1">
                       <p>
                         <span className="font-medium">Type:</span>{" "}
                         {booking.facility?.type?.replace(/_/g, " ")}
                       </p>
                       <p>
-                        <span className="font-medium">Location:</span> {booking.facility?.building} -
-                        Floor {booking.facility?.floor}
+                        <span className="font-medium">Location:</span>{" "}
+                        {booking.facility?.building} - Floor{" "}
+                        {booking.facility?.floor}
                       </p>
                       <p>
                         <span className="font-medium">Status:</span>{" "}
@@ -294,41 +337,50 @@ export default function BookingApprovalQueue() {
                   </div>
 
                   {/* Approval Workflow */}
-                  {booking.approvalSteps && booking.approvalSteps.length > 0 && (
-                    <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">Approval Steps</p>
-                      <div className="space-y-1 text-xs">
-                        {booking.approvalSteps.map((step, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2 p-2 bg-white rounded border border-slate-200"
-                          >
-                            <span className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 text-xs font-bold">
-                              {step.stepOrder}
-                            </span>
-                            <span className="flex-1 font-medium">{step.approverRole}</span>
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                step.decision === "APPROVED"
-                                  ? "bg-green-100 text-green-700"
-                                  : step.decision === "REJECTED"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                              }`}
+                  {booking.approvalSteps &&
+                    booking.approvalSteps.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700 mb-1">
+                          Approval Steps
+                        </p>
+                        <div className="space-y-1 text-xs">
+                          {booking.approvalSteps.map((step, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 p-2 bg-white rounded border border-slate-200"
                             >
-                              {step.decision}
-                            </span>
-                          </div>
-                        ))}
+                              <span className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 text-xs font-bold">
+                                {step.stepOrder}
+                              </span>
+                              <span className="flex-1 font-medium">
+                                {step.approverRole}
+                              </span>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  step.decision === "APPROVED"
+                                    ? "bg-green-100 text-green-700"
+                                    : step.decision === "REJECTED"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {step.decision}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Booking Purpose */}
                   {booking.purpose && (
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">Purpose</p>
-                      <p className="text-xs text-slate-600">{booking.purpose}</p>
+                      <p className="text-sm font-semibold text-slate-700 mb-1">
+                        Purpose
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        {booking.purpose}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -360,7 +412,9 @@ export default function BookingApprovalQueue() {
                   disabled={actionLoading === booking.id}
                   className="flex-1 px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  {actionLoading === booking.id ? "Processing..." : "✅ Approve"}
+                  {actionLoading === booking.id
+                    ? "Processing..."
+                    : "✅ Approve"}
                 </button>
                 <button
                   onClick={() => handleReject(booking.id)}
@@ -374,6 +428,13 @@ export default function BookingApprovalQueue() {
           ))}
         </div>
       )}
+
+      {/* QR Code PDF Modal */}
+      <QRCodePdfModal
+        booking={lastApprovedBooking}
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+      />
     </div>
   );
 }

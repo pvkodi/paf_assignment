@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sliitreserve.api.dto.bookings.CheckInRequestDTO;
 import com.sliitreserve.api.entities.booking.Booking;
 import com.sliitreserve.api.entities.booking.CheckInMethod;
-import com.sliitreserve.api.entities.booking.CheckInRecord;
+import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
@@ -16,17 +16,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -49,21 +52,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Requirements Covered:
  * - POST /api/v1/bookings/{bookingId}/check-in/with-geofencing endpoint
  * - Proper HTTP status codes and error messages
- * - Geofencing data validation (WiFi SSID, BSSID, latitude, longitude)
+ * - Geofencing data validation (latitude, longitude)
  * - Check-in record persisted correctly
  * - Suspension policy enforced
  */
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 @TestPropertySource(locations = "classpath:application-test.properties")
 @DisplayName("Check-In with Geofencing Integration Tests")
 public class CheckInGeofencingIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebApplicationContext webApplicationContext;
 
-    @Autowired
+    private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @Autowired
@@ -88,65 +90,76 @@ public class CheckInGeofencingIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .build();
+        objectMapper = new ObjectMapper();
+
         // Create test user
-        testUser = new User();
-        testUser.setEmail("student@test.com");
-        testUser.setName("Test Student");
-        testUser.setRole(Role.USER);
+        testUser = User.builder()
+                .email("student@test.com")
+                .displayName("Test Student")
+                .roles(Set.of(Role.USER))
+                .build();
         testUser = userRepository.save(testUser);
         userId = testUser.getId();
 
         // Create test lecturer
-        testLecturer = new User();
-        testLecturer.setEmail("lecturer@test.com");
-        testLecturer.setName("Test Lecturer");
-        testLecturer.setRole(Role.LECTURER);
+        testLecturer = User.builder()
+                .email("lecturer@test.com")
+                .displayName("Test Lecturer")
+                .roles(Set.of(Role.LECTURER))
+                .build();
         testLecturer = userRepository.save(testLecturer);
 
         // Create facility with geofencing configuration
-        testFacility = new Facility();
-        testFacility.setName("Lecture Hall A");
-        testFacility.setCapacity(50);
-        testFacility.setWifiSSID("SLT-Fiber-5G_6df8");
-        testFacility.setWifiMacAddress("b4:0f:3b:64:6d:f8");
-        testFacility.setLatitude(6.9271);
-        testFacility.setLongitude(80.7789);
-        testFacility.setGeofenceRadiusMeters(100);
+        testFacility = Facility.builder()
+                .name("Lecture Hall A")
+                .capacity(50)
+                .wifiSSID("SLT-Fiber-5G_6df8")
+                .wifiMacAddress("b4:0f:3b:64:6d:f8")
+                .latitude(6.9271)
+                .longitude(80.7789)
+                .geofenceRadiusMeters(100)
+                .build();
         testFacility = facilityRepository.save(testFacility);
         facilityId = testFacility.getId();
 
         // Create a booking
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
-        testBooking = new Booking();
-        testBooking.setUser(testUser);
-        testBooking.setFacility(testFacility);
-        testBooking.setStartTime(now.plusMinutes(10));
-        testBooking.setEndTime(now.plusHours(2));
-        testBooking.setStatus("APPROVED");
+        LocalDate bookingDate = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        testBooking = Booking.builder()
+                .bookedFor(testUser)
+                .requestedBy(testUser)
+                .facility(testFacility)
+                .bookingDate(bookingDate)
+                .startTime(LocalTime.of(14, 0))
+                .endTime(LocalTime.of(16, 0))
+                .purpose("Test Class")
+                .attendees(1)
+                .status(BookingStatus.APPROVED)
+                .build();
         testBooking = bookingRepository.save(testBooking);
         bookingId = testBooking.getId();
     }
 
     @Test
     @WithMockUser(username = "student@test.com", roles = {"USER"})
-    @DisplayName("Should successfully check in with valid WiFi and GPS")
+    @DisplayName("Should successfully check in with valid GPS")
     void testSuccessfulCheckInWithValidGeofencing() throws Exception {
         CheckInRequestDTO request = new CheckInRequestDTO();
         request.setMethod(CheckInMethod.QR);
         request.setLatitude(6.92705);  // Within radius (~100m from facility)
         request.setLongitude(80.77895);
 
-        MvcResult result = mockMvc.perform(post("/api/v1/bookings/{bookingId}/check-in/with-geofencing", bookingId)
+        mockMvc.perform(post("/api/v1/bookings/{bookingId}/check-in/with-geofencing", bookingId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.booking_id", is(bookingId.toString())))
                 .andExpect(jsonPath("$.method", is("QR")))
-                .andExpect(jsonPath("$.checked_in_at", notNullValue()))
-                .andReturn();
+                .andExpect(jsonPath("$.checked_in_at", notNullValue()));
 
         // Verify check-in record was created
-        assert checkInRepository.findByBookingId(bookingId).size() == 1;
+        assert checkInRepository.findByBooking_Id(bookingId).size() == 1;
     }
 
     @Test
@@ -165,7 +178,7 @@ public class CheckInGeofencingIntegrationTest {
                 .andExpect(jsonPath("$.error", containsString("GEOFENCE_GPS_OUT_OF_RANGE")));
 
         // Verify no check-in record was created
-        assert checkInRepository.findByBookingId(bookingId).isEmpty();
+        assert checkInRepository.findByBooking_Id(bookingId).isEmpty();
     }
 
     @Test
@@ -173,21 +186,27 @@ public class CheckInGeofencingIntegrationTest {
     @DisplayName("Should allow check-in without geofencing when not configured")
     void testCheckInWithoutGeofencingConfigured() throws Exception {
         // Create facility without geofencing
-        Facility facilityNoGeo = new Facility();
-        facilityNoGeo.setName("Hall without Geofencing");
-        facilityNoGeo.setCapacity(30);
-        facilityNoGeo.setWifiSSID(null);  // No WiFi configured
-        facilityNoGeo.setLatitude(null);   // No GPS configured
+        Facility facilityNoGeo = Facility.builder()
+                .name("Hall without Geofencing")
+                .capacity(30)
+                .wifiSSID(null)
+                .latitude(null)
+                .build();
         facilityNoGeo = facilityRepository.save(facilityNoGeo);
 
         // Create booking for this facility
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
-        Booking bookingNoGeo = new Booking();
-        bookingNoGeo.setUser(testUser);
-        bookingNoGeo.setFacility(facilityNoGeo);
-        bookingNoGeo.setStartTime(now.plusMinutes(10));
-        bookingNoGeo.setEndTime(now.plusHours(2));
-        bookingNoGeo.setStatus("APPROVED");
+        LocalDate bookingDate = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        Booking bookingNoGeo = Booking.builder()
+                .bookedFor(testUser)
+                .requestedBy(testUser)
+                .facility(facilityNoGeo)
+                .bookingDate(bookingDate)
+                .startTime(LocalTime.of(14, 0))
+                .endTime(LocalTime.of(16, 0))
+                .purpose("Test Class")
+                .attendees(1)
+                .status(BookingStatus.APPROVED)
+                .build();
         bookingNoGeo = bookingRepository.save(bookingNoGeo);
 
         CheckInRequestDTO request = new CheckInRequestDTO();

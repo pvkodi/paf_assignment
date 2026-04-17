@@ -21,6 +21,8 @@ import {
   BookingRecommendationsPage,
   AnalyticsPage,
   AppealsPage,
+  QuickCheckInPageWrapper,
+  QRCodeGeneratorPage,
 } from "./routes/pages";
 
 /**
@@ -53,18 +55,32 @@ function App() {
 
             {/* Facilities & Bookings */}
             <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
-            <Route path="bookings/recommendations" element={<BookingRecommendationsPage />} />
+            <Route
+              path="bookings/recommendations"
+              element={<BookingRecommendationsPage />}
+            />
             <Route path="my-bookings" element={<BookingsPage />} />
             <Route path="facilities" element={<FacilitiesPage />} />
-            <Route path="facilities/:id" element={<FacilityDetailRoutePage />} />
-            <Route path="facilities/underutilized" element={<UnderutilizedPage />} />
-            <Route path="facilities/suggestions" element={<FacilitySuggestionsPage />} />
+            <Route
+              path="facilities/:id"
+              element={<FacilityDetailRoutePage />}
+            />
+            <Route
+              path="facilities/underutilized"
+              element={<UnderutilizedPage />}
+            />
+            <Route
+              path="facilities/suggestions"
+              element={<FacilitySuggestionsPage />}
+            />
 
             {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
             <Route
               path="approvals/bookings"
               element={
-                <ProtectedRoute requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}>
+                <ProtectedRoute
+                  requiredRoles={["LECTURER", "FACILITY_MANAGER", "ADMIN"]}
+                >
                   <BookingApprovalsPage />
                 </ProtectedRoute>
               }
@@ -76,6 +92,16 @@ function App() {
               element={
                 <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
                   <AdminBookingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* QR Code Generator - for ADMIN/FACILITY_MANAGER to generate check-in QR codes */}
+            <Route
+              path="qr-code-generator"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
+                  <QRCodeGeneratorPage />
                 </ProtectedRoute>
               }
             />
@@ -117,6 +143,16 @@ function App() {
           >
             <Route index element={<AppealsPage />} />
           </Route>
+
+          {/* QR Code Quick Check-In Route */}
+          <Route
+            path="/check-in/booking/:bookingId"
+            element={
+              <ProtectedRoute>
+                <QuickCheckInPageWrapper />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 Not Found */}
           <Route

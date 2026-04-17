@@ -3,6 +3,7 @@ package com.sliitreserve.api.util.mapping;
 import com.sliitreserve.api.dto.bookings.BookingRequestDTO;
 import com.sliitreserve.api.dto.bookings.BookingResponseDTO;
 import com.sliitreserve.api.entities.booking.Booking;
+import com.sliitreserve.api.services.booking.BookingService;
 import com.sliitreserve.api.services.booking.CheckInService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
