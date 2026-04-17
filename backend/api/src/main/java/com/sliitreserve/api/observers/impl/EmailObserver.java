@@ -5,7 +5,7 @@ import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.observers.EventSeverity;
 import com.sliitreserve.api.observers.Observer;
 import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
