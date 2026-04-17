@@ -22,10 +22,6 @@ public class BookingMapper implements BaseMapper<Booking, BookingRequestDTO, Boo
     private final CheckInService checkInService;
     private final ApprovalStepRepository approvalStepRepository;
 
-    public BookingMapper(ApprovalStepRepository approvalStepRepository) {
-        this.approvalStepRepository = approvalStepRepository;
-    }
-
     @Override
     public BookingResponseDTO toResponseDTO(Booking booking) {
         if (booking == null) {

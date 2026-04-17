@@ -63,7 +63,7 @@ class BookingContractTest {
     private MockMvc mockMvc;
     @BeforeEach
     void setUp() {
-        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper(approvalStepRepository));
+        BookingController bookingController = new BookingController(bookingService, userRepository, new BookingMapper(checkInService, approvalStepRepository));
         mockMvc = MockMvcBuilders.standaloneSetup(bookingController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
