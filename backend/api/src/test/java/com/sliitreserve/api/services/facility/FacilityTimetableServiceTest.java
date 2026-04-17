@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -30,13 +31,13 @@ public class FacilityTimetableServiceTest {
     @Mock
     private FacilityRepository facilityRepository;
 
-    @Mock
     private TimetableParserService parserService;
 
     private FacilityTimetableService timetableService;
 
     @BeforeEach
     void setUp() {
+        parserService = new TimetableParserService();
         timetableService = new FacilityTimetableService(facilityRepository, parserService);
     }
 
@@ -152,13 +153,6 @@ public class FacilityTimetableServiceTest {
                 </table>
                 </html>
                 """;
-
-        // Setup mock facility
-        Facility mockFacility = new Facility();
-        mockFacility.setFacilityCode("G1301");
-        mockFacility.setAvailabilityStartTime(LocalTime.of(8, 0));
-        mockFacility.setAvailabilityEndTime(LocalTime.of(17, 0));
-        when(facilityRepository.findByFacilityCode("G1301")).thenReturn(Optional.of(mockFacility));
 
         timetableService.loadTimetableFromHtml(html, false);
 

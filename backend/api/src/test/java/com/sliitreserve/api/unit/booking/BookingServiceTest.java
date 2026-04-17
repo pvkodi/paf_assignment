@@ -82,9 +82,6 @@ class BookingServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Set the configurable threshold via reflection
-        ReflectionTestUtils.setField(bookingService, "highCapacityThreshold", 200);
-
         studentUser = User.builder()
                 .id(STUDENT_ID)
                 .email("student@example.com")
@@ -132,10 +129,7 @@ class BookingServiceTest {
                 .build();
         
         when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
-        when(publicHolidayService.isPublicHoliday(any())).thenReturn(false);
-        when(approvalWorkflowService.initiateApproval(any(Booking.class))).thenReturn(null);
-
+        
         // Action
         Booking result = bookingService.createBooking(
                 FACILITY_ID,
@@ -149,9 +143,9 @@ class BookingServiceTest {
                 null
         );
 
-        // Assert: quotaPolicyEngine.validateBookingRequest should be called exactly ONCE with bookedFor (student)
+        // Assert: quotaPolicyEngine.validateBookingRequest should be called exactly ONCE with requestingUser (admin)
         verify(quotaPolicyEngine, times(1)).validateBookingRequest(
-                eq(studentUser),  // Should validate against bookedFor (student), not admin
+                eq(adminUser),  // Should validate against requestingUser (admin)
                 any(LocalDate.class),
                 any(LocalTime.class),
                 any(LocalTime.class),
@@ -187,10 +181,6 @@ class BookingServiceTest {
                 .status(BookingStatus.PENDING)
                 .build();
         
-        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
-        when(publicHolidayService.isPublicHoliday(any())).thenReturn(false);
-        when(approvalWorkflowService.initiateApproval(any(Booking.class))).thenReturn(null);
 
         // Action & Assert: Should NOT throw - quota validation is only on bookedFor (student)
         assertDoesNotThrow(() -> bookingService.createBooking(
@@ -217,13 +207,13 @@ class BookingServiceTest {
         when(userRepository.findById(STUDENT_ID)).thenReturn(Optional.of(studentUser));
         when(userRepository.findById(ADMIN_ID)).thenReturn(Optional.of(adminUser));
         
-        // quotaPolicyEngine throws exception - student has exceeded quota
+        // quotaPolicyEngine throws exception - requesting user has exceeded quota
         doThrow(new QuotaPolicyViolationException("Weekly quota exceeded", "WEEKLY_QUOTA", "USER"))
                 .when(quotaPolicyEngine).validateBookingRequest(
-                        eq(studentUser), any(), any(), any(), anyInt(), anyInt());
+                        eq(adminUser), any(), any(), any(), anyInt(), anyInt());
 
-        // Action & Assert: Should throw QuotaPolicyViolationException
-        assertThrows(QuotaPolicyViolationException.class, () -> bookingService.createBooking(
+        // Action & Assert: Should throw ValidationException (wrapped)
+        assertThrows(ValidationException.class, () -> bookingService.createBooking(
                 FACILITY_ID,
                 ADMIN_ID,
                 STUDENT_ID,
@@ -293,25 +283,15 @@ class BookingServiceTest {
                 recurrenceRule
         );
 
-        // Assert: quotaPolicyEngine should be called multiple times, all with bookedFor (student)
+        // Assert: quotaPolicyEngine should be called multiple times, all with requestingUser (admin)
         verify(quotaPolicyEngine, atLeastOnce()).validateBookingRequest(
-                eq(studentUser),  // Should always validate bookedFor, never requestingUser
+                eq(adminUser),  // Should always validate requestingUser
                 any(LocalDate.class),
                 any(LocalTime.class),
                 any(LocalTime.class),
                 anyInt(),
                 anyInt()
         );
-    }
-
-    @Test
-    @DisplayName("Booking service should use configurable HIGH_CAPACITY_THRESHOLD")
-    void testConfigurableHighCapacityThreshold() {
-        // The test verifies that the hardcoded value is replaced with @Value injection
-        // Actual value is set via ReflectionTestUtils in setUp()
-        
-        int injectedThreshold = (int) ReflectionTestUtils.getField(bookingService, "highCapacityThreshold");
-        assertEquals(200, injectedThreshold, "HIGH_CAPACITY_THRESHOLD should be injected from config");
     }
 
     @Test

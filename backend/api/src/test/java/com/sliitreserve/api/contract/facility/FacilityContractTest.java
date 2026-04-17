@@ -7,6 +7,7 @@ import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ResourceNotFoundException;
 import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.services.facility.FacilityOptimizationService;
+import com.sliitreserve.api.services.facility.FacilityTimetableService;
 import com.sliitreserve.api.services.facility.FacilityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,14 +33,16 @@ public class FacilityContractTest {
     private MockMvc mockMvc;
     private FacilityService facilityService;
     private FacilityOptimizationService facilityOptimizationService;
+    private FacilityTimetableService facilityTimetableService;
     private UserRepository userRepository;
 
     @BeforeEach
     public void setup() {
         facilityService = Mockito.mock(FacilityService.class);
         facilityOptimizationService = Mockito.mock(FacilityOptimizationService.class);
+        facilityTimetableService = Mockito.mock(FacilityTimetableService.class);
         userRepository = Mockito.mock(UserRepository.class);
-        FacilityController controller = new FacilityController(facilityService, facilityOptimizationService, userRepository);
+        FacilityController controller = new FacilityController(facilityService, facilityOptimizationService, facilityTimetableService, userRepository);
         this.mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())

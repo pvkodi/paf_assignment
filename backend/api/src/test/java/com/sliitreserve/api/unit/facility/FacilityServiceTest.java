@@ -42,6 +42,9 @@ public class FacilityServiceTest {
     @Mock
     private FacilityFactory facilityFactory;
 
+    @Mock
+    private com.sliitreserve.api.services.facility.FacilityTimetableService facilityTimetableService;
+
     private FacilityMapper facilityMapper;
 
     @Mock
@@ -52,7 +55,7 @@ public class FacilityServiceTest {
     @BeforeEach
     void init() {
         facilityMapper = org.mockito.Mockito.spy(new FacilityMapper());
-        facilityService = new FacilityService(facilityRepository, facilityFactory, facilityMapper, maintenanceIntegrationService);
+        facilityService = new FacilityService(facilityRepository, facilityFactory, facilityMapper, maintenanceIntegrationService, facilityTimetableService);
     }
 
     @Test
