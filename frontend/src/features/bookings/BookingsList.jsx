@@ -134,11 +134,11 @@ export default function BookingsList() {
                     {booking.facility?.name || "Unknown Facility"}
                   </h3>
                   <p className="text-slate-600 text-sm mt-1">
-                    {formatBookingDate(booking.bookingDate)} · {booking.startTime} -{" "}
-                    {booking.endTime}
+                    {formatBookingDate(booking.bookingDate)} ·{" "}
+                    {booking.startTime} - {booking.endTime}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColorClasses(
                       booking.status,
@@ -146,6 +146,11 @@ export default function BookingsList() {
                   >
                     {booking.status}
                   </span>
+                  {booking.has_checked_in && (
+                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-300">
+                      ✓ Checked In
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -164,7 +169,9 @@ export default function BookingsList() {
                   <p className="text-slate-600">{booking.facility?.location}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-slate-700">Requested By</span>
+                  <span className="font-medium text-slate-700">
+                    Requested By
+                  </span>
                   <p className="text-slate-600">{booking.requestedBy?.name}</p>
                 </div>
               </div>
@@ -179,16 +186,27 @@ export default function BookingsList() {
                   }
                   className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
                 >
-                  {selectedBookingId === booking.id ? "Hide Details" : "View Details"}
+                  {selectedBookingId === booking.id
+                    ? "Hide Details"
+                    : "View Details"}
                 </button>
 
-                {canCheckInBooking(booking) && (
+                {booking.has_checked_in ? (
                   <button
-                    onClick={() => setCheckInBookingId(booking.id)}
-                    className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                    disabled
+                    className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium cursor-not-allowed opacity-75"
                   >
-                    ✓ Check In
+                    ✓ Checked In
                   </button>
+                ) : (
+                  canCheckInBooking(booking) && (
+                    <button
+                      onClick={() => setCheckInBookingId(booking.id)}
+                      className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                    >
+                      ✓ Check In
+                    </button>
+                  )
                 )}
                 {canCancelBooking(booking) && (
                   <button
@@ -196,7 +214,9 @@ export default function BookingsList() {
                     disabled={actionLoading === booking.id}
                     className="px-3 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 disabled:bg-red-400 transition-colors"
                   >
-                    {actionLoading === booking.id ? "Cancelling..." : "✕ Cancel"}
+                    {actionLoading === booking.id
+                      ? "Cancelling..."
+                      : "✕ Cancel"}
                   </button>
                 )}
               </div>

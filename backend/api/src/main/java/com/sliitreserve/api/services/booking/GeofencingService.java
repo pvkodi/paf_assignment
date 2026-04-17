@@ -174,7 +174,7 @@ public class GeofencingService {
      * @param lon2 Second longitude (decimal degrees)
      * @return Distance in meters
      */
-    protected double calculateHaversineDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
+    public double calculateHaversineDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
         final double EARTH_RADIUS_KM = 6371.0;
         
         // Convert degrees to radians
