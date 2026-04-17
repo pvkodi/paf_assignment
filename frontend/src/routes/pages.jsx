@@ -166,9 +166,6 @@ function FacilitiesAndBookingsPage() {
       </div>
 
       {/* Quota Policy Summary below facilities search */}
-      <div>
-        <QuotaPolicySummary userRole="USER" compact={false} />
-      </div>
 
       {/* Slide-over booking panel (hovering, rounded, spaced) */}
       {isBookingOpen && (
