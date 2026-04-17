@@ -192,22 +192,6 @@ export default function BookingApprovalQueue() {
 
   return (
     <div className="space-y-6">
-      {/* DEBUG INFO */}
-      <div className="bg-blue-50 rounded-lg shadow-md p-4 border border-blue-200">
-        <h3 className="font-semibold text-blue-900 mb-2">🔍 Debug Info</h3>
-        <div className="text-xs text-blue-800 space-y-1 font-mono bg-white p-2 rounded border border-blue-100">
-          <div>✅ canApprove: {String(canApprove)}</div>
-          <div>👤 User email: {user?.email || "NOT SET"}</div>
-          <div>🔐 User roles: {user?.roles?.join(", ") || "NONE"}</div>
-          <div>📋 Pending bookings: {pendingBookings.length}</div>
-          <div>⏳ Loading: {String(loading)}</div>
-          <div>❌ Error: {error || "NONE"}</div>
-        </div>
-        <p className="text-xs text-blue-600 mt-2">
-          Check browser console (F12) for detailed logs
-        </p>
-      </div>
-
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
