@@ -222,7 +222,7 @@ public class EndpointAuthorizationConfig {
                 new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
 
         ENDPOINT_ACCESS_MATRIX.put("DELETE /api/tickets/*/attachments/*",
-                new HashSet<>(Collections.singletonList(Role.ADMIN)));
+                new HashSet<>(Arrays.asList(Role.USER, Role.LECTURER, Role.TECHNICIAN, Role.FACILITY_MANAGER, Role.ADMIN)));
 
         // ========== NOTIFICATION ENDPOINTS (US5) ==========
         // All authenticated users can view their notifications

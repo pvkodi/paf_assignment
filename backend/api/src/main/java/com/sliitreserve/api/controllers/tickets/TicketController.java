@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ import com.sliitreserve.api.services.ticket.EscalationService;
 import com.sliitreserve.api.workflow.escalation.EscalationLevel;
 
 import jakarta.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -386,6 +388,7 @@ public class TicketController {
   }
 
   @DeleteMapping("/{ticketId}/attachments/{attachmentId}")
+  @Transactional
   public ResponseEntity<Void> deleteAttachment(
       @PathVariable UUID ticketId,
       @PathVariable UUID attachmentId,
@@ -407,17 +410,33 @@ public class TicketController {
       throw new IllegalArgumentException("Attachment not found: " + attachmentId);
     }
 
-    // Check authorization: owner or admin can delete
+    // Check authorization: owner, admin, or assigned technician can delete
     User currentUser = getCurrentUser(auth);
-    boolean isOwner = attachment.getUploadedBy().getId().equals(currentUser.getId());
+    boolean isOwner = attachment.getUploadedBy() != null && 
+        attachment.getUploadedBy().getId().equals(currentUser.getId());
     boolean isAdmin = auth.getAuthorities().stream()
         .anyMatch(auth2 -> auth2.getAuthority().equals("ROLE_ADMIN"));
     
-    if (!isOwner && !isAdmin) {
+    // Check if user is a technician assigned to this ticket
+    boolean isTechnician = auth.getAuthorities().stream()
+        .anyMatch(auth2 -> auth2.getAuthority().equals("ROLE_TECHNICIAN"));
+    boolean isAssignedTechnician = isTechnician && 
+        ticket.getAssignedTechnician() != null && 
+        ticket.getAssignedTechnician().getId().equals(currentUser.getId());
+    
+    if (!isOwner && !isAdmin && !isAssignedTechnician) {
       throw new IllegalArgumentException("Not authorized to delete this attachment");
     }
 
+    // Remove attachment from ticket's attachments collection
+    // With orphanRemoval = true, JPA will automatically delete the orphaned attachment
+    ticket.getAttachments().remove(attachment);
+    ticketRepository.save(ticket);
+    
+    // Delete files from disk (handled by service)
     attachmentService.deleteAttachment(attachment);
+    
+    log.info("Successfully deleted attachment {} from ticket {}", attachmentId, ticketId);
     return ResponseEntity.noContent().build();
   }
 
@@ -537,6 +556,7 @@ public class TicketController {
         .visibility(comment.getVisibility())
         .authorId(comment.getAuthor().getId())
         .authorName(comment.getAuthor().getDisplayName())
+        .authorRoles(new ArrayList<>(comment.getAuthor().getRoles()))
         .createdAt(comment.getCreatedAt())
         .updatedAt(comment.getUpdatedAt())
         .isEdited(comment.getUpdatedAt() != null && !comment.getUpdatedAt().equals(comment.getCreatedAt()))

@@ -379,6 +379,7 @@ export function TicketDetailView() {
               {activeTab === "attachments" && (
                 <AttachmentsSection
                   ticketId={ticket.id}
+                  ticket={ticket}
                   attachments={ticket.attachments}
                   user={user}
                   isAdmin={user?.roles?.includes("ADMIN")}
@@ -461,6 +462,13 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
   const [error, setError] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
+
+  // Helper to check user roles (handles both string and array formats)
+  const hasRole = (role) => {
+    if (!user?.roles) return false;
+    const userRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
+    return userRoles.includes(role);
+  };
 
   const fetchComments = useCallback(async () => {
     try {
@@ -656,27 +664,50 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
               ) : (
                 <>
                   <p className="text-gray-700 text-sm">{comment.content}</p>
-                  {(user?.id === comment.authorId ||
-                    user?.roles?.includes("ADMIN")) && (
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          setEditingCommentId(comment.id);
-                          setEditingContent(comment.content);
-                        }}
-                        className="text-xs text-indigo-600 hover:text-indigo-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDeleteComment(comment.id)}
-                        className="text-xs text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    // Compare IDs as strings for consistency
+                    const userIdStr = user?.id?.toString();
+                    const authorIdStr = comment.authorId?.toString();
+                    const isAuthor = userIdStr && authorIdStr && userIdStr === authorIdStr;
+                    const isAdmin = hasRole("ADMIN");
+                    const isTechnician = hasRole("TECHNICIAN");
+                    
+                    // Check if comment author is admin
+                    const authorRoles = comment.authorRoles || [];
+                    const authorIsAdmin = authorRoles.includes("ADMIN");
+                    
+                    const canEdit = isAuthor; // Only author can edit
+                    // Technician cannot delete admin comments
+                    const canDelete = isAuthor || isAdmin || (isTechnician && !authorIsAdmin);
+                    
+                    if (canEdit || canDelete) {
+                      return (
+                        <div className="flex gap-2 mt-3">
+                          {canEdit && (
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(comment.id);
+                                setEditingContent(comment.content);
+                              }}
+                              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 transition"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() =>
+                                handleDeleteComment(comment.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </>
               )}
             </div>
@@ -690,12 +721,19 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
 /**
  * Attachments Section Component
  */
-function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachmentDeleted }) {
+function AttachmentsSection({ ticketId, ticket, attachments, user, isAdmin, onAttachmentDeleted }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [deleting, setDeleting] = useState(null); // Track which attachment is being deleted
   const [file, setFile] = useState(null);
   const [attachmentType, setAttachmentType] = useState("PROBLEM"); // PROBLEM or SOLUTION
+
+  // Helper to check user roles (handles both string and array formats)
+  const hasRole = (role) => {
+    if (!user?.roles) return false;
+    const userRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
+    return userRoles.includes(role);
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
@@ -859,7 +897,7 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {attachment.type === "PROBLEM" ? "🔴 Issue" : "✅ Solution"}
+                        {attachment.type === "PROBLEM" ? " Issue" : " Solution"}
                       </span>
                     )}
                   </div>
@@ -876,7 +914,9 @@ function AttachmentsSection({ ticketId, attachments, user, isAdmin, onAttachment
                   >
                     Download
                   </a>
-                  {(isAdmin || attachment.uploadedBy?.id === user?.id) && (
+                  {(isAdmin || 
+                    attachment.uploadedById === user?.id || 
+                    (hasRole("TECHNICIAN") && ticket?.assignedTechnicianId === user?.id)) && (
                     <button
                       onClick={() =>
                         handleDelete(attachment.id)}

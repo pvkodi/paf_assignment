@@ -443,13 +443,11 @@ public class TicketService {
       throw new IllegalStateException("Cannot update a deleted comment");
     }
 
-    // Check permissions: author or admin
+    // Check permissions: only author can edit comments
     boolean isAuthor = comment.getAuthor().getId().equals(updateBy.getId());
-    boolean isAdmin =
-        updateBy.getRoles().stream().anyMatch(role -> role == Role.ADMIN);
 
-    if (!isAuthor && !isAdmin) {
-      throw new IllegalStateException("Only comment author or admin can update comment");
+    if (!isAuthor) {
+      throw new IllegalStateException("Only comment author can edit their own comment");
     }
 
     comment.setContent(newContent);
@@ -486,12 +484,21 @@ public class TicketService {
       throw new IllegalStateException("Comment is already deleted");
     }
 
-    // Check permissions: author or admin
+    // Check permissions: author, admin, or technician (but not technician if author is admin)
     boolean isAuthor = comment.getAuthor().getId().equals(deleteBy.getId());
     boolean isAdmin =
         deleteBy.getRoles().stream().anyMatch(role -> role == Role.ADMIN);
+    boolean isTechnician =
+        deleteBy.getRoles().stream().anyMatch(role -> role == Role.TECHNICIAN);
+    boolean authorIsAdmin =
+        comment.getAuthor().getRoles().stream().anyMatch(role -> role == Role.ADMIN);
 
-    if (!isAuthor && !isAdmin) {
+    // Technician cannot delete admin comments
+    if (isTechnician && authorIsAdmin) {
+      throw new IllegalStateException("Technician cannot delete admin comments");
+    }
+
+    if (!isAuthor && !isAdmin && !isTechnician) {
       throw new IllegalStateException("Only comment author or admin can delete comment");
     }
 
