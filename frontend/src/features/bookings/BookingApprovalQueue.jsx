@@ -116,7 +116,8 @@ export default function BookingApprovalQueue() {
         return updated;
       });
     } catch (err) {
-      const errorMsg = err.response?.data?.message || "Failed to approve booking";
+      const errorMsg =
+        err.response?.data?.message || "Failed to approve booking";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -150,7 +151,8 @@ export default function BookingApprovalQueue() {
         return updated;
       });
     } catch (err) {
-      const errorMsg = err.response?.data?.message || "Failed to reject booking";
+      const errorMsg =
+        err.response?.data?.message || "Failed to reject booking";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -243,12 +245,24 @@ export default function BookingApprovalQueue() {
       {pendingBookings.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-slate-400 mb-2">
-            <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-12 h-12 mx-auto mb-2 opacity-50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </div>
           <p className="text-slate-600 font-medium">All caught up</p>
-          <p className="text-slate-500 text-sm mt-1">No bookings pending your approval</p>
+          <p className="text-slate-500 text-sm mt-1">
+            No bookings pending your approval
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -266,7 +280,9 @@ export default function BookingApprovalQueue() {
                     </h3>
                     <div className="mt-2 flex items-center gap-4 flex-wrap text-sm">
                       <div className="text-slate-600">
-                        <span className="font-medium">{formatBookingDate(booking.booking_date)}</span>
+                        <span className="font-medium">
+                          {formatBookingDate(booking.booking_date)}
+                        </span>
                       </div>
                       <div className="text-slate-600">
                         <span className="font-mono bg-slate-100 px-2 py-1 rounded text-xs">
@@ -276,7 +292,11 @@ export default function BookingApprovalQueue() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
+                    onClick={() =>
+                      setExpandedId(
+                        expandedId === booking.id ? null : booking.id,
+                      )
+                    }
                     className="px-3 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm transition-colors"
                   >
                     {expandedId === booking.id ? "Less" : "More"}
@@ -286,7 +306,9 @@ export default function BookingApprovalQueue() {
                 {/* Quick Info Grid */}
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Facility</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Facility
+                    </p>
                     <p className="text-sm text-slate-900 font-medium mt-1">
                       {booking.facility?.type?.replace(/_/g, " ") || "N/A"}
                     </p>
@@ -295,7 +317,9 @@ export default function BookingApprovalQueue() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Location</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Location
+                    </p>
                     <p className="text-sm text-slate-900 font-medium mt-1">
                       {booking.facility?.building || "N/A"}
                     </p>
@@ -304,9 +328,13 @@ export default function BookingApprovalQueue() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Requested By</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Requested By
+                    </p>
                     <p className="text-sm text-slate-900 font-medium mt-1">
-                      {booking.requested_by?.displayName || booking.requested_by?.email || "Unknown"}
+                      {booking.requested_by?.displayName ||
+                        booking.requested_by?.email ||
+                        "Unknown"}
                     </p>
                     <p className="text-xs text-slate-600 mt-1">
                       {booking.attendees} attendees
@@ -320,50 +348,51 @@ export default function BookingApprovalQueue() {
                 <div className="border-t border-slate-200 bg-slate-50 p-6 space-y-4">
                   {booking.purpose && (
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Purpose</p>
-                      <p className="text-sm text-slate-700">{booking.purpose}</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                        Purpose
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        {booking.purpose}
+                      </p>
                     </div>
                   )}
 
                   {booking.facility?.location && (
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Exact Location</p>
-                      <p className="text-sm text-slate-700">{booking.facility.location}</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                        Exact Location
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        {booking.facility.location}
+                      </p>
                     </div>
                   )}
 
-                  {booking.approvalSteps && booking.approvalSteps.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Approval Workflow</p>
-                      <div className="space-y-2">
-                        {booking.approvalSteps.map((step, idx) => (
-                          <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-slate-200 text-sm">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-xs font-bold text-slate-700 flex-shrink-0">
-                              {step.stepOrder}
-                            </span>
-                            <span className="flex-1 font-medium text-slate-900">{step.approverRole}</span>
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-semibold flex-shrink-0 ${
-                                step.decision === "APPROVED"
-                                  ? "bg-green-100 text-green-700"
-                                  : step.decision === "REJECTED"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
-                              }`}
+                  {booking.approvalSteps &&
+                    booking.approvalSteps.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                          Approval Workflow
+                        </p>
+                        <div className="space-y-2">
+                          {booking.approvalSteps.map((step, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-3 p-3 bg-white rounded border border-slate-200 text-sm"
                             >
-                              <span className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-200 text-xs font-bold">
+                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-xs font-bold text-slate-700 flex-shrink-0">
                                 {step.stepOrder}
                               </span>
-                              <span className="flex-1 font-medium">
+                              <span className="flex-1 font-medium text-slate-900">
                                 {step.approverRole}
                               </span>
                               <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                className={`px-2 py-1 rounded text-xs font-semibold flex-shrink-0 ${
                                   step.decision === "APPROVED"
                                     ? "bg-green-100 text-green-700"
                                     : step.decision === "REJECTED"
                                       ? "bg-red-100 text-red-700"
-                                      : "bg-yellow-100 text-yellow-700"
+                                      : "bg-amber-100 text-amber-700"
                                 }`}
                               >
                                 {step.decision}
@@ -372,8 +401,7 @@ export default function BookingApprovalQueue() {
                           ))}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
 
@@ -381,7 +409,9 @@ export default function BookingApprovalQueue() {
               <div className="border-t border-slate-200 p-6 bg-white flex gap-6">
                 {/* Notes Textarea - Left Side */}
                 <div className="flex-1">
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">Add a note (optional)</label>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Add a note (optional)
+                  </label>
                   <textarea
                     value={approvalNotes[booking.id] || ""}
                     onChange={(e) =>
