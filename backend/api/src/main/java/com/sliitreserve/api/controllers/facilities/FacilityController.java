@@ -6,10 +6,12 @@ import com.sliitreserve.api.dto.facility.FacilitySuggestionDTO;
 import com.sliitreserve.api.dto.facility.FacilitySuggestionRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityUtilizationDTO;
 import com.sliitreserve.api.dto.facility.UnderutilizedFacilityDTO;
+import com.sliitreserve.api.dto.facility.TimetableAvailabilityDTO;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.services.facility.FacilityOptimizationService;
 import com.sliitreserve.api.services.facility.FacilityService;
+import com.sliitreserve.api.services.facility.FacilityTimetableService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,8 +23,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping({"/api/v1/facilities", "/api/facilities"})
@@ -31,6 +36,7 @@ public class FacilityController {
 
     private final FacilityService facilityService;
     private final FacilityOptimizationService facilityOptimizationService;
+    private final FacilityTimetableService facilityTimetableService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -116,5 +122,46 @@ public class FacilityController {
             @Valid @RequestBody FacilitySuggestionRequestDTO request
     ) {
         return ResponseEntity.ok(facilityOptimizationService.suggestAlternativeFacilities(request));
+    }
+
+    @GetMapping("/{id}/timetable-availability")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<TimetableAvailabilityDTO> getTimetableAvailability(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String day
+    ) {
+        FacilityResponseDTO facility = facilityService.getFacilityById(id);
+        
+        // Parse day parameter or default to MONDAY
+        DayOfWeek dayOfWeek = day != null 
+            ? DayOfWeek.valueOf(day.toUpperCase())
+            : DayOfWeek.MONDAY;
+
+        // Get occupied slots from timetable
+        Set<String> occupiedSlots = facilityTimetableService
+                .getOccupiedSlots(facility.getFacilityCode(), dayOfWeek)
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+
+        // Get available slots
+        Set<String> availableSlots = facilityTimetableService
+                .getAvailableSlots(facility.getFacilityCode(), dayOfWeek)
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+
+        TimetableAvailabilityDTO response = TimetableAvailabilityDTO.builder()
+                .facilityCode(facility.getFacilityCode())
+                .facilityName(facility.getName())
+                .day(dayOfWeek)
+                .occupiedSlots(occupiedSlots)
+                .availableSlots(availableSlots)
+                .totalOccupiedCount(occupiedSlots.size())
+                .totalAvailableCount(availableSlots.size())
+                .timetableLoaded(facilityTimetableService.isTimetableLoaded())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 }

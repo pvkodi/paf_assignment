@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ public class FacilityService {
     private final FacilityFactory facilityFactory;
     private final FacilityMapper facilityMapper;
     private final MaintenanceIntegrationService maintenanceIntegrationService;
+    private final FacilityTimetableService facilityTimetableService;
 
     public Page<FacilityResponseDTO> listFacilities(Pageable pageable) {
         return facilityRepository.findAll(pageable).map(facilityMapper::toResponseDTO);
@@ -140,7 +142,24 @@ public class FacilityService {
             return false;
         }
 
-        return !maintenanceIntegrationService.isFacilityUnderMaintenance(facilityId, start, end);
+        if (maintenanceIntegrationService.isFacilityUnderMaintenance(facilityId, start, end)) {
+            return false;
+        }
+
+        // Check timetable occupancy for each day in the requested range
+        LocalDateTime current = start;
+        while (current.isBefore(end)) {
+            DayOfWeek day = current.getDayOfWeek();
+            LocalTime time = current.toLocalTime();
+            
+            if (facilityTimetableService.isOccupied(facility.getFacilityCode(), day, time)) {
+                return false;
+            }
+            
+            current = current.plusHours(1);
+        }
+
+        return true;
     }
 
     public List<Facility> findActiveByType(FacilityType type) {
