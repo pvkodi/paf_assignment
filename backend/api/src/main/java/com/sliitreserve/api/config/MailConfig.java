@@ -103,10 +103,10 @@ import java.util.Properties;
 @Slf4j
 public class MailConfig {
 
-    @Value("${spring.mail.host:smtp.mailtrap.io}")
+    @Value("${spring.mail.host:localhost}")
     private String mailHost;
 
-    @Value("${spring.mail.port:2525}")
+    @Value("${spring.mail.port:1025}")
     private int mailPort;
 
     @Value("${spring.mail.username:}")
@@ -115,16 +115,16 @@ public class MailConfig {
     @Value("${spring.mail.password:}")
     private String mailPassword;
 
-    @Value("${spring.mail.from:noreply@campus-ops.local}")
+    @Value("${spring.mail.from:noreply@smartcampus.local}")
     private String mailFrom;
 
-    @Value("${spring.mail.properties.mail.smtp.auth:true}")
+    @Value("${spring.mail.properties.mail.smtp.auth:false}")
     private boolean smtpAuth;
 
-    @Value("${spring.mail.properties.mail.smtp.starttls.enable:true}")
+    @Value("${spring.mail.properties.mail.smtp.starttls.enable:false}")
     private boolean starttlsEnable;
 
-    @Value("${spring.mail.properties.mail.smtp.starttls.required:true}")
+    @Value("${spring.mail.properties.mail.smtp.starttls.required:false}")
     private boolean starttlsRequired;
 
     @Value("${spring.mail.properties.mail.smtp.debug:false}")

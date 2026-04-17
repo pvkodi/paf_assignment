@@ -1,11 +1,20 @@
 package com.sliitreserve.api.observers.impl;
 
 import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.observers.EventSeverity;
 import com.sliitreserve.api.observers.Observer;
+import com.sliitreserve.api.entities.auth.User;
+import com.sliitreserve.api.repositories.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import java.util.UUID;
+import java.util.Optional;
 
 /**
  * Email Notification Observer Implementation
@@ -56,6 +65,25 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EmailObserver implements Observer {
 
+    @Autowired
+    private EventPublisher eventPublisher;
+
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    /**
+     * Subscribe this observer to the EventPublisher on bean initialization.
+     * Called automatically after @Autowired dependencies are injected.
+     */
+    @PostConstruct
+    public void init() {
+        eventPublisher.subscribe(this);
+        log.info("EmailObserver subscribed to EventPublisher");
+    }
+
     /**
      * Handle domain event for email notification delivery.
      *
@@ -93,30 +121,42 @@ public class EmailObserver implements Observer {
                     event.getEventType(),
                     event.getAffectedUserId());
 
-            // TODO (T079): Integrate MailConfig and SMTP adapter for actual email dispatch
-            // Placeholder for actual implementation:
-            // 
-            // User user = userRepository.findById(event.getAffectedUserId())
-            //     .orElseThrow(() -> new UserNotFoundException(event.getAffectedUserId()));
-            // 
-            // EmailTemplate template = EmailTemplateFactory.createTemplate(event);
-            // String htmlBody = template.render(Map.of(
-            //     "recipientName", user.getDisplayName(),
-            //     "eventTitle", event.getTitle(),
-            //     "eventDescription", event.getDescription(),
-            //     "actionUrl", event.getActionUrl(),
-            //     "actionLabel", event.getActionLabel(),
-            //     "severity", "HIGH"
-            // ));
-            // 
-            // SimpleMailMessage message = new SimpleMailMessage();
-            // message.setTo(user.getEmail());
-            // message.setSubject(emailTemplateFactory.getSubjectForEventType(event.getEventType()));
-            // message.setText(htmlBody);
-            // 
-            // javaMailSender.send(message);
+            // Extract userId from event metadata (stored as String)
+            String userIdStr = (String) event.getMetadata().get("userId");
+            if (userIdStr == null) {
+                log.warn("EmailObserver: No userId in event metadata for event: {}", event.getEventType());
+                return;
+            }
 
-            log.info("EmailObserver: Sent HIGH priority email for user {} - event type: {}",
+            // Convert String userId to UUID and lookup user
+            UUID userId = UUID.fromString(userIdStr);
+            Optional<User> userOpt = userRepository.findById(userId);
+            
+            if (userOpt.isEmpty()) {
+                log.warn("EmailObserver: User not found with ID: {} for event: {}",
+                        userId, event.getEventType());
+                return;
+            }
+
+            User user = userOpt.get();
+            
+            // Validate user has email
+            if (user.getEmail() == null || user.getEmail().isBlank()) {
+                log.warn("EmailObserver: User {} has no email address for event: {}",
+                        userId, event.getEventType());
+                return;
+            }
+
+            // Create and send email
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject(getEmailSubjectForEventType(event.getEventType()));
+            message.setText(formatEmailBody(event, user));
+            
+            javaMailSender.send(message);
+
+            log.info("EmailObserver: Successfully sent HIGH priority email to {} for user {} - event type: {}",
+                    user.getEmail(),
                     event.getAffectedUserId(),
                     event.getEventType());
 
@@ -186,6 +226,8 @@ public class EmailObserver implements Observer {
             case "TICKET_CREATED" -> "🎟️ New Maintenance Ticket Created";
             case "APPEAL_REJECTED" -> "⛔ Suspension Appeal Rejected";
             case "APPEAL_APPROVED" -> "✅ Suspension Appeal Approved";
+            case "BOOKING_APPROVED" -> "✅ Your Booking Has Been Approved";
+            case "BOOKING_REJECTED" -> "❌ Your Booking Has Been Rejected";
             default -> "Campus Operations Notification";
         };
     }
@@ -207,5 +249,32 @@ public class EmailObserver implements Observer {
             case "SLA_DEADLINE_APPROACHING", "TICKET_ESCALATED" -> "NORMAL";
             default -> "NORMAL";
         };
+    }
+
+    /**
+     * Format email body with event details and recipient name.
+     *
+     * @param event The domain event containing notification details
+     * @param user The recipient user
+     * @return Formatted email body text
+     */
+    private String formatEmailBody(EventEnvelope event, User user) {
+        StringBuilder body = new StringBuilder();
+        body.append("Dear ").append(user.getDisplayName()).append(",\n\n");
+        body.append(event.getTitle()).append("\n\n");
+        body.append(event.getDescription()).append("\n\n");
+        
+        if (event.getActionUrl() != null && !event.getActionUrl().isBlank()) {
+            body.append("Action: ").append(event.getActionLabel() != null ? event.getActionLabel() : "View Details")
+                .append("\n");
+            body.append("URL: ").append(event.getActionUrl()).append("\n\n");
+        }
+        
+        body.append("Event Type: ").append(event.getEventType()).append("\n");
+        body.append("Occurred At: ").append(event.getOccurrenceTime()).append("\n");
+        body.append("Severity: ").append(event.getSeverity()).append("\n\n");
+        body.append("Smart Campus Operations System");
+        
+        return body.toString();
     }
 }

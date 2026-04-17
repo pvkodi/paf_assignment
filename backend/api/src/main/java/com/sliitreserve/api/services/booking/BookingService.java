@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.OptimisticLockingFailureException;
+import java.time.ZonedDateTime;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -277,6 +278,7 @@ public class BookingService {
 
     /**
      * Approves an existing booking using its @Version for optimistic locking (409).
+     * Publishes BOOKING_APPROVED event (STANDARD severity - in-app only).
      */
     @Transactional
     public Booking approveBooking(UUID bookingId, Long expectedVersion, String note) {
@@ -294,7 +296,26 @@ public class BookingService {
         booking.setStatus(BookingStatus.APPROVED);
 
         try {
-            return bookingRepository.save(booking);
+            Booking approvedBooking = bookingRepository.save(booking);
+            
+            // Publish BOOKING_APPROVED event to notify requester (HIGH severity = in-app + email)
+            eventPublisher.publish(EventEnvelope.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .eventType("BOOKING_APPROVED")
+                    .severity(EventSeverity.HIGH)
+                    .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                    .title("Your Booking Has Been Approved")
+                    .description("Your booking for " + booking.getFacility().getName() + 
+                            " on " + booking.getBookingDate() + " has been approved.")
+                    .source("BookingService")
+                    .entityReference("booking:" + booking.getId())
+                    .actionUrl("/bookings/" + booking.getId())
+                    .actionLabel("View Booking")
+                    .occurrenceTime(ZonedDateTime.now())
+                    .metadata(java.util.Map.of("userId", booking.getRequestedBy().getId().toString()))
+                    .build());
+            
+            return approvedBooking;
         } catch (OptimisticLockingFailureException ex) {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
@@ -302,6 +323,7 @@ public class BookingService {
 
     /**
      * Rejects an existing booking using its @Version for optimistic locking (409).
+     * Publishes BOOKING_REJECTED event (STANDARD severity - in-app only).
      */
     @Transactional
     public Booking rejectBooking(UUID bookingId, Long expectedVersion, String note) {
@@ -319,7 +341,26 @@ public class BookingService {
         booking.setStatus(BookingStatus.REJECTED);
 
         try {
-            return bookingRepository.save(booking);
+            Booking rejectedBooking = bookingRepository.save(booking);
+            
+            // Publish BOOKING_REJECTED event to notify requester (HIGH severity = in-app + email)
+            eventPublisher.publish(EventEnvelope.builder()
+                    .eventId(java.util.UUID.randomUUID().toString())
+                    .eventType("BOOKING_REJECTED")
+                    .severity(EventSeverity.HIGH)
+                    .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                    .title("Your Booking Has Been Rejected")
+                    .description("Your booking for " + booking.getFacility().getName() + 
+                            " on " + booking.getBookingDate() + " has been rejected.")
+                    .source("BookingService")
+                    .entityReference("booking:" + booking.getId())
+                    .actionUrl("/bookings/" + booking.getId())
+                    .actionLabel("View Booking")
+                    .occurrenceTime(ZonedDateTime.now())
+                    .metadata(java.util.Map.of("userId", booking.getRequestedBy().getId().toString()))
+                    .build());
+            
+            return rejectedBooking;
         } catch (OptimisticLockingFailureException ex) {
             throw new ConflictException("Optimistic lock failure upon saving");
         }
