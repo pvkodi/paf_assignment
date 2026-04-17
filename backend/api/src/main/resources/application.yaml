@@ -2,7 +2,7 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://postgres:5432/smartcampus
+    url: jdbc:postgresql://localhost:5432/smartcampus
     username: smartcampus
     password: smartcampus
     driver-class-name: org.postgresql.Driver
