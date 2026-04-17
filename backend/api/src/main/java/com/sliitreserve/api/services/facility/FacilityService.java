@@ -1,7 +1,9 @@
 package com.sliitreserve.api.services.facility;
 
+import com.sliitreserve.api.dto.facility.AvailabilityWindowDTO;
 import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
+import com.sliitreserve.api.entities.facility.AvailabilityWindow;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
 import com.sliitreserve.api.exception.ConflictException;
@@ -24,6 +26,7 @@ import java.time.LocalTime;
 import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -85,6 +88,19 @@ public class FacilityService {
         }
 
         Facility facility = facilityFactory.createFacility(normalizedRequest);
+
+        // Apply multi-window availability schedule
+        if (normalizedRequest.getAvailabilityWindows() != null && !normalizedRequest.getAvailabilityWindows().isEmpty()) {
+            List<AvailabilityWindow> windows = normalizedRequest.getAvailabilityWindows().stream()
+                .map(dto -> AvailabilityWindow.builder()
+                    .dayOfWeek(dto.getDayOfWeek())
+                    .startTime(dto.getStartTime())
+                    .endTime(dto.getEndTime())
+                    .build())
+                .collect(Collectors.toList());
+            facility.getAvailabilityWindows().addAll(windows);
+        }
+
         Facility savedFacility = facilityRepository.save(facility);
         return facilityMapper.toResponseDTO(savedFacility);
     }
@@ -135,28 +151,28 @@ public class FacilityService {
             return false;
         }
 
-        LocalTime requestedStart = start.toLocalTime();
-        LocalTime requestedEnd = end.toLocalTime();
-        if (requestedStart.isBefore(facility.getAvailabilityStartTime())
-                || requestedEnd.isAfter(facility.getAvailabilityEndTime())) {
-            return false;
-        }
-
-        if (maintenanceIntegrationService.isFacilityUnderMaintenance(facilityId, start, end)) {
-            return false;
-        }
-
-        // Check timetable occupancy for each day in the requested range
+        // Check each hour in the requested range against the availability schedule
         LocalDateTime current = start;
         while (current.isBefore(end)) {
             DayOfWeek day = current.getDayOfWeek();
             LocalTime time = current.toLocalTime();
-            
+
+            // Check availability windows (multi-window schedule)
+            if (!facility.isAvailableAt(day, time)) {
+                return false;
+            }
+
+            // Check timetable occupancy
             if (facilityTimetableService.isOccupied(facility.getFacilityCode(), day, time)) {
                 return false;
             }
-            
+
             current = current.plusHours(1);
+        }
+
+        // Check for maintenance tickets
+        if (maintenanceIntegrationService.isFacilityUnderMaintenance(facilityId, start, end)) {
+            return false;
         }
 
         return true;

@@ -11,8 +11,11 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -79,6 +82,19 @@ public class Facility {
     @Column(name = "availability_end", nullable = false)
     private LocalTime availabilityEnd;
 
+    /**
+     * Multi-window availability schedule (Mon–Sun, multiple windows per day).
+     * Replaces the flat availabilityStart/End as the primary source of truth.
+     * Old flat fields are kept for backward compatibility with existing data.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "facility_availability_windows",
+        joinColumns = @JoinColumn(name = "facility_id")
+    )
+    @Builder.Default
+    private List<AvailabilityWindow> availabilityWindows = new ArrayList<>();
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -128,6 +144,21 @@ public class Facility {
                 );
             }
         }
+    }
+
+    /**
+     * Returns true if the facility has any availability window covering the given day and time.
+     * Falls back to the flat availabilityStart/End if no windows are configured.
+     */
+    public boolean isAvailableAt(DayOfWeek day, LocalTime time) {
+        if (availabilityWindows != null && !availabilityWindows.isEmpty()) {
+            return availabilityWindows.stream().anyMatch(w -> w.contains(day, time));
+        }
+        // Legacy fallback: use flat start/end fields (treats all days as available)
+        if (availabilityStart != null && availabilityEnd != null) {
+            return !time.isBefore(availabilityStart) && time.isBefore(availabilityEnd);
+        }
+        return true;
     }
 
     /**
