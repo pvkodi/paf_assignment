@@ -7,7 +7,7 @@ import { apiClient } from "../../services/apiClient";
  * Opened as an expanded section from BookingsList card.
  * Avoids repeating information already shown in the card.
  */
-export default function BookingDetails({ bookingId, onClose, onUpdate }) {
+export default function BookingDetails({ bookingId, onClose, onUpdate, compactMode = false }) {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,13 +57,13 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
   const getDecisionColor = (decision) => {
     switch (decision) {
       case "APPROVED":
-        return "bg-green-100 text-green-700 border-green-300";
+        return "bg-green-50 text-green-700 border-green-200";
       case "REJECTED":
-        return "bg-red-100 text-red-700 border-red-300";
+        return "bg-red-50 text-red-700 border-red-200";
       case "PENDING":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+        return "bg-orange-50 text-[#49BBBB] border-orange-200";
       default:
-        return "bg-slate-100 text-slate-700 border-slate-300";
+        return "bg-slate-50 text-slate-700 border-slate-100";
     }
   };
 
@@ -79,8 +79,8 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
 
   if (loading) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-slate-600">Loading booking details...</p>
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-slate-400 text-sm font-bold animate-pulse">Loading details...</div>
       </div>
     );
   }
@@ -88,8 +88,8 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg bg-red-50 p-4 border border-red-200">
-          <p className="text-sm font-medium text-red-900">{error}</p>
+        <div className="rounded-2xl bg-red-50 p-4 border border-red-100">
+          <p className="text-sm font-bold text-red-600">{error}</p>
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
   if (!booking) {
     return (
       <div className="p-6 text-center">
-        <p className="text-slate-600">Booking not found</p>
+        <p className="text-sm font-bold text-slate-400">Booking not found</p>
       </div>
     );
   }
@@ -109,68 +109,74 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
   const canCancel = (isApproved || isPending) && !isTerminal;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`${compactMode ? 'pt-2 pb-0 px-0' : 'p-6'} space-y-6`}>
       {/* Error Message */}
       {actionError && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <p className="text-sm font-medium text-red-900">{actionError}</p>
+        <div className="rounded-2xl bg-red-50 border border-red-100 p-4">
+          <p className="text-sm font-bold text-red-600">{actionError}</p>
         </div>
       )}
 
-      {/* Additional Facility Details */}
-      {booking.facility && (
-        <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Facility Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
+      {!compactMode && (
+        <>
+          {/* Additional Facility Details */}
+          {booking.facility && (
             <div>
-              <p className="text-xs text-slate-600 font-medium">Status</p>
-              <p className="text-sm text-slate-900 font-medium mt-1">{booking.facility?.status || "Active"}</p>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Facility Info</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</p>
+                  <p className="text-sm font-bold text-slate-800">{booking.facility?.status || "Active"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Capacity</p>
+                  <p className="text-sm font-bold text-slate-800">{booking.facility?.capacity} people</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Building</p>
+                  <p className="text-sm font-bold text-slate-800">{booking.facility?.building}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floor</p>
+                  <p className="text-sm font-bold text-slate-800">{booking.facility?.floor}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-slate-600 font-medium">Capacity</p>
-              <p className="text-sm text-slate-900 font-medium mt-1">{booking.facility?.capacity} people</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-600 font-medium">Building</p>
-              <p className="text-sm text-slate-900 font-medium mt-1">{booking.facility?.building}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-600 font-medium">Floor</p>
-              <p className="text-sm text-slate-900 font-medium mt-1">{booking.facility?.floor}</p>
+          )}
+
+          {/* Booking Metadata */}
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Booking Info</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attendees</p>
+                <p className="text-sm font-bold text-slate-800">{booking.attendees}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Timezone</p>
+                <p className="text-sm font-bold text-slate-800">{booking.timezone}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Purpose</p>
+                <p className="text-sm font-medium text-slate-700">{booking.purpose}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Booking Metadata */}
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Booking Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
-          <div>
-            <p className="text-xs text-slate-600 font-medium">Attendees</p>
-            <p className="text-sm text-slate-900 font-medium mt-1">{booking.attendees}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-600 font-medium">Timezone</p>
-            <p className="text-sm text-slate-900 font-medium mt-1">{booking.timezone}</p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-xs text-slate-600 font-medium">Purpose</p>
-            <p className="text-sm text-slate-900 mt-1">{booking.purpose}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Booking For Information (if different from current user) */}
+      {/* Booking For Information */}
       {booking.bookedFor?.id !== booking.requestedBy?.id && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Booked For</h3>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-blue-900">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Delegation</h3>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Booked For</p>
+            <p className="text-sm font-bold text-white mb-3">
               {booking.bookedFor?.displayName || booking.bookedFor?.email}
             </p>
-            <p className="text-xs text-blue-700 mt-1">
-              Requested by: {booking.requestedBy?.displayName || booking.requestedBy?.email}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Requested By</p>
+            <p className="text-sm font-bold text-slate-300">
+              {booking.requestedBy?.displayName || booking.requestedBy?.email}
             </p>
           </div>
         </div>
@@ -179,89 +185,89 @@ export default function BookingDetails({ bookingId, onClose, onUpdate }) {
       {/* Recurrence Information */}
       {booking.recurrenceRule && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Recurrence</h3>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-xs text-blue-600 font-medium">Recurrence Rule</p>
-            <p className="text-sm font-mono text-blue-900 mt-1">{booking.recurrenceRule}</p>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Recurrence</h3>
+          <div className="bg-[#49BBBB]/10 border border-[#49BBBB]/20 rounded-2xl p-4">
+            <p className="text-[10px] font-bold text-[#49BBBB] uppercase tracking-wider mb-1">Rule</p>
+            <p className="text-sm font-mono font-bold text-slate-900 mb-2">{booking.recurrenceRule}</p>
             {booking.isRecurringMaster && (
-              <p className="text-xs text-blue-700 mt-2">This is the master booking for a recurring series</p>
+              <p className="text-xs font-bold text-slate-500">Master booking for series</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Approval Workflow */}
-      {booking.approvalSteps && booking.approvalSteps.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Approval Workflow</h3>
-          <div className="space-y-2">
-            {booking.approvalSteps.map((step, index) => (
-              <div key={index} className={`p-4 rounded-lg border-2 ${getDecisionColor(step.decision)}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-semibold text-sm">
-                      Step {step.stepOrder}: {step.approverRole?.replace(/_/g, " ")}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Approval Workflow */}
+        {booking.approvalSteps && booking.approvalSteps.length > 0 && (
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Approvals</h3>
+            <div className="space-y-3">
+              {booking.approvalSteps.map((step, index) => (
+                <div key={index} className={`p-4 rounded-2xl border ${getDecisionColor(step.decision)}`}>
+                  <div className="flex justify-between items-center mb-0.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                      Step {step.stepOrder} • {step.approverRole?.replace(/_/g, " ")}
                     </p>
-                    <p className="text-xs font-medium mt-1">{step.decision}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider">{step.decision}</p>
                   </div>
+
+                  {step.decidedBy && (
+                    <div className="mt-2 pt-2 border-t border-current border-opacity-10 text-xs">
+                      <p className="font-bold opacity-90 mb-0.5">
+                        {step.decidedBy.displayName || step.decidedBy.email}
+                      </p>
+                      {step.decidedAt && (
+                        <p className="font-semibold opacity-70">
+                          {formatDateTime(step.decidedAt)}
+                        </p>
+                      )}
+                      {step.note && (
+                        <p className="mt-2 font-medium bg-white/50 p-2 rounded-lg">
+                          "{step.note}"
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-
-                {step.decidedBy && (
-                  <div className="mt-3 pt-3 border-t border-current border-opacity-20 text-xs space-y-1">
-                    <p>
-                      <span className="font-medium">Decided by:</span> {step.decidedBy.displayName || step.decidedBy.email}
-                    </p>
-                    {step.decidedAt && (
-                      <p>
-                        <span className="font-medium">Date:</span> {formatDateTime(step.decidedAt)}
-                      </p>
-                    )}
-                    {step.note && (
-                      <p className="mt-2">
-                        <span className="font-medium">Note:</span> {step.note}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Audit Trail / Timestamps */}
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Audit Information</h3>
-        <div className="bg-slate-50 rounded-lg p-4 text-xs space-y-2 text-slate-600">
-          <div className="flex justify-between">
-            <span className="font-medium">Created:</span>
-            <span>{formatDateTime(booking.createdAt)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium">Last Updated:</span>
-            <span>{formatDateTime(booking.updatedAt)}</span>
-          </div>
-          {booking.version && (
-            <div className="flex justify-between pt-2 border-t border-slate-200">
-              <span className="font-medium">Version:</span>
-              <span className="font-mono">{booking.version}</span>
+              ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Audit Trail */}
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Audit</h3>
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Created</p>
+              <p className="text-xs font-bold text-slate-800">{formatDateTime(booking.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Updated</p>
+              <p className="text-xs font-bold text-slate-800">{formatDateTime(booking.updatedAt)}</p>
+            </div>
+            {booking.version && (
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Version</p>
+                <p className="text-xs font-bold font-mono text-slate-800">{booking.version}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 pt-4 border-t border-slate-200">
-        {canCancel && (
+      {!compactMode && canCancel && (
+        <div className="pt-4 border-t border-slate-100 flex justify-end">
           <button
             onClick={handleCancelBooking}
             disabled={actionLoading}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-white border border-slate-200 text-slate-600 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl font-bold text-sm transition-all shadow-[0_2px_8px_rgb(0,0,0,0.02)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {actionLoading ? "Cancelling..." : "Cancel Booking"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

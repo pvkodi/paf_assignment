@@ -160,15 +160,15 @@ export default function AdminBookingsView() {
   const getStatusColor = (status) => {
     switch (status) {
       case "APPROVED":
-        return "bg-green-100 text-green-800";
+        return "bg-green-50 text-green-700 border border-green-200";
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-orange-50 text-[#49BBBB] border border-orange-200";
       case "REJECTED":
-        return "bg-red-100 text-red-800";
+        return "bg-red-50 text-red-700 border border-red-200";
       case "CANCELLED":
-        return "bg-slate-100 text-slate-800";
+        return "bg-slate-50 text-slate-600 border border-slate-200";
       default:
-        return "bg-slate-100 text-slate-800";
+        return "bg-slate-50 text-slate-700 border border-slate-200";
     }
   };
 
@@ -181,29 +181,31 @@ export default function AdminBookingsView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 bg-[#f8f9fa] min-h-screen p-6 md:p-8 rounded-3xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          All Bookings
-        </h1>
-        <p className="text-slate-600">
-          View and manage all facility bookings across campus
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            All Bookings
+          </h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">
+            View and manage all facility bookings across campus
+          </p>
+        </div>
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-slate-100">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Filters</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.02)] p-6 border border-slate-100">
+        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Focus View</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
               Status
             </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none"
             >
               <option value="">All Statuses</option>
               <option value="APPROVED">Approved</option>
@@ -214,39 +216,39 @@ export default function AdminBookingsView() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
               From Date
             </label>
             <input
               type="date"
               value={filters.from}
               onChange={(e) => handleFilterChange("from", e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
               To Date
             </label>
             <input
               type="date"
               value={filters.to}
               onChange={(e) => handleFilterChange("to", e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none"
             />
           </div>
 
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-3">
             <button
               onClick={handleApplyFilters}
-              className="flex-1 rounded bg-indigo-600 px-4 py-2 text-white font-medium hover:bg-indigo-700 transition-colors"
+              className="flex-1 rounded-xl bg-[#49BBBB] hover:bg-[#3CA0A0] text-white shadow-[0_4px_14px_rgba(73,187,187,0.3)] px-4 py-3 text-sm font-bold transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              Apply Filters
+              Filter
             </button>
             <button
               onClick={handleReset}
-              className="flex-1 rounded bg-slate-300 px-4 py-2 text-slate-900 font-medium hover:bg-slate-400 transition-colors"
+              className="flex-1 rounded-xl bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-900 px-4 py-3 text-sm font-bold transition-colors"
             >
               Reset
             </button>
@@ -268,96 +270,101 @@ export default function AdminBookingsView() {
       )}
 
       {/* Bookings Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-100">
+      <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.02)] overflow-hidden border border-slate-100">
         {bookings.length === 0 ? (
-          <div className="p-6 text-center">
-            <p className="text-slate-600">No bookings found with current filters.</p>
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mx-auto mb-4 border border-slate-100">
+              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+            <p className="text-slate-500 font-medium">No bookings found with current filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-slate-50/50 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Facility
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Date & Time
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Booked For
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                    Purpose
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Pupose
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Attendees
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100/80">
                 {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-5">
                       <div>
-                        <p className="font-medium text-slate-900">
+                        <p className="font-bold text-sm text-slate-900 group-hover:text-slate-800 transition-colors">
                           {booking.facility?.name || "Unknown"}
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
                           {booking.facility?.location || ""}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <p className="font-medium text-slate-900">
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div>
+                        <p className="font-bold text-sm text-slate-900">
                           {formatDate(booking.booking_date)}
                         </p>
-                        <p className="text-slate-600">
+                        <p className="text-xs font-medium text-slate-500 mt-1">
                           {formatTime(booking.start_time)} -{" "}
                           {formatTime(booking.end_time)}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-900">
+                    <td className="px-6 py-5">
+                      <p className="text-sm font-bold text-slate-700">
                         {booking.booked_for?.displayName ||
                           booking.booked_for?.email ||
                           "Unknown"}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600 max-w-xs truncate">
+                    <td className="px-6 py-5">
+                      <p className="text-sm font-medium text-slate-600 max-w-[12rem] truncate">
                         {booking.purpose}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-900">
-                      {booking.attendees}
+                    <td className="px-6 py-5">
+                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                        {booking.attendees}
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusColor(
                           booking.status
                         )}`}
                       >
                         {booking.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       {booking.status !== "CANCELLED" &&
                         booking.status !== "REJECTED" && (
                           <button
                             onClick={() => handleCancelBooking(booking.id, booking.version)}
                             disabled={actionLoading === booking.id}
-                            className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors disabled:bg-red-400"
+                            className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
                           >
-                            {actionLoading === booking.id ? "Cancelling..." : "Cancel"}
+                            {actionLoading === booking.id ? "Wait..." : "Cancel"}
                           </button>
                         )}
                     </td>
@@ -371,10 +378,10 @@ export default function AdminBookingsView() {
 
       {/* Summary */}
       {bookings.length > 0 && (
-        <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-4">
-          <p className="text-sm text-indigo-900">
-            <span className="font-semibold">{bookings.length}</span> booking
-            {bookings.length !== 1 ? "s" : ""} found matching your filters
+        <div className="bg-slate-900 rounded-2xl shadow-[0_4px_14px_rgba(73,187,187,0.3)] p-4 flex items-center justify-center">
+          <p className="text-sm font-medium text-slate-300">
+            <span className="font-bold text-white mr-1">{bookings.length}</span> booking
+            {bookings.length !== 1 ? "s" : ""} match your criteria
           </p>
         </div>
       )}

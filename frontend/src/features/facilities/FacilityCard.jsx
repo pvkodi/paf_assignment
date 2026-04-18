@@ -4,20 +4,20 @@ import { Link } from "react-router-dom";
 function statusClasses(status) {
   switch (status) {
     case "ACTIVE":
-      return "bg-green-600 text-white";
+      return "bg-green-50 text-green-700 border border-green-200";
     case "MAINTENANCE":
-      return "bg-yellow-600 text-black";
+      return "bg-amber-50 text-amber-700 border border-amber-200";
     case "OUT_OF_SERVICE":
-      return "bg-red-600 text-white";
+      return "bg-red-50 text-red-700 border border-red-200";
     default:
-      return "bg-gray-200 text-gray-900";
+      return "bg-slate-50 text-slate-600 border border-slate-200";
   }
 }
 
 function Sparkline({ data = [] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="h-8 w-24 text-xs text-gray-500" aria-hidden>
+      <div className="h-8 w-24 flex items-center justify-end text-[10px] font-bold text-slate-300 uppercase tracking-wider" aria-hidden>
         No data
       </div>
     );
@@ -37,7 +37,7 @@ function Sparkline({ data = [] }) {
   return (
     <svg
       viewBox="0 0 100 30"
-      className="h-8 w-24"
+      className="h-8 w-24 opacity-80"
       role="img"
       aria-label={`Utilization sparkline, average ${avg} percent`}
       focusable="false"
@@ -45,8 +45,8 @@ function Sparkline({ data = [] }) {
       <title>Utilization sparkline</title>
       <polyline
         fill="none"
-        stroke="#4f46e5"
-        strokeWidth="2"
+        stroke="#49BBBB"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         points={points}
@@ -67,59 +67,54 @@ export default function FacilityCard({ facility = {}, utilizationHistory = [] })
 
   return (
     <article
-      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+      className="group rounded-2xl border border-slate-100 bg-white p-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-200 transition-all flex flex-col h-full"
       aria-labelledby={`facility-${facility.id}-title`}
       role="group"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 id={`facility-${facility.id}-title`} className="text-sm font-semibold text-gray-900">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border mb-3 bg-slate-50 text-slate-600 border-slate-200">
+            {typeLabel}
+          </div>
+          <h3 id={`facility-${facility.id}-title`} className="text-lg font-bold text-slate-900 group-hover:text-[#49BBBB] transition-colors line-clamp-1">
             {name}
           </h3>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 flex items-center gap-2 text-sm font-medium text-slate-500">
             <span className="sr-only">Location:</span>
-            {facility.building || "-"} <span aria-hidden>•</span>{' '}
-            <span className="sr-only">Type:</span>{typeLabel}
+            {facility.building || "-"}
           </p>
         </div>
 
-        <div>
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusClasses(
-              facility.status,
-            )}`}
-            aria-label={`Status: ${facility.status ?? 'UNKNOWN'}`}
-          >
-            {facility.status || "UNKNOWN"}
-          </span>
+        <span
+          className={`shrink-0 inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusClasses(
+            facility.status,
+          )}`}
+          aria-label={`Status: ${facility.status ?? 'UNKNOWN'}`}
+        >
+          {facility.status || "UNKNOWN"}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-6 bg-[#f8f9fa] rounded-xl p-3 flex-grow">
+        <div className="flex flex-col justify-center">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Capacity</p>
+          <p className="text-sm font-bold text-slate-800">{facility.capacity ?? "-"}</p>
+        </div>
+        <div className="flex flex-col flex-grow items-end justify-center">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 text-right">Avg Util: {avgUtil}%</p>
+          <div className="mt-1 w-full flex justify-end">
+            <Sparkline data={utilizationHistory} />
+          </div>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="text-xs text-gray-600">
-          <div>
-            <span className="sr-only">Capacity: </span>
-            Capacity: <span className="font-medium">{facility.capacity ?? "-"}</span>
-          </div>
-          <div className="mt-1">
-            <span className="sr-only">Average utilization: </span>
-            Avg Util: <span className="font-medium">{avgUtil}%</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Sparkline data={utilizationHistory} />
-        </div>
-      </div>
-
-      <div className="mt-4 flex justify-end">
+      <div className="mt-auto">
         <Link
           to={`/facilities/${facility.id}`}
-          className="text-xs inline-flex items-center gap-2 rounded px-3 py-1 text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full inline-flex justify-center items-center px-5 py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-xl transition-all shadow-[0_2px_8px_rgb(0,0,0,0.02)] active:scale-95"
           aria-label={`View details for ${name}`}
         >
-          <span>View</span>
-          <span className="sr-only">{` ${name}`}</span>
+          View Details
         </Link>
       </div>
     </article>

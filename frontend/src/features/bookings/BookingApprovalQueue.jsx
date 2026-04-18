@@ -165,13 +165,17 @@ export default function BookingApprovalQueue() {
       "🚫 User lacks approval permissions - rendering no-permission message",
     );
     return (
-      <div className="bg-white rounded-lg p-6 border border-slate-200">
-        <p className="text-slate-600">
-          You do not have permission to approve bookings. Only LECTURER,
-          FACILITY_MANAGER, and ADMIN roles can approve.
+      <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-400 flex items-center justify-center rounded-full mx-auto mb-4 border border-red-100">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-6V4M4 4h16v16H4z"/></svg>
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 mb-2">Access Restricted</h2>
+        <p className="text-slate-500 font-medium max-w-md mx-auto">
+          You do not have permission to approve bookings. Only LECTURERS,
+          FACILITY MANAGERS, and ADMINS can approve requests.
         </p>
-        <p className="text-sm text-slate-500 mt-2">
-          DEBUG: Your roles: {user?.roles?.join(", ") || "None"}
+        <p className="text-xs text-slate-400 mt-6 font-mono px-4 py-2 bg-slate-50 rounded-lg inline-block border border-slate-100">
+          ROLE: {user?.roles?.join(", ") || "None"}
         </p>
       </div>
     );
@@ -179,8 +183,8 @@ export default function BookingApprovalQueue() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-slate-500">Loading pending approvals...</div>
+      <div className="flex items-center justify-center h-64 bg-[#f8f9fa] rounded-3xl">
+        <div className="text-slate-400 text-sm font-bold animate-pulse">Loading queue...</div>
       </div>
     );
   }
@@ -191,241 +195,187 @@ export default function BookingApprovalQueue() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 bg-[#f8f9fa] min-h-screen p-6 md:p-8 rounded-3xl">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Booking Approvals
-          </h2>
-          <button
-            onClick={fetchPendingBookings}
-            className="px-4 py-2 text-slate-900 bg-slate-100 hover:bg-slate-200 font-semibold rounded-md transition-all duration-200 active:scale-95"
-          >
-            Refresh
-          </button>
+          </h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">
+            📋 {pendingBookings.length} booking{pendingBookings.length !== 1 ? "s" : ""} awaiting your response
+          </p>
         </div>
-
-        {error && (
-          <div className="rounded-md bg-red-50 p-4 mb-4">
-            <p className="text-sm font-medium text-red-800">{error}</p>
-          </div>
-        )}
-
-        <p className="text-sm text-slate-600 font-medium">
-          📋 {pendingBookings.length} booking
-          {pendingBookings.length !== 1 ? "s" : ""} awaiting your approval
-        </p>
+        <button
+          onClick={fetchPendingBookings}
+          className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:text-slate-900 hover:bg-slate-50 shadow-[0_2px_10px_rgb(0,0,0,0.02)] rounded-full transition-all duration-300"
+        >
+          Refresh Queue
+        </button>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <p className="text-sm font-medium text-red-900">{error}</p>
+        <div className="rounded-2xl bg-red-50/50 border border-red-100 p-5 backdrop-blur-sm">
+          <p className="text-sm font-bold text-red-800">{error}</p>
         </div>
       )}
 
       {/* No Pending Bookings */}
       {pendingBookings.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-slate-400 mb-2">
+        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-100">
             <svg
-              className="w-12 h-12 mx-auto mb-2 opacity-50"
+              className="w-8 h-8 text-green-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-slate-600 font-medium">All caught up</p>
-          <p className="text-slate-500 text-sm mt-1">
-            No bookings pending your approval
+          <p className="text-slate-800 font-bold text-lg mb-1">Queue is Clear</p>
+          <p className="text-slate-500 text-sm font-medium">
+            You have no pending bookings to review.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {pendingBookings.map((booking) => (
             <div
               key={booking.id}
-              className="rounded-lg border border-slate-200 bg-white transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+              className="group bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-[0_4px_24px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_32px_rgb(0,0,0,0.06)] transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
             >
-              {/* Card Header - Summary Information */}
-              <div className="p-6">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-900 truncate">
-                      {booking.facility?.name || "Unknown Facility"}
-                    </h3>
-                    <div className="mt-2 flex items-center gap-4 flex-wrap text-sm">
-                      <div className="text-slate-600">
-                        <span className="font-medium">
-                          {formatBookingDate(booking.booking_date)}
-                        </span>
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Left Side Info Blocks */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-orange-50 text-[#49BBBB] border-orange-200 mb-3">
+                        <span className="animate-pulse w-1.5 h-1.5 rounded-full bg-[#49BBBB]"></span>
+                        Action Required
                       </div>
-                      <div className="text-slate-600">
-                        <span className="font-mono bg-slate-100 px-2 py-1 rounded text-xs">
-                          {booking.start_time} – {booking.end_time}
-                        </span>
+                      <h3 className="text-2xl font-bold text-slate-900 group-hover:text-slate-800 transition-colors">
+                        {booking.facility?.name || "Unknown Facility"}
+                      </h3>
+                      <p className="text-slate-500 text-sm font-medium flex items-center gap-2 mt-1">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        {booking.facility?.building || "N/A"}, Fl {booking.facility?.floor || "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Time & Date Block */}
+                  <div className="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+                        <p className="text-sm font-bold text-slate-800">{formatBookingDate(booking.booking_date)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time</p>
+                        <p className="text-sm font-bold text-slate-800">{booking.start_time} - {booking.end_time}</p>
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() =>
-                      setExpandedId(
-                        expandedId === booking.id ? null : booking.id,
-                      )
-                    }
-                    className="px-3 py-1 text-slate-600 hover:text-slate-900 font-semibold text-sm transition-colors"
-                  >
-                    {expandedId === booking.id ? "Less" : "More"}
-                  </button>
+
+                  {/* Purpose & Attendees */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Requested By</p>
+                      <p className="text-xs font-bold text-slate-800 truncate">
+                        {booking.requested_by?.displayName || booking.requested_by?.email || "Unknown"}
+                      </p>
+                    </div>
+                    <div className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Attendees</p>
+                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700">
+                        {booking.attendees}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Quick Info Grid */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200">
+                {/* Right Side Review Actions */}
+                <div className="w-full md:w-72 bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col">
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Facility
-                    </p>
-                    <p className="text-sm text-slate-900 font-medium mt-1">
-                      {booking.facility?.type?.replace(/_/g, " ") || "N/A"}
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Cap: {booking.facility?.capacity || "N/A"}
-                    </p>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                      Reviewer Note (Optional)
+                    </label>
+                    <textarea
+                      value={approvalNotes[booking.id] || ""}
+                      onChange={(e) =>
+                        setApprovalNotes((prev) => ({
+                          ...prev,
+                          [booking.id]: e.target.value,
+                        }))
+                      }
+                      placeholder="Add an optional comment..."
+                      rows="3"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-medium text-slate-800 transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 text-sm resize-none mb-4"
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Location
-                    </p>
-                    <p className="text-sm text-slate-900 font-medium mt-1">
-                      {booking.facility?.building || "N/A"}
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Floor {booking.facility?.floor || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Requested By
-                    </p>
-                    <p className="text-sm text-slate-900 font-medium mt-1">
-                      {booking.requested_by?.displayName ||
-                        booking.requested_by?.email ||
-                        "Unknown"}
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {booking.attendees} attendees
-                    </p>
+
+                  <div className="mt-auto flex flex-col gap-3">
+                    <button
+                      onClick={() => handleApprove(booking.id)}
+                      disabled={actionLoading === booking.id}
+                      className="w-full py-3 bg-[#49BBBB] hover:bg-[#3CA0A0] text-white font-bold rounded-xl shadow-[0_4px_14px_rgba(73,187,187,0.3)] transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading === booking.id ? "Approving..." : "Approve Request"}
+                    </button>
+                    <button
+                      onClick={() => handleReject(booking.id)}
+                      disabled={actionLoading === booking.id}
+                      className="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-500 font-bold rounded-xl shadow-[0_2px_8px_rgb(0,0,0,0.02)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading === booking.id ? "Wait..." : "Reject"}
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Expanded Details Section */}
-              {expandedId === booking.id && (
-                <div className="border-t border-slate-200 bg-slate-50 p-6 space-y-4">
+              {/* Toggle Extra Info */}
+              <div className="mt-4 pt-4 border-t border-slate-100 relative">
+                <button
+                  onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
+                  className="mx-auto block text-xs font-bold text-slate-400 hover:text-slate-700 uppercase tracking-wider transition-colors"
+                >
+                  {expandedId === booking.id ? "- Hide Details -" : "+ Show Details +"}
+                </button>
+                
+                <div className={`mt-4 overflow-hidden transition-all duration-300 origin-top transform ${expandedId === booking.id ? 'opacity-100 scale-y-100 h-auto' : 'opacity-0 scale-y-0 h-0'}`}>
                   {booking.purpose && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                        Purpose
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        {booking.purpose}
-                      </p>
+                    <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Booking Purpose</p>
+                      <p className="text-sm font-medium text-slate-700 leading-relaxed">{booking.purpose}</p>
                     </div>
                   )}
 
-                  {booking.facility?.location && (
+                  {booking.approvalSteps && booking.approvalSteps.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                        Exact Location
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        {booking.facility.location}
-                      </p>
-                    </div>
-                  )}
-
-                  {booking.approvalSteps &&
-                    booking.approvalSteps.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                          Approval Workflow
-                        </p>
-                        <div className="space-y-2">
-                          {booking.approvalSteps.map((step, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-3 p-3 bg-white rounded border border-slate-200 text-sm"
-                            >
-                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-xs font-bold text-slate-700 flex-shrink-0">
-                                {step.stepOrder}
-                              </span>
-                              <span className="flex-1 font-medium text-slate-900">
-                                {step.approverRole}
-                              </span>
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-semibold flex-shrink-0 ${
-                                  step.decision === "APPROVED"
-                                    ? "bg-green-100 text-green-700"
-                                    : step.decision === "REJECTED"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-amber-100 text-amber-700"
-                                }`}
-                              >
-                                {step.decision}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Previous Approvals</p>
+                      <div className="space-y-2">
+                        {booking.approvalSteps.map((step, idx) => (
+                          <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-[10px] font-bold text-slate-700 flex-shrink-0">
+                              {step.stepOrder}
+                            </span>
+                            <span className="flex-1 font-bold text-slate-800 text-xs uppercase tracking-wide">
+                              {step.approverRole?.replace(/_/g, " ")}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest flex-shrink-0 ${
+                              step.decision === "APPROVED" ? "bg-green-100 text-green-700" :
+                              step.decision === "REJECTED" ? "bg-red-100 text-red-700" :
+                              "bg-orange-100 text-[#49BBBB]"
+                            }`}>
+                              {step.decision}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                </div>
-              )}
-
-              {/* Notes Input with Action Buttons */}
-              <div className="border-t border-slate-200 p-6 bg-white flex gap-6">
-                {/* Notes Textarea - Left Side */}
-                <div className="flex-1">
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Add a note (optional)
-                  </label>
-                  <textarea
-                    value={approvalNotes[booking.id] || ""}
-                    onChange={(e) =>
-                      setApprovalNotes((prev) => ({
-                        ...prev,
-                        [booking.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="Add any comments for the requester..."
-                    rows="2"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-                  />
-                </div>
-
-                {/* Action Buttons - Right Side, Stacked Vertically */}
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleApprove(booking.id)}
-                    disabled={actionLoading === booking.id}
-                    className="px-4 py-1 text-sm text-green-600 border-2 border-green-600 hover:bg-green-50 font-medium rounded-full transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {actionLoading === booking.id ? "Approving..." : "Approve"}
-                  </button>
-                  <button
-                    onClick={() => handleReject(booking.id)}
-                    disabled={actionLoading === booking.id}
-                    className="px-4 py-1 text-sm text-slate-900 border-2 border-slate-900 hover:bg-slate-100 font-medium rounded-full transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {actionLoading === booking.id ? "Rejecting..." : "Reject"}
-                  </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
