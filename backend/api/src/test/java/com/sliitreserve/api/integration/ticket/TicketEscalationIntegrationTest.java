@@ -13,6 +13,7 @@ import com.sliitreserve.api.repositories.ticket.TicketCommentRepository;
 import com.sliitreserve.api.repositories.ticket.TicketEscalationRepository;
 import com.sliitreserve.api.services.ticket.TicketService;
 import com.sliitreserve.api.services.ticket.EscalationService;
+import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.state.TicketStateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -76,6 +77,7 @@ public class TicketEscalationIntegrationTest {
   @Mock private UserRepository userRepository;
   @Mock private EscalationService escalationService;
   @Mock private TicketStateMachine stateMachine;
+  @Mock private EventPublisher eventPublisher;
 
   private TicketService ticketService;
   private Facility testFacility;
@@ -86,7 +88,7 @@ public class TicketEscalationIntegrationTest {
   @BeforeEach
   void setUp() {
     ticketService =
-        new TicketService(ticketRepository, commentRepository, stateMachine);
+        new TicketService(ticketRepository, commentRepository, stateMachine, eventPublisher);
 
     // Default save behavior for mocked repositories in service-level tests.
     org.mockito.Mockito.lenient()
