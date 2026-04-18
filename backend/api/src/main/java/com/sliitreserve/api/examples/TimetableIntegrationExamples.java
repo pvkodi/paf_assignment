@@ -1,5 +1,8 @@
 package com.sliitreserve.api.examples;
 
+import com.sliitreserve.api.services.facility.FacilityService;
+import com.sliitreserve.api.services.facility.FacilityTimetableService;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;

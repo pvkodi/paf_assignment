@@ -22,4 +22,6 @@ public class FacilitySuggestionDTO {
     private Facility.FacilityStatus status;
     private boolean operational;
     private int capacityDelta;
+    private double utilizationScore;
+    private String timetableStatus;
 }
