@@ -6,6 +6,7 @@ import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.entities.facility.Facility.FacilityType;
 import com.sliitreserve.api.entities.ticket.*;
+import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;

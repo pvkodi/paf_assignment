@@ -97,7 +97,7 @@ export function AuthProvider({ children }) {
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
-        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+        response.expiresAt, // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state
@@ -125,14 +125,17 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      const response = await authService.loginWithEmailPassword(email, password);
+      const response = await authService.loginWithEmailPassword(
+        email,
+        password,
+      );
 
       // Store tokens and user with expiration from backend
       authService.setAuthTokens(
         response.token || response.accessToken,
         response.refreshToken,
         response.user,
-        response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
+        response.expiresAt, // Pass backend's ISO timestamp for proper expiry calculation
       );
 
       // Update state
@@ -153,10 +156,19 @@ export function AuthProvider({ children }) {
 
   /**
    * Handle user registration with email and password
-   * Creates new user account and stores auth state
+   * Creates a registration request awaiting admin approval
+   * User will see a pending message and receive email upon approval/rejection
    */
   const registerWithEmailPassword = useCallback(
-    async (email, displayName, password, confirmPassword) => {
+    async (
+      email,
+      displayName,
+      password,
+      confirmPassword,
+      roleRequested,
+      registrationNumber,
+      employeeNumber,
+    ) => {
       try {
         setLoading(true);
         setError(null);
@@ -165,22 +177,18 @@ export function AuthProvider({ children }) {
           email,
           displayName,
           password,
-          confirmPassword
+          confirmPassword,
+          roleRequested,
+          registrationNumber,
+          employeeNumber,
         );
 
-        // Store tokens and user with expiration from backend
-        authService.setAuthTokens(
-          response.token || response.accessToken,
-          response.refreshToken,
-          response.user,
-          response.expiresAt // Pass backend's ISO timestamp for proper expiry calculation
-        );
+        // Registration successful - returns status and registration ID, NOT authentication tokens
+        // User cannot login until admin approves
+        setIsAuthenticated(false);
+        setUser(null);
 
-        // Update state
-        setUser(response.user);
-        setIsAuthenticated(true);
-
-        return response.user;
+        return response;
       } catch (err) {
         console.error("Registration error:", err);
         setError(err.message || "Registration failed");
@@ -191,7 +199,7 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   /**

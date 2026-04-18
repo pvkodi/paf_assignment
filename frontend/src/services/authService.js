@@ -385,17 +385,24 @@ const loginWithEmailPassword = async (email, password) => {
 
 /**
  * Register new user with email and password
+ * Creates a registration request awaiting admin approval
  * @param {string} email - User email
  * @param {string} displayName - User display name
  * @param {string} password - User password
  * @param {string} confirmPassword - Password confirmation
- * @returns {Promise} Response with accessToken, refreshToken, and user
+ * @param {string} roleRequested - User role (USER, LECTURER, TECHNICIAN, FACILITY_MANAGER)
+ * @param {string} registrationNumber - Registration number (required if role=USER)
+ * @param {string} employeeNumber - Employee number (required if role!=USER)
+ * @returns {Promise} Response with registration status and ID
  */
 const registerWithEmailPassword = async (
   email,
   displayName,
   password,
   confirmPassword,
+  roleRequested = "USER",
+  registrationNumber = "",
+  employeeNumber = "",
 ) => {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {
@@ -408,6 +415,9 @@ const registerWithEmailPassword = async (
         displayName,
         password,
         confirmPassword,
+        roleRequested,
+        registrationNumber,
+        employeeNumber,
       }),
     });
 

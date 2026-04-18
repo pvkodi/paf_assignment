@@ -33,6 +33,11 @@ export function LoginPage() {
   const [displayName, setDisplayName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Registration form state (new)
+  const [roleRequested, setRoleRequested] = useState("USER");
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [employeeNumber, setEmployeeNumber] = useState("");
+
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const REDIRECT_URI = `${window.location.origin}/auth/callback`;
 
@@ -121,6 +126,17 @@ export function LoginPage() {
       return;
     }
 
+    // Validate role-specific fields
+    if (roleRequested === "USER" && !registrationNumber) {
+      setError("Registration number is required for students");
+      return;
+    }
+
+    if (roleRequested !== "USER" && !employeeNumber) {
+      setError("Employee number is required for this role");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -138,8 +154,11 @@ export function LoginPage() {
         displayName,
         password,
         confirmPassword,
+        roleRequested,
+        registrationNumber,
+        employeeNumber,
       );
-      navigate(redirectUrl);
+      navigate("/registration-pending", { state: { email } });
     } catch (err) {
       setError(
         err.message ||
@@ -161,6 +180,9 @@ export function LoginPage() {
     setPassword("");
     setDisplayName("");
     setConfirmPassword("");
+    setRoleRequested("USER");
+    setRegistrationNumber("");
+    setEmployeeNumber("");
   };
 
   return (
@@ -334,6 +356,55 @@ export function LoginPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    value={roleRequested}
+                    onChange={(e) => setRoleRequested(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    disabled={isProcessing || loading}
+                  >
+                    <option value="USER">Student</option>
+                    <option value="LECTURER">Lecturer</option>
+                    <option value="TECHNICIAN">Technician</option>
+                    <option value="FACILITY_MANAGER">Facility Manager</option>
+                  </select>
+                </div>
+
+                {roleRequested === "USER" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Registration Number
+                    </label>
+                    <input
+                      type="text"
+                      value={registrationNumber}
+                      onChange={(e) => setRegistrationNumber(e.target.value)}
+                      placeholder="e.g., 20230001234"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      disabled={isProcessing || loading}
+                    />
+                  </div>
+                )}
+
+                {roleRequested !== "USER" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Employee Number
+                    </label>
+                    <input
+                      type="text"
+                      value={employeeNumber}
+                      onChange={(e) => setEmployeeNumber(e.target.value)}
+                      placeholder="e.g., EMP00123"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      disabled={isProcessing || loading}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Password
                   </label>
                   <input
@@ -374,7 +445,7 @@ export function LoginPage() {
                       Creating account...
                     </>
                   ) : (
-                    "Create Account"
+                    "Submit Registration"
                   )}
                 </button>
               </form>
