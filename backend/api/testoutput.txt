@@ -1,0 +1,193 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.sliitreserve:api >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ api ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 10 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ api ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.5:test (default-test) @ api ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running Ticket Controller Contract Tests
+[INFO] Running Get Ticket Endpoint
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\CHAMA COMPUTERS\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+04:48:29.471 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 9.0.1.Final
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 2.670 s <<< FAILURE! -- in Get Ticket Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldReturn404WhenTicketNotFound -- Time elapsed: 2.616 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldGetTicket -- Time elapsed: 0.029 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running Update Status Endpoint
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.060 s <<< FAILURE! -- in Update Status Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldRejectUnauthorizedUpdate -- Time elapsed: 0.031 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldUpdateStatus -- Time elapsed: 0.023 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running List Tickets Endpoint
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.039 s <<< FAILURE! -- in List Tickets Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldListUserTickets -- Time elapsed: 0.014 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldListAllTicketsForStaff -- Time elapsed: 0.020 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running Comment Endpoints
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.035 s <<< FAILURE! -- in Comment Endpoints
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldListComments -- Time elapsed: 0.020 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldAddComment -- Time elapsed: 0.011 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running Escalation History Endpoint
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.027 s <<< FAILURE! -- in Escalation History Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldGetEscalationHistory -- Time elapsed: 0.012 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldRejectNonStaffAccess -- Time elapsed: 0.012 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running Assign Technician Endpoint
+[ERROR] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.023 s <<< FAILURE! -- in Assign Technician Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldRejectNonAdminAssignment -- Time elapsed: 0.012 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldAssignTechnician -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Running Create Ticket Endpoint
+[ERROR] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 0.034 s <<< FAILURE! -- in Create Ticket Endpoint
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldRejectUnauthenticated -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldCreateTicket -- Time elapsed: 0.010 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[ERROR] com.sliitreserve.api.contract.ticket.TicketContractTest.shouldRejectInvalidFacility -- Time elapsed: 0.010 s <<< ERROR!
+java.lang.IllegalStateException: springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+	at org.springframework.util.Assert.state(Assert.java:102)
+	at org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurer.beforeMockMvcCreated(SecurityMockMvcConfigurer.java:78)
+	at org.springframework.test.web.servlet.setup.AbstractMockMvcBuilder.build(AbstractMockMvcBuilder.java:184)
+	at com.sliitreserve.api.contract.ticket.TicketContractTest.setup(TicketContractTest.java:115)
+
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.912 s -- in Ticket Controller Contract Tests
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Errors: 
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[ERROR]   TicketContractTest.setup:115 ╗ IllegalState springSecurityFilterChain cannot be null. Ensure a Bean with the name springSecurityFilterChain implementing Filter is present or inject the Filter to be used.
+[INFO] 
+[ERROR] Tests run: 15, Failures: 0, Errors: 15, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.283 s
+[INFO] Finished at: 2026-04-18T04:48:30+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.5:test (default-test) on project api: 
+[ERROR] 
+[ERROR] See E:\University\3rd Year\3rd Year 2nd sem\2026 Things\PAF\Group project\PAF group assignment\paf_assignment\backend\api\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

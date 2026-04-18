@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import TicketAssignmentDialog from "./TicketAssignmentDialog";
 import TicketStatusUpdate from "./TicketStatusUpdate";
 import { TicketEditModal } from "./TicketEditModal";
+import { ManualEscalationDialog } from "./ManualEscalationDialog";
 
 /**
  * Ticket Detail View Component
@@ -35,6 +36,7 @@ export function TicketDetailView() {
   const [error, setError] = useState(null);
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEscalationDialog, setShowEscalationDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
 
@@ -86,6 +88,11 @@ export function TicketDetailView() {
     ["FACILITY_MANAGER", "ADMIN", "TECHNICIAN"].includes(role),
   );
 
+  // Debug logging
+  console.log("TicketDetailView - User:", user);
+  console.log("TicketDetailView - User roles:", user?.roles);
+  console.log("TicketDetailView - isStaff:", isStaff);
+
   const canAssign =
     user?.roles?.includes("ADMIN") ||
     (user?.roles?.includes("FACILITY_MANAGER") && user?.facilityId === ticket?.facilityId);
@@ -112,6 +119,12 @@ export function TicketDetailView() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatEscalationLevel = (level) => {
+    if (!level) return "Unknown";
+    // Convert LEVEL_1 to Level 1, LEVEL_2 to Level 2, etc.
+    return level.replace(/^LEVEL_/, "Level ");
   };
 
   const getStatusColor = (status) => {
@@ -225,6 +238,17 @@ export function TicketDetailView() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
                 >
                   Assign Technician
+                </button>
+              )}
+              {isStaff && (
+                <button
+                  onClick={() => setShowEscalationDialog(true)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Escalate
                 </button>
               )}
               {canEdit && (
@@ -392,34 +416,71 @@ export function TicketDetailView() {
 
         {/* Right Column: Escalation History (Staff Only) */}
         {isStaff && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 h-fit">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Escalation History
-            </h3>
+          <div className="bg-white rounded-lg border border-gray-200 p-6 h-fit shadow-sm">
+            <div className="flex items-center gap-2 mb-5">
+              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0A4 4 0 1010 4a1 1 0 11-2 0 2 2 0 10-4 4 1 1 0 010 2z M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" />
+              </svg>
+              <h3 className="text-lg font-bold text-gray-900">Escalation History</h3>
+            </div>
             {ticket.escalationHistory && ticket.escalationHistory.length > 0 ? (
-              <div className="space-y-4">
-                {ticket.escalationHistory.map((escalation, index) => (
-                  <div
-                    key={index}
-                    className={`pb-4 border-b border-gray-200 last:border-b-0 ${getEscalationColor(escalation.toLevel)}`}
-                  >
-                    <p className="text-sm font-semibold text-gray-900 mb-2">
-                      {escalation.fromLevel} → {escalation.toLevel}
-                    </p>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {formatDate(escalation.escalatedAt)}
-                    </p>
-                    <p className="text-xs text-gray-700 mb-2">
-                      <span className="font-medium">By:</span> {escalation.escalatedByName}
-                    </p>
-                    <p className="text-xs text-gray-700">
-                      <span className="font-medium">Reason:</span> {escalation.reason}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {ticket.escalationHistory.map((escalation, index) => {
+                  const getLevelColors = (level) => {
+                    const colors = {
+                      1: { bg: "bg-gradient-to-br from-green-50 to-emerald-50", border: "border-green-300", badge: "bg-green-100 text-green-700", icon: "text-green-600" },
+                      2: { bg: "bg-gradient-to-br from-yellow-50 to-amber-50", border: "border-yellow-300", badge: "bg-yellow-100 text-yellow-700", icon: "text-yellow-600" },
+                      3: { bg: "bg-gradient-to-br from-orange-50 to-red-50", border: "border-orange-300", badge: "bg-orange-100 text-orange-700", icon: "text-orange-600" },
+                      4: { bg: "bg-gradient-to-br from-red-50 to-red-100", border: "border-red-300", badge: "bg-red-100 text-red-700", icon: "text-red-600" },
+                    };
+                    return colors[level] || { bg: "bg-gray-50", border: "border-gray-300", badge: "bg-gray-100 text-gray-700", icon: "text-gray-600" };
+                  };
+
+                  const toColors = getLevelColors(escalation.toLevel);
+
+                  return (
+                    <div key={index} className={`${toColors.bg} border-l-4 ${toColors.border} rounded-lg p-4 transition-all hover:shadow-md`}>
+                      {/* Escalation Arrow */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${toColors.badge}`}>
+                          {formatEscalationLevel(escalation.fromLevel)}
+                        </span>
+                        <svg className={`w-4 h-4 ${toColors.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${toColors.badge}`}>
+                          {formatEscalationLevel(escalation.toLevel)}
+                        </span>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <p className="text-gray-600 font-medium mb-0.5">When</p>
+                          <p className="text-gray-900 font-semibold">{formatDate(escalation.escalatedAt)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium mb-0.5">By</p>
+                          <p className="text-gray-900 font-semibold">{escalation.escalatedByName}</p>
+                        </div>
+                      </div>
+
+                      {/* Reason */}
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-gray-600 font-medium text-xs mb-1">Reason</p>
+                        <p className="text-gray-700 text-sm leading-relaxed">{escalation.reason}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No escalations yet</p>
+              <div className="text-center py-8">
+                <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-gray-500 font-medium">No escalations yet</p>
+              </div>
             )}
           </div>
         )}
@@ -445,6 +506,19 @@ export function TicketDetailView() {
         onClose={() => setShowEditModal(false)}
         onTicketUpdated={handleTicketUpdated}
       />
+
+      {/* Manual Escalation Dialog */}
+      {showEscalationDialog && (
+        <ManualEscalationDialog
+          ticketId={ticket.id}
+          facilityId={ticket.facilityId}
+          onEscalationSuccess={() => {
+            setShowEscalationDialog(false);
+            fetchTicket();
+          }}
+          onCancel={() => setShowEscalationDialog(false)}
+        />
+      )}
     </div>
   );
 }
@@ -611,26 +685,45 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
         {comments.length === 0 ? (
           <p className="text-center text-gray-500 py-8">No comments yet</p>
         ) : (
-          comments.map((comment) => (
+          comments.map((comment) => {
+            // Check if this is a solution summary comment
+            const isSolutionSummary = comment.content.startsWith("**SOLUTION:**");
+            const displayContent = isSolutionSummary 
+              ? comment.content.replace("**SOLUTION:** ", "").trim()
+              : comment.content;
+
+            return (
             <div
               key={comment.id}
               className={`p-4 rounded-lg border ${
-                comment.visibility === "INTERNAL"
+                isSolutionSummary
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-emerald-300 border-l-4 border-l-emerald-500 shadow-sm"
+                  : comment.visibility === "INTERNAL"
                   ? "bg-yellow-50 border-yellow-200"
                   : "bg-gray-50 border-gray-200"
               }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="font-medium text-gray-900">
-                    {comment.authorName}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900">
+                      {comment.authorName}
+                    </p>
+                    {isSolutionSummary && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Solution
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600">
                     {new Date(comment.createdAt).toLocaleString()}
                     {comment.isEdited && " (edited)"}
                   </p>
                 </div>
-                {comment.visibility === "INTERNAL" && (
+                {!isSolutionSummary && comment.visibility === "INTERNAL" && (
                   <span className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 rounded">
                     Internal
                   </span>
@@ -643,13 +736,13 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
                     value={editingContent}
                     onChange={(e) => setEditingContent(e.target.value)}
                     rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() =>
                         handleUpdateComment(comment.id)}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700"
                     >
                       Save
                     </button>
@@ -663,7 +756,9 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
                 </div>
               ) : (
                 <>
-                  <p className="text-gray-700 text-sm">{comment.content}</p>
+                  <p className={`text-sm ${isSolutionSummary ? "text-emerald-900 font-medium leading-relaxed" : "text-gray-700"}`}>
+                    {displayContent}
+                  </p>
                   {(() => {
                     // Compare IDs as strings for consistency
                     const userIdStr = user?.id?.toString();
@@ -687,9 +782,13 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
                             <button
                               onClick={() => {
                                 setEditingCommentId(comment.id);
-                                setEditingContent(comment.content);
+                                setEditingContent(displayContent);
                               }}
-                              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 transition"
+                              className={`px-3 py-1 rounded text-sm transition ${
+                                isSolutionSummary
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                  : "bg-indigo-600 text-white hover:bg-indigo-700"
+                              }`}
                             >
                               Edit
                             </button>
@@ -711,7 +810,8 @@ function CommentsSection({ ticketId, onCommentAdded, isStaff }) {
                 </>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -778,10 +878,21 @@ function AttachmentsSection({ ticketId, ticket, attachments, user, isAdmin, onAt
       onAttachmentDeleted();
     } catch (err) {
       console.error("Failed to upload attachment:", err);
-      setUploadError(
-        err.response?.data?.message ||
-          "Failed to upload file. Please try again.",
-      );
+      const errorMessage = err.response?.data?.message || err.message;
+      
+      // Display user-friendly error messages
+      let displayMessage = "Failed to upload file. Please try again.";
+      if (errorMessage?.includes("maximum attachment limit")) {
+        displayMessage = "Maximum 3 attachments allowed per ticket.";
+      } else if (errorMessage?.includes("File size")) {
+        displayMessage = errorMessage;
+      } else if (errorMessage?.includes("MIME") || errorMessage?.includes("allowed")) {
+        displayMessage = errorMessage;
+      } else if (errorMessage) {
+        displayMessage = errorMessage;
+      }
+      
+      setUploadError(displayMessage);
     } finally {
       setUploading(false);
     }
