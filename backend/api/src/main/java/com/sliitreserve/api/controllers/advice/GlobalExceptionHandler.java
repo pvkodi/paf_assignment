@@ -159,6 +159,46 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles IllegalStateException for business logic violations.
+     * Returns HTTP 400 Bad Request with the specific error message.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalStateException(
+            IllegalStateException ex,
+            WebRequest request) {
+        
+        log.warn("Illegal state error: {}", ex.getMessage());
+        
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+            "ILLEGAL_STATE",
+            ex.getMessage()
+        );
+        errorResponse.setTimestamp(LocalDateTime.now());
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles IllegalArgumentException for invalid arguments.
+     * Returns HTTP 400 Bad Request with the specific error message.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(
+            IllegalArgumentException ex,
+            WebRequest request) {
+        
+        log.warn("Illegal argument error: {}", ex.getMessage());
+        
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+            "INVALID_ARGUMENT",
+            ex.getMessage()
+        );
+        errorResponse.setTimestamp(LocalDateTime.now());
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * Generic exception handler for unexpected errors.
      * Returns HTTP 500 Internal Server Error.
      */

@@ -466,11 +466,15 @@ public class TicketController {
       @PathVariable UUID ticketId,
       @RequestBody com.sliitreserve.api.dto.ticket.ManualEscalationRequest request,
       Authentication auth) {
-    log.info("Manual escalation request for ticket {} with reason: {}", 
-        ticketId, request.getReason());
+    log.info("Manual escalation request for ticket {} with reason: {} and assignee: {}", 
+        ticketId, request.getReason(), request.getAssigneeId());
 
     if (request.getReason() == null || request.getReason().isBlank()) {
       throw new IllegalArgumentException("Escalation reason is required");
+    }
+
+    if (request.getAssigneeId() == null) {
+      throw new IllegalArgumentException("Assignee is required for escalation");
     }
 
     MaintenanceTicket ticket = ticketRepository.findById(ticketId)
@@ -482,9 +486,11 @@ public class TicketController {
       TicketEscalation escalation = escalationService.manuallyEscalateTicket(
           ticket,
           request.getReason(),
-          currentUser);
+          currentUser,
+          request.getAssigneeId());
 
-      log.info("Ticket {} escalated manually by user {}", ticketId, currentUser.getDisplayName());
+      log.info("Ticket {} escalated manually by user {} and assigned to {}", 
+          ticketId, currentUser.getDisplayName(), request.getAssigneeId());
 
       return ResponseEntity.ok(mapEscalationToResponseDTO(escalation));
     } catch (IllegalStateException e) {
