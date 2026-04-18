@@ -32,8 +32,32 @@ public class FacilityTimetableServiceTest {
     private FacilityRepository facilityRepository;
 
     private TimetableParserService parserService;
-
     private FacilityTimetableService timetableService;
+
+    private static String wrapFetTable(String rows) {
+        return """
+                <!DOCTYPE html>
+                <html><body>
+                <table id="table_1" border="1">
+                  <thead>
+                    <tr><td rowspan="2"></td><th colspan="7">Group1</th></tr>
+                    <tr>
+                      <th class="xAxis">Monday</th>
+                      <th class="xAxis">Tuesday</th>
+                      <th class="xAxis">Wednesday</th>
+                      <th class="xAxis">Thursday</th>
+                      <th class="xAxis">Friday</th>
+                      <th class="xAxis">Saturday</th>
+                      <th class="xAxis">Sunday</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                """ + rows + """
+                  </tbody>
+                </table>
+                </body></html>
+                """;
+    }
 
     @BeforeEach
     void setUp() {
@@ -44,20 +68,13 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should cache timetable after loading")
     void testTimetableCaching() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         assertFalse(timetableService.isTimetableLoaded());
         
@@ -69,20 +86,13 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should not reload if already loaded (unless forced)")
     void testNoCacheReloadWithoutForce() {
-        String html1 = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html1 = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html1, false);
         Map<String, Object> stats1 = timetableService.getStatistics();
@@ -97,20 +107,13 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should reload with forceReload=true")
     void testForcedCacheReload() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
         timetableService.clearCache();
@@ -135,24 +138,17 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should check occupancy correctly")
     void testOccupancyCheck() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                    <tr>
-                        <td>09:00</td>
-                        <td>-x-</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">09:00</th>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
 
@@ -163,28 +159,22 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should get occupied slots for a facility on a day")
     void testGetOccupiedSlots() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                    <tr>
-                        <td>09:00</td>
-                        <td>G1301</td>
-                    </tr>
-                    <tr>
-                        <td>10:00</td>
-                        <td>-x-</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td rowspan="2">Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">09:00</th>
+                  <!-- spanned -->
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">10:00</th>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
         Set<LocalTime> occupiedSlots = timetableService.getOccupiedSlots("G1301", DayOfWeek.MONDAY);
@@ -198,28 +188,21 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should get available slots using facility availability window")
     void testGetAvailableSlots() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                    <tr>
-                        <td>09:00</td>
-                        <td>-x-</td>
-                    </tr>
-                    <tr>
-                        <td>10:00</td>
-                        <td>-x-</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">09:00</th>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">10:00</th>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         Facility mockFacility = new Facility();
         mockFacility.setFacilityCode("G1301");
@@ -239,20 +222,13 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should case-insensitively match facility codes")
     void testCaseInsensitiveFacilityCodeMatching() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>g1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>g1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
 
@@ -263,24 +239,18 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should return statistics")
     void testGetStatistics() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                    <tr>
-                        <td>09:00</td>
-                        <td>A405</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                <tr>
+                  <th class="yAxis">09:00</th>
+                  <td>Group A<br/>Tutor<br/>A405<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
         Map<String, Object> stats = timetableService.getStatistics();
@@ -295,20 +265,13 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should clear cache properly")
     void testClearCache() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
         assertTrue(timetableService.isTimetableLoaded());
@@ -322,22 +285,14 @@ public class FacilityTimetableServiceTest {
     @Test
     @DisplayName("Should return facility occupancy across all days")
     void testGetFacilityOccupancy() {
-        String html = """
-                <html>
-                <table>
-                    <tr>
-                        <th>Time</th>
-                        <th>MONDAY</th>
-                        <th>TUESDAY</th>
-                    </tr>
-                    <tr>
-                        <td>08:00</td>
-                        <td>G1301</td>
-                        <td>G1301</td>
-                    </tr>
-                </table>
-                </html>
-                """;
+        String html = wrapFetTable("""
+                <tr>
+                  <th class="yAxis">08:00</th>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>Group A<br/>Tutor<br/>G1301<br/></td>
+                  <td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td><td>-x-</td>
+                </tr>
+                """);
 
         timetableService.loadTimetableFromHtml(html, false);
         var occupancy = timetableService.getFacilityOccupancy("G1301");

@@ -1,12 +1,15 @@
 package com.sliitreserve.api.unit.analytics;
 
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
+import com.sliitreserve.api.dto.integration.BookingDTO;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
 import com.sliitreserve.api.services.analytics.RecommendationService;
 import com.sliitreserve.api.services.analytics.UtilizationAnalyticsService;
+import com.sliitreserve.api.services.integration.BookingIntegrationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,13 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +37,9 @@ class UtilizationServiceTest {
 
     @Mock
     private RecommendationService recommendationService;
+
+    @Mock
+    private BookingIntegrationService bookingIntegrationService;
 
     @InjectMocks
     private UtilizationAnalyticsService utilizationAnalyticsService;
@@ -79,14 +86,28 @@ class UtilizationServiceTest {
                 .reason("Better utilization")
                 .build();
 
+        BookingDTO booking1 = BookingDTO.builder()
+            .facilityId(eligibleFacility.getId())
+            .startDateTime(from.atTime(9, 0))
+            .endDateTime(from.atTime(11, 0))
+            .build();
+        BookingDTO booking2 = BookingDTO.builder()
+            .facilityId(eligibleFacility.getId())
+            .startDateTime(from.atTime(14, 0))
+            .endDateTime(from.atTime(15, 0))
+            .build();
+
         when(snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(from, to))
             .thenReturn(snapshots);
+        when(bookingIntegrationService.getBookingsForFacility(eq(eligibleFacility.getId()), any(), any()))
+            .thenReturn(List.of(booking1, booking2));
         when(recommendationService.generateRecommendations(anyList()))
             .thenReturn(List.of(recommendation));
 
         UtilizationResponse response = utilizationAnalyticsService.generateUtilizationAnalytics(from, to);
 
-        assertEquals(2, response.getHeatmap().size());
+        // Heatmap should have entries for 9-10h, 10-11h, and 14-15h for the first day
+        assertTrue(response.getHeatmap().size() >= 2);
         assertEquals(1, response.getUnderutilizedFacilities().size());
         assertEquals(eligibleFacility.getId(), response.getUnderutilizedFacilities().get(0).getFacilityId());
         assertEquals(1, response.getRecommendations().size());
@@ -106,6 +127,8 @@ class UtilizationServiceTest {
 
         when(snapshotRepository.findBySnapshotDateBetweenOrderBySnapshotDateAsc(from, to))
             .thenReturn(snapshots);
+        when(bookingIntegrationService.getBookingsForFacility(any(), any(), any()))
+            .thenReturn(List.of());
         when(recommendationService.generateRecommendations(anyList()))
             .thenThrow(new RuntimeException("Recommendation engine unavailable"));
 

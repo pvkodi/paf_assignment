@@ -6,9 +6,12 @@ import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ResourceNotFoundException;
 import com.sliitreserve.api.repositories.auth.UserRepository;
+import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.services.facility.FacilityOptimizationService;
 import com.sliitreserve.api.services.facility.FacilityTimetableService;
 import com.sliitreserve.api.services.facility.FacilityService;
+import com.sliitreserve.api.services.facility.TimetableParserService;
+import com.sliitreserve.api.services.facility.FacilityRuleEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,6 +37,9 @@ public class FacilityContractTest {
     private FacilityService facilityService;
     private FacilityOptimizationService facilityOptimizationService;
     private FacilityTimetableService facilityTimetableService;
+    private TimetableParserService timetableParserService;
+    private FacilityRuleEngine facilityRuleEngine;
+    private FacilityRepository facilityRepository;
     private UserRepository userRepository;
 
     @BeforeEach
@@ -41,8 +47,14 @@ public class FacilityContractTest {
         facilityService = Mockito.mock(FacilityService.class);
         facilityOptimizationService = Mockito.mock(FacilityOptimizationService.class);
         facilityTimetableService = Mockito.mock(FacilityTimetableService.class);
+        timetableParserService = Mockito.mock(TimetableParserService.class);
+        facilityRuleEngine = Mockito.mock(FacilityRuleEngine.class);
+        facilityRepository = Mockito.mock(FacilityRepository.class);
         userRepository = Mockito.mock(UserRepository.class);
-        FacilityController controller = new FacilityController(facilityService, facilityOptimizationService, facilityTimetableService, userRepository);
+        FacilityController controller = new FacilityController(
+                facilityService, facilityOptimizationService,
+                facilityTimetableService, timetableParserService,
+                facilityRuleEngine, facilityRepository, userRepository);
         this.mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
