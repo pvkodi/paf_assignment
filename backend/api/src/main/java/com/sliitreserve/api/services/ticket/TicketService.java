@@ -7,12 +7,16 @@ import com.sliitreserve.api.entities.ticket.*;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import com.sliitreserve.api.repositories.ticket.TicketCommentRepository;
 import com.sliitreserve.api.state.TicketStateMachine;
+import com.sliitreserve.api.observers.EventPublisher;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventSeverity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,15 +67,18 @@ public class TicketService {
   private final MaintenanceTicketRepository ticketRepository;
   private final TicketCommentRepository commentRepository;
   private final TicketStateMachine ticketStateMachine;
+  private final EventPublisher eventPublisher;
 
   @Autowired
   public TicketService(
       MaintenanceTicketRepository ticketRepository,
       TicketCommentRepository commentRepository,
-      TicketStateMachine ticketStateMachine) {
+      TicketStateMachine ticketStateMachine,
+      EventPublisher eventPublisher) {
     this.ticketRepository = ticketRepository;
     this.commentRepository = commentRepository;
     this.ticketStateMachine = ticketStateMachine;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -140,6 +147,29 @@ public class TicketService {
             .build();
 
     MaintenanceTicket savedTicket = ticketRepository.save(ticket);
+    
+    // Publish TICKET_CREATED event to notify creator (STANDARD severity = in-app only)
+    eventPublisher.publish(EventEnvelope.builder()
+        .eventId(UUID.randomUUID().toString())
+        .eventType("TICKET_CREATED")
+        .severity(EventSeverity.STANDARD)
+        .affectedUserId(createdBy.getId().getMostSignificantBits())
+        .title("Your Ticket Has Been Created")
+        .description("Ticket for " + facility.getName() + " has been created with priority " + priority.name() + ".")
+        .source("TicketService")
+        .entityReference("ticket:" + savedTicket.getId())
+        .actionUrl("/tickets/" + savedTicket.getId())
+        .actionLabel("View Ticket")
+        .occurrenceTime(ZonedDateTime.now())
+        .metadata(java.util.Map.of(
+            "userId", createdBy.getId().toString(),
+            "ticketId", savedTicket.getId().toString(),
+            "facilityId", facility.getId().toString(),
+            "priority", priority.name(),
+            "category", category.name()
+        ))
+        .build());
+    
     log.info(
         "Ticket created: ticketId={}, facility={}, priority={}, slaDueAt={}",
         savedTicket.getId(),
@@ -243,13 +273,54 @@ public class TicketService {
               + newStatus);
     }
 
+    // Store old status for notification
+    TicketStatus oldStatus = ticket.getStatus();
+    
     // Perform transition
     ticketStateMachine.transition(ticket, newStatus);
     MaintenanceTicket updatedTicket = ticketRepository.save(ticket);
+    
+    // Publish TICKET_STATUS_CHANGED event to notify relevant users
+    EventSeverity severity = newStatus == TicketStatus.CLOSED ? EventSeverity.HIGH : EventSeverity.STANDARD;
+    
+    // Determine affected users based on status change
+    List<User> affectedUsers = new ArrayList<>();
+    affectedUsers.add(ticket.getCreatedBy());
+    if (ticket.getAssignedTechnician() != null) {
+      affectedUsers.add(ticket.getAssignedTechnician());
+    }
+    
+    // Publish notification for each affected user
+    String statusChangeDesc = "Ticket '" + ticket.getTitle() + "' status has been changed from " + 
+        oldStatus.name() + " to " + newStatus.name() + ".";
+    
+    for (User affectedUser : affectedUsers) {
+      eventPublisher.publish(EventEnvelope.builder()
+          .eventId(UUID.randomUUID().toString())
+          .eventType("TICKET_STATUS_CHANGED")
+          .severity(severity)
+          .affectedUserId(affectedUser.getId().getMostSignificantBits())
+          .title("Ticket Status Updated: " + newStatus.name())
+          .description(statusChangeDesc)
+          .source("TicketService")
+          .entityReference("ticket:" + ticket.getId())
+          .actionUrl("/tickets/" + ticket.getId())
+          .actionLabel("View Ticket")
+          .occurrenceTime(ZonedDateTime.now())
+          .metadata(java.util.Map.of(
+              "userId", affectedUser.getId().toString(),
+              "ticketId", ticket.getId().toString(),
+              "oldStatus", oldStatus.name(),
+              "newStatus", newStatus.name(),
+              "facilityId", ticket.getFacility().getId().toString()
+          ))
+          .build());
+    }
+    
     log.info(
         "Ticket status updated: ticketId={}, oldStatus={}, newStatus={}",
         ticket.getId(),
-        ticket.getStatus(),
+        oldStatus,
         newStatus);
 
     return updatedTicket;
@@ -271,6 +342,33 @@ public class TicketService {
 
     ticket.setAssignedTechnician(technician);
     MaintenanceTicket updatedTicket = ticketRepository.save(ticket);
+    
+    // Publish TICKET_ASSIGNED event to notify technician (HIGH severity = in-app + email)
+    if (technician != null) {
+      eventPublisher.publish(EventEnvelope.builder()
+          .eventId(UUID.randomUUID().toString())
+          .eventType("TICKET_ASSIGNED")
+          .severity(EventSeverity.HIGH)
+          .affectedUserId(technician.getId().getMostSignificantBits())
+          .secondaryUserId(ticket.getCreatedBy().getId().getMostSignificantBits())
+          .title("New Ticket Assigned to You")
+          .description("Ticket '" + ticket.getTitle() + "' for " + ticket.getFacility().getName() + 
+              " has been assigned to you with " + ticket.getPriority().name() + " priority.")
+          .source("TicketService")
+          .entityReference("ticket:" + ticket.getId())
+          .actionUrl("/tickets/" + ticket.getId())
+          .actionLabel("View Ticket")
+          .occurrenceTime(ZonedDateTime.now())
+          .metadata(java.util.Map.of(
+              "userId", technician.getId().toString(),
+              "ticketId", ticket.getId().toString(),
+              "facilityId", ticket.getFacility().getId().toString(),
+              "priority", ticket.getPriority().name(),
+              "assignedTo", technician.getId().toString()
+          ))
+          .build());
+    }
+    
     log.info(
         "Ticket assigned: ticketId={}, technician={}",
         ticket.getId(),
@@ -347,6 +445,53 @@ public class TicketService {
             .build();
 
     TicketComment savedComment = commentRepository.save(comment);
+    
+    // Publish TICKET_COMMENT_ADDED event to notify relevant users
+    // Determine affected users based on comment visibility
+    List<User> affectedUsers = new ArrayList<>();
+    
+    if (effectiveVisibility == TicketCommentVisibility.PUBLIC) {
+      // Notify ticket creator and assigned technician
+      if (!ticket.getCreatedBy().getId().equals(author.getId())) {
+        affectedUsers.add(ticket.getCreatedBy());
+      }
+      if (ticket.getAssignedTechnician() != null && !ticket.getAssignedTechnician().getId().equals(author.getId())) {
+        affectedUsers.add(ticket.getAssignedTechnician());
+      }
+    } else {
+      // INTERNAL comments - notify assigned technician only
+      if (ticket.getAssignedTechnician() != null && !ticket.getAssignedTechnician().getId().equals(author.getId())) {
+        affectedUsers.add(ticket.getAssignedTechnician());
+      }
+    }
+    
+    // Publish notification for each affected user
+    String commentPreview = content.length() > 100 ? content.substring(0, 100) + "..." : content;
+    
+    for (User affectedUser : affectedUsers) {
+      eventPublisher.publish(EventEnvelope.builder()
+          .eventId(UUID.randomUUID().toString())
+          .eventType("TICKET_COMMENT_ADDED")
+          .severity(EventSeverity.STANDARD)
+          .affectedUserId(affectedUser.getId().getMostSignificantBits())
+          .secondaryUserId(author.getId().getMostSignificantBits())
+          .title("New Comment on Ticket '" + ticket.getTitle() + "'")
+          .description(author.getEmail() + " commented: " + commentPreview)
+          .source("TicketService")
+          .entityReference("ticket:" + ticket.getId())
+          .actionUrl("/tickets/" + ticket.getId() + "?commentId=" + savedComment.getId())
+          .actionLabel("View Comment")
+          .occurrenceTime(ZonedDateTime.now())
+          .metadata(java.util.Map.of(
+              "userId", affectedUser.getId().toString(),
+              "ticketId", ticket.getId().toString(),
+              "commentId", savedComment.getId().toString(),
+              "visibility", effectiveVisibility.name(),
+              "authorId", author.getId().toString()
+          ))
+          .build());
+    }
+    
     log.debug(
         "Comment added: commentId={}, ticket={}, visibility={}",
         savedComment.getId(),

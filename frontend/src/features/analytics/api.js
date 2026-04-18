@@ -8,4 +8,10 @@ export async function fetchCampusUtilization(from, to) {
   return response.data;
 }
 
-export default fetchCampusUtilization;
+// Fetch live campus vacancy/occupancy status
+export async function fetchRealTimeStatus() {
+  const response = await apiClient.get("/v1/analytics/real-time-status");
+  return response.data;
+}
+
+export default { fetchCampusUtilization, fetchRealTimeStatus };

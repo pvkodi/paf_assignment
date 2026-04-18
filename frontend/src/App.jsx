@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
+import { RegistrationPendingPage } from "./pages/RegistrationPendingPage";
 import AppShell from "./app/AppShell";
+import AdminUserManagementPanel from "./features/admin/AdminUserManagementPanel";
 import {
   BookingsPage,
   FacilitiesAndBookingsPage,
@@ -12,12 +14,11 @@ import {
   DashboardPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
-  FacilitySuggestionsPage,
+  TimetableImportPreviewPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
-  UnderutilizedPage,
   BookingRecommendationsPage,
   AnalyticsPage,
   AppealsPage,
@@ -39,6 +40,10 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
+          <Route
+            path="/registration-pending"
+            element={<RegistrationPendingPage />}
+          />
 
           {/* Protected Routes */}
           <Route
@@ -65,13 +70,14 @@ function App() {
               path="facilities/:id"
               element={<FacilityDetailRoutePage />}
             />
+
             <Route
-              path="facilities/underutilized"
-              element={<UnderutilizedPage />}
-            />
-            <Route
-              path="facilities/suggestions"
-              element={<FacilitySuggestionsPage />}
+              path="facilities/timetable-preview"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
+                  <TimetableImportPreviewPage />
+                </ProtectedRoute>
+              }
             />
 
             {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}
@@ -127,6 +133,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRoles={["ADMIN"]}>
                   <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/user-management"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN"]}>
+                  <AdminUserManagementPanel />
                 </ProtectedRoute>
               }
             />

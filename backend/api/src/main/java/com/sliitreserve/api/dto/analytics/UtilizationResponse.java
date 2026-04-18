@@ -29,6 +29,10 @@ public class UtilizationResponse {
 
     private List<UnderutilizedFacility> underutilizedFacilities;
 
+    private List<UnderutilizedFacility> hotspotFacilities;
+
+    private List<UnderutilizedFacility> ghostTownFacilities;
+
     private List<RecommendedAlternative> recommendations;
 
     /**
