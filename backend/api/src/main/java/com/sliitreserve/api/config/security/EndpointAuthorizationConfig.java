@@ -86,6 +86,10 @@ public class EndpointAuthorizationConfig {
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/register", new HashSet<>());
         ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/login", new HashSet<>());
 
+        // OTP-based registration: public endpoints (no auth required)
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/otp/send", new HashSet<>());
+        ENDPOINT_ACCESS_MATRIX.put("POST /api/v1/auth/otp/verify-and-register", new HashSet<>());
+
         // ========== FILE UPLOADS (PUBLIC) ==========
         // Allow downloads of uploaded attachments without authentication
         ENDPOINT_ACCESS_MATRIX.put("GET /api/uploads/**", new HashSet<>());
