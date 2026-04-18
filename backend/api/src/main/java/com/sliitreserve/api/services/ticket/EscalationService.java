@@ -94,4 +94,24 @@ public interface EscalationService {
       Integer toLevel,
       Object escalatedBy,
       String reason);
+
+  /**
+   * Manually escalate a ticket to the next level by staff member.
+   *
+   * <p>Allows TECHNICIAN, FACILITY_MANAGER, or ADMIN users to manually escalate
+   * a ticket to the next severity level with a documented reason. This is useful when
+   * a staff member identifies a more complex issue earlier than the SLA timer would
+   * trigger, or when a safety concern is detected.
+   *
+   * @param ticket the ticket to escalate
+   * @param reason the reason for manual escalation (required, e.g., "Safety hazard detected")
+   * @param escalatingUser the user performing the escalation
+   * @return the created TicketEscalation record for the manual escalation
+   * @throws IllegalArgumentException if ticket is null, reason is blank, or user is null
+   * @throws IllegalStateException if ticket is already at maximum escalation level (LEVEL_4)
+   */
+  TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser);
 }

@@ -4,6 +4,7 @@ import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketEscalation;
 import com.sliitreserve.api.entities.ticket.TicketStatus;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import com.sliitreserve.api.repositories.ticket.TicketEscalationRepository;
 import com.sliitreserve.api.workflow.escalation.*;
@@ -55,6 +56,7 @@ public class EscalationServiceImpl implements EscalationService {
 
   private final MaintenanceTicketRepository ticketRepository;
   private final TicketEscalationRepository escalationRepository;
+  private final UserRepository userRepository;
   private final CriticalEscalationHandler criticalHandler;
   private final HighEscalationHandler highHandler;
   private final MediumEscalationHandler mediumHandler;
@@ -64,12 +66,14 @@ public class EscalationServiceImpl implements EscalationService {
   public EscalationServiceImpl(
       MaintenanceTicketRepository ticketRepository,
       TicketEscalationRepository escalationRepository,
+      UserRepository userRepository,
       CriticalEscalationHandler criticalHandler,
       HighEscalationHandler highHandler,
       MediumEscalationHandler mediumHandler,
       LowEscalationHandler lowHandler) {
     this.ticketRepository = ticketRepository;
     this.escalationRepository = escalationRepository;
+    this.userRepository = userRepository;
     this.criticalHandler = criticalHandler;
     this.highHandler = highHandler;
     this.mediumHandler = mediumHandler;
@@ -202,7 +206,11 @@ public class EscalationServiceImpl implements EscalationService {
 
     User escalatedByUser = null;
     if (escalatedBy instanceof User) {
-      escalatedByUser = (User) escalatedBy;
+      User user = (User) escalatedBy;
+      // Reload user from database to ensure it's managed by Hibernate
+      // The user from Spring Security is detached and will cause issues when saving
+      escalatedByUser = userRepository.findById(user.getId())
+          .orElseThrow(() -> new IllegalArgumentException("Escalating user not found: " + user.getId()));
     } else {
       // If no user provided, use a system user placeholder (would be admin user in real app)
       escalatedByUser = getSystemUser();
@@ -239,6 +247,58 @@ public class EscalationServiceImpl implements EscalationService {
         .setNext(highHandler
             .setNext(mediumHandler
                 .setNext(lowHandler)));
+  }
+
+  @Override
+  @Transactional
+  public TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+    if (reason == null || reason.isBlank()) {
+      throw new IllegalArgumentException("Escalation reason is required");
+    }
+    if (escalatingUser == null) {
+      throw new IllegalArgumentException("Escalating user cannot be null");
+    }
+
+    // Check if already at max level
+    Integer currentLevel = ticket.getEscalationLevel();
+    if (currentLevel != null && currentLevel >= 3) {
+      throw new IllegalStateException(
+          "Ticket is already at maximum escalation level (LEVEL_4)");
+    }
+
+    // Calculate next level
+    Integer nextLevel = (currentLevel == null || currentLevel < 0) ? 1 : currentLevel + 1;
+
+    // Ensure nextLevel doesn't exceed max
+    if (nextLevel > 3) {
+      nextLevel = 3;
+    }
+
+    // Update ticket escalation level
+    ticket.setEscalationLevel(nextLevel);
+    ticketRepository.save(ticket);
+
+    // Record the escalation with the actual user
+    User escalatedByUser = null;
+    if (escalatingUser instanceof User) {
+      escalatedByUser = (User) escalatingUser;
+    } else {
+      throw new IllegalArgumentException(
+          "Escalating user must be a User entity");
+    }
+
+    return recordEscalation(
+        ticket,
+        currentLevel != null ? currentLevel : 0,
+        nextLevel,
+        escalatedByUser,
+        reason);
   }
 
   /**
