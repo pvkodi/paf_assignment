@@ -45,6 +45,14 @@ public interface UtilizationSnapshotRepository extends JpaRepository<Utilization
     @Query(value = "SELECT CONCAT(DAYOFWEEK(u.snapshot_date) - 1, '_', HOUR(u.snapshot_date)) as slot, " +
         "ROUND(AVG(u.utilization_percent)) as util " +
         "FROM utilization_snapshot u " +
+        "WHERE u.snapshot_date BETWEEN :startDate AND :endDate " +
+        "GROUP BY DAYOFWEEK(u.snapshot_date), HOUR(u.snapshot_date)", nativeQuery = true)
+    java.util.Map<String, Integer> getCampusWeeklyHeatmapData(@Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
+
+    @Query(value = "SELECT CONCAT(DAYOFWEEK(u.snapshot_date) - 1, '_', HOUR(u.snapshot_date)) as slot, " +
+        "ROUND(AVG(u.utilization_percent)) as util " +
+        "FROM utilization_snapshot u " +
         "WHERE u.facility_id = :facilityId " +
         "AND u.snapshot_date BETWEEN :startDate AND :endDate " +
         "GROUP BY DAYOFWEEK(u.snapshot_date), HOUR(u.snapshot_date)", nativeQuery = true)

@@ -41,9 +41,17 @@ public class FacilityOptimizationService {
     private final BookingIntegrationService bookingIntegrationService;
     private final MaintenanceIntegrationService maintenanceIntegrationService;
     private final UtilizationSnapshotRepository utilizationSnapshotRepository;
+    private final FacilityTimetableService facilityTimetableService;
+
+    public static final UUID ALL_CAMPUS_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2");
 
     public FacilityUtilizationDTO getFacilityUtilization(UUID facilityId, LocalDateTime start, LocalDateTime end) {
         validateRange(start, end);
+        
+        if (ALL_CAMPUS_ID.equals(facilityId)) {
+            return getCampusWideUtilization(start, end);
+        }
+
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Facility", String.valueOf(facilityId)));
 
@@ -104,24 +112,34 @@ public class FacilityOptimizationService {
         List<FacilitySuggestionDTO> suggestions = new ArrayList<>();
         Set<UUID> addedFacilityIds = new HashSet<>();
 
+        // Optimization Strategy: 1. Try exact matches first, then expand.
         List<Facility> sameTypeFacilities = facilityService.findActiveByType(request.getType());
         collectSuggestions(sameTypeFacilities, request, suggestions, addedFacilityIds);
 
-        if (suggestions.size() < 5) {
+        if (suggestions.size() < 10) { // Increased pool size
             List<Facility> activeFacilities = facilityRepository.findByStatus(Facility.FacilityStatus.ACTIVE);
             collectSuggestions(activeFacilities, request, suggestions, addedFacilityIds);
         }
 
+        // Weighted Scoring: Prefer Building Match (50 points), Lower Utilization (40 points), Tightest Capacity (10 points)
         suggestions.sort(
-                Comparator.comparingInt(FacilitySuggestionDTO::getCapacityDelta)
-                        .thenComparing((left, right) -> {
-                            boolean leftSameBuilding = isPreferredBuildingMatch(left.getBuilding(), request.getPreferredBuilding());
-                            boolean rightSameBuilding = isPreferredBuildingMatch(right.getBuilding(), request.getPreferredBuilding());
-                            return Boolean.compare(rightSameBuilding, leftSameBuilding);
-                        })
+                Comparator.comparingDouble((FacilitySuggestionDTO s) -> {
+                    double score = 0;
+                    // Lower capacity delta is better (10% weight)
+                    score += (1.0 / (s.getCapacityDelta() + 1)) * 10;
+                    
+                    // Lower utilization is better (40% weight)
+                    score += (100.0 - s.getUtilizationScore()) * 0.4;
+
+                    // Preferred building match (50% weight)
+                    if (isPreferredBuildingMatch(s.getBuilding(), request.getPreferredBuilding())) {
+                        score += 50;
+                    }
+                    return score;
+                }).reversed() // Higher score is better
         );
 
-        return suggestions.size() > 5 ? suggestions.subList(0, 5) : suggestions;
+        return suggestions.size() > 6 ? suggestions.subList(0, 6) : suggestions;
     }
 
     private void collectSuggestions(
@@ -131,7 +149,7 @@ public class FacilityOptimizationService {
             Set<UUID> addedFacilityIds
     ) {
         for (Facility facility : candidates) {
-            if (suggestions.size() >= 5) {
+            if (suggestions.size() >= 15) { // Internal search limit
                 return;
             }
             if (addedFacilityIds.contains(facility.getId())) {
@@ -140,9 +158,21 @@ public class FacilityOptimizationService {
             if (facility.getCapacity() == null || facility.getCapacity() < request.getCapacity()) {
                 continue;
             }
+            
+            // 1. Basic Operational Check
             if (!facilityService.isFacilityOperational(facility.getId(), request.getStart(), request.getEnd())) {
                 continue;
             }
+
+            // 2. TIMETABLE INTEGRATION: Check if room is occupied by a class
+            boolean hasClass = isOccupiedByClass(facility, request.getStart(), request.getEnd());
+            if (hasClass) {
+                continue; // Strictly block timetable conflicts
+            }
+
+            // Fetch utilization for scoring
+            FacilityUtilizationDTO util = getFacilityUtilization(facility.getId(), 
+                LocalDateTime.now().minusDays(14), LocalDateTime.now());
 
             suggestions.add(FacilitySuggestionDTO.builder()
                     .facilityId(facility.getId())
@@ -153,9 +183,23 @@ public class FacilityOptimizationService {
                     .status(facility.getStatus())
                     .operational(true)
                     .capacityDelta(facility.getCapacity() - request.getCapacity())
+                    .utilizationScore(util.getUtilizationPercentage())
+                    .timetableStatus("Verified Free")
                     .build());
             addedFacilityIds.add(facility.getId());
         }
+    }
+
+    private boolean isOccupiedByClass(Facility facility, LocalDateTime start, LocalDateTime end) {
+        LocalDateTime current = start;
+        while (current.isBefore(end)) {
+            if (facilityTimetableService.isOccupied(facility.getFacilityCode(), 
+                current.getDayOfWeek(), current.toLocalTime())) {
+                return true;
+            }
+            current = current.plusHours(1);
+        }
+        return false;
     }
 
     private int resolveConsecutiveUnderutilizedDays(UUID facilityId) {
@@ -221,5 +265,30 @@ public class FacilityOptimizationService {
 
     private double roundTwoDecimals(double value) {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private FacilityUtilizationDTO getCampusWideUtilization(LocalDateTime start, LocalDateTime end) {
+        List<Facility> activeFacilities = facilityRepository.findByStatus(Facility.FacilityStatus.ACTIVE);
+        double totalAvailable = 0.0;
+        double totalBooked = 0.0;
+
+        for (Facility f : activeFacilities) {
+            if (maintenanceIntegrationService.isFacilityUnderMaintenance(f.getId(), start, end)) {
+                continue;
+            }
+            totalAvailable += calculateTotalAvailableHours(f, start, end);
+            totalBooked += bookingIntegrationService.getBookedHours(f.getId(), start, end);
+        }
+
+        double utilizationPercentage = calculateUtilization(totalAvailable, totalBooked);
+
+        return FacilityUtilizationDTO.builder()
+                .facilityId(ALL_CAMPUS_ID)
+                .rangeStart(start)
+                .rangeEnd(end)
+                .totalAvailableHours(roundTwoDecimals(totalAvailable))
+                .totalBookedHours(roundTwoDecimals(totalBooked))
+                .utilizationPercentage(roundTwoDecimals(utilizationPercentage))
+                .build();
     }
 }

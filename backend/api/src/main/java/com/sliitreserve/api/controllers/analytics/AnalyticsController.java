@@ -1,6 +1,7 @@
 package com.sliitreserve.api.controllers.analytics;
 
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
+import com.sliitreserve.api.services.analytics.RealTimeAnalyticsService;
 import com.sliitreserve.api.services.analytics.UtilizationAnalyticsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class AnalyticsController {
 
     @Autowired
     private UtilizationAnalyticsService analyticsService;
+
+    @Autowired
+    private RealTimeAnalyticsService realTimeService;
 
     @GetMapping("/utilization")
     @PreAuthorize("hasRole('ADMIN')")
@@ -61,5 +65,11 @@ public class AnalyticsController {
             log.error("Error generating utilization analytics for period {} to {}", from, to, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/real-time-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RealTimeAnalyticsService.RealTimeStatus> getRealTimeStatus() {
+        return ResponseEntity.ok(realTimeService.getCurrentCampusStatus());
     }
 }

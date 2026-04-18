@@ -134,7 +134,7 @@ class BookingContractTest {
                         .content(payload))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"))
-                .andExpect(jsonPath("$.message").value(containsString("Only ADMIN users can book on behalf of others")));
+                .andExpect(jsonPath("$.message").value(containsString("Only ADMIN and FACILITY_MANAGER users can book on behalf of others")));
     }
 
     @Test

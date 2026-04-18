@@ -39,6 +39,9 @@ public class UtilizationAnalyticsService {
     @Autowired
     private UtilizationSnapshotRepository snapshotRepository;
 
+    @Autowired
+    private com.sliitreserve.api.services.integration.BookingIntegrationService bookingIntegrationService;
+
     @Autowired(required = false)
     private RecommendationService recommendationService;
 
@@ -81,11 +84,15 @@ public class UtilizationAnalyticsService {
 
             List<UtilizationResponse.HeatmapEntry> heatmap = buildHeatmap(eligibleSnapshots);
             List<UtilizationResponse.UnderutilizedFacility> underutilized = identifyUnderutilized(eligibleSnapshots);
+            List<UtilizationResponse.UnderutilizedFacility> hotspots = identifyHotspots(eligibleSnapshots);
+            List<UtilizationResponse.UnderutilizedFacility> ghostTowns = identifyGhostTowns(eligibleSnapshots);
             List<UtilizationResponse.RecommendedAlternative> recommendations = generateRecommendations(underutilized);
 
             return UtilizationResponse.builder()
                 .heatmap(heatmap)
                 .underutilizedFacilities(underutilized)
+                .hotspotFacilities(hotspots)
+                .ghostTownFacilities(ghostTowns)
                 .recommendations(recommendations)
                 .build();
         } catch (Exception e) {
@@ -121,31 +128,67 @@ public class UtilizationAnalyticsService {
     }
 
     /**
-     * Build heatmap from snapshots.
-     *
-     * Groups by facility and calculates average utilization by day-of-week and hour-of-day.
-     * (Simplified: returns daily aggregates, assumes hourly data would come from extended snapshots)
-     *
-     * @param snapshots List of utilization snapshots
-     * @return List of heatmap entries
+     * Build heatmap from snapshots + real hourly booking data.
      */
     private List<UtilizationResponse.HeatmapEntry> buildHeatmap(List<UtilizationSnapshot> snapshots) {
+        if (snapshots.isEmpty()) return new ArrayList<>();
+        
+        // Find date range
+        LocalDate start = snapshots.stream().map(UtilizationSnapshot::getSnapshotDate).min(LocalDate::compareTo).get();
+        LocalDate end = snapshots.stream().map(UtilizationSnapshot::getSnapshotDate).max(LocalDate::compareTo).get();
+        
         List<UtilizationResponse.HeatmapEntry> heatmap = new ArrayList<>();
-
-        snapshots.forEach(snapshot -> {
-            // Map LocalDate to day-of-week (0=Monday, 6=Sunday)
-            int dayOfWeek = snapshot.getSnapshotDate().getDayOfWeek().getValue() - 1; // Convert to 0-6
-
-            UtilizationResponse.HeatmapEntry entry = UtilizationResponse.HeatmapEntry.builder()
-                .facilityId(snapshot.getFacility().getId())
-                .facilityName(snapshot.getFacility().getName())
-                .dayOfWeek(dayOfWeek)
-                .hourOfDay(0) // TODO: Extended to hourly snapshots in future
-                .utilizationPercent(snapshot.getUtilizationPercent())
-                .build();
-
-            heatmap.add(entry);
-        });
+        
+        // Group snapshots by facility
+        Map<UUID, List<UtilizationSnapshot>> byFacility = snapshots.stream()
+            .collect(Collectors.groupingBy(s -> s.getFacility().getId()));
+            
+        for (Map.Entry<UUID, List<UtilizationSnapshot>> entry : byFacility.entrySet()) {
+            UUID facilityId = entry.getKey();
+            String facilityName = entry.getValue().get(0).getFacility().getName();
+            
+            // Fetch ALL bookings for this facility in the range
+            List<com.sliitreserve.api.dto.integration.BookingDTO> bookings = 
+                bookingIntegrationService.getBookingsForFacility(facilityId, start.atStartOfDay(), end.atTime(23, 59, 59));
+                
+            // Map DayOfWeek (0-6) -> Hour (0-23) -> Booking Count
+            int[][] hourlyGrid = new int[7][24];
+            int[] dayCounts = new int[7];
+            
+            for (com.sliitreserve.api.dto.integration.BookingDTO b : bookings) {
+                java.time.LocalDateTime cur = b.getStartDateTime();
+                while (cur.isBefore(b.getEndDateTime())) {
+                    int day = cur.getDayOfWeek().getValue() - 1;
+                    int hour = cur.getHour();
+                    if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
+                        hourlyGrid[day][hour]++;
+                    }
+                    cur = cur.plusHours(1);
+                }
+            }
+            
+            // Calculate actual days present in the range for averaging
+            for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+                dayCounts[d.getDayOfWeek().getValue() - 1]++;
+            }
+            
+            // Generate HeatmapEntries (Capacity based % is simplified as 100% busy if any booking exists in that hour for this room)
+            for (int d = 0; d < 7; d++) {
+                if (dayCounts[d] == 0) continue;
+                for (int h = 0; h < 24; h++) {
+                    if (hourlyGrid[d][h] > 0) {
+                        double avgUtilization = (double) hourlyGrid[d][h] / dayCounts[d] * 100.0;
+                        heatmap.add(UtilizationResponse.HeatmapEntry.builder()
+                            .facilityId(facilityId)
+                            .facilityName(facilityName)
+                            .dayOfWeek(d)
+                            .hourOfDay(h)
+                            .utilizationPercent(BigDecimal.valueOf(Math.min(100.0, avgUtilization)).setScale(2, java.math.RoundingMode.HALF_UP))
+                            .build());
+                    }
+                }
+            }
+        }
 
         return heatmap;
     }
@@ -195,6 +238,51 @@ public class UtilizationAnalyticsService {
         );
 
         return underutilizedFacilities;
+    }
+
+    /**
+     * Identify hotspots (Top 5 utilized facilities).
+     */
+    private List<UtilizationResponse.UnderutilizedFacility> identifyHotspots(List<UtilizationSnapshot> snapshots) {
+        return snapshots.stream()
+            .collect(Collectors.groupingBy(s -> s.getFacility().getId()))
+            .values().stream()
+            .map(facilitySnapshots -> {
+                UtilizationSnapshot last = facilitySnapshots.get(facilitySnapshots.size() - 1);
+                double avg = facilitySnapshots.stream().mapToDouble(s -> s.getUtilizationPercent().doubleValue()).average().orElse(0);
+                return UtilizationResponse.UnderutilizedFacility.builder()
+                    .facilityId(last.getFacility().getId())
+                    .facilityName(last.getFacility().getName())
+                    .utilizationPercent(BigDecimal.valueOf(avg).setScale(2, java.math.RoundingMode.HALF_UP))
+                    .recommendation("High Demand: Consider expanding capacity or increasing rates.")
+                    .build();
+            })
+            .sorted(Comparator.comparing(f -> f.getUtilizationPercent().negate()))
+            .limit(5)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Identify ghost towns (Bottom 5 utilized facilities).
+     */
+    private List<UtilizationResponse.UnderutilizedFacility> identifyGhostTowns(List<UtilizationSnapshot> snapshots) {
+        return snapshots.stream()
+            .collect(Collectors.groupingBy(s -> s.getFacility().getId()))
+            .values().stream()
+            .map(facilitySnapshots -> {
+                UtilizationSnapshot last = facilitySnapshots.get(facilitySnapshots.size() - 1);
+                double avg = facilitySnapshots.stream().mapToDouble(s -> s.getUtilizationPercent().doubleValue()).average().orElse(0);
+                return UtilizationResponse.UnderutilizedFacility.builder()
+                    .facilityId(last.getFacility().getId())
+                    .facilityName(last.getFacility().getName())
+                    .utilizationPercent(BigDecimal.valueOf(avg).setScale(2, java.math.RoundingMode.HALF_UP))
+                    .consecutiveUnderutilizedDays(last.getConsecutiveUnderutilizedDays())
+                    .recommendation("Ghost Town: Available but ignored. Requires investigation.")
+                    .build();
+            })
+            .sorted(Comparator.comparing(UtilizationResponse.UnderutilizedFacility::getUtilizationPercent))
+            .limit(5)
+            .collect(Collectors.toList());
     }
 
     /**

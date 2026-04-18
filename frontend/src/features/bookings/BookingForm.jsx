@@ -4,7 +4,13 @@ import { apiClient } from "../../services/apiClient";
 import RecurrenceSelector from "./RecurrenceSelector";
 import AdminBookForUserSelector from "./AdminBookForUserSelector";
 
-export default function BookingForm({ facility: initialFacility, onBookingComplete, isModal, onClose }) {
+export default function BookingForm({ 
+  facility: initialFacility, 
+  onBookingComplete, 
+  isModal, 
+  onClose,
+  prefill = null // New prop for auto-filling from suggestions
+}) {
   const { user } = useContext(AuthContext);
   const [facility, setFacility] = useState(initialFacility || null);
   const [bookingDate, setBookingDate] = useState("");
@@ -34,6 +40,15 @@ export default function BookingForm({ facility: initialFacility, onBookingComple
   useEffect(() => {
     setFacility(initialFacility || null);
   }, [initialFacility]);
+
+  // Handle pre-filling from suggestions
+  useEffect(() => {
+    if (prefill) {
+      if (prefill.date) setBookingDate(prefill.date);
+      if (prefill.startTime) setStartTime(prefill.startTime);
+      if (prefill.endTime) setEndTime(prefill.endTime);
+    }
+  }, [prefill]);
 
   // Fetch availability slots when facility and date are selected
   useEffect(() => {

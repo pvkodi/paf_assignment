@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../services/apiClient";
-import { fetchFacilities, searchFacilities } from "./api";
+import { fetchFacilities, searchFacilities, fetchFacilitySuggestions } from "./api";
 import QuotaPolicySummary from "../bookings/QuotaPolicySummary";
 
 /**
@@ -15,6 +15,13 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
   const [minCapacity, setMinCapacity] = useState("");
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
+  
+  // Suggestion states
+  const [isSuggestionMode, setIsSuggestionMode] = useState(false);
+  const [suggestionStart, setSuggestionStart] = useState("");
+  const [suggestionEnd, setSuggestionEnd] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  
   const [results, setResults] = useState(initialResults || []);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState(null);
@@ -124,6 +131,64 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
       setError(requestError?.response?.data?.message || "Failed to search facilities. Please try again.");
       setResults([]);
       if (onResultsChange) onResultsChange([]);
+    } finally {
+      setIsSuggestionMode(false);
+    }
+  };
+
+  const handleSuggest = async (e) => {
+    if (e) e.preventDefault();
+    if (!suggestionStart || !suggestionEnd) {
+      setError("Please select both Start and End times for smart suggestions.");
+      return;
+    }
+    setError(null);
+
+    try {
+      setIsSuggesting(true);
+      setLoading(true);
+      
+      const payload = {
+        type: type || "LECTURE_HALL",
+        capacity: minCapacity === "" ? 1 : Number(minCapacity),
+        start: new Date(suggestionStart).toISOString().slice(0, 19),
+        end: new Date(suggestionEnd).toISOString().slice(0, 19),
+        preferredBuilding: building || null,
+      };
+
+      const data = await fetchFacilitySuggestions(payload);
+      
+      // Map suggestion results to look like facility objects
+      const mappedResults = (data || []).map(s => ({
+        id: s.facilityId,
+        facilityId: s.facilityId, // keep both for safety
+        name: s.name,
+        type: s.type,
+        capacity: s.capacity,
+        building: s.building || "Campus Main",
+        floor: "N/A", // Not in suggestion DTO
+        location: "N/A", // Not in suggestion DTO
+        status: "ACTIVE", // Suggester only returns active/available ones
+        isSmartMatch: true,
+        utilizationScore: s.utilizationScore,
+        timetableStatus: s.timetableStatus,
+        suggestedDate: suggestionStart.split('T')[0],
+        suggestedStartTime: suggestionStart.split('T')[1],
+        suggestedEndTime: suggestionEnd.split('T')[1],
+      }));
+
+      setResults(mappedResults);
+      setTotal(mappedResults.length);
+      setPage(0);
+      setHasSearched(true);
+      if (onResultsChange) onResultsChange(mappedResults);
+    } catch (err) {
+      console.error("Suggestion error:", err);
+      setError(err?.response?.data?.message || "The optimization engine failed to find suggestions.");
+      setResults([]);
+    } finally {
+      setIsSuggesting(false);
+      setLoading(false);
     }
   };
 
@@ -132,6 +197,9 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
     setMinCapacity("");
     setLocation("");
     setBuilding("");
+    setSuggestionStart("");
+    setSuggestionEnd("");
+    setIsSuggestionMode(false);
     setResults(initialResults || []);
     setHasSearched(false);
     setError(null);
@@ -206,6 +274,52 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
                   <label className="block text-sm font-medium text-slate-700 mb-1">Building</label>
                   <input type="text" value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="e.g., Building A" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                 </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSuggestionMode(!isSuggestionMode)}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-bold text-sm transition-all duration-300 border-2 ${
+                      isSuggestionMode 
+                        ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
+                        : "bg-white border-dashed border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600"
+                    }`}
+                  >
+                    <span>{isSuggestionMode ? "✨ Suggestion Mode On" : "✨ Try Smart Suggestions"}</span>
+                  </button>
+                </div>
+
+                {isSuggestionMode && (
+                  <div className="space-y-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-300">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Suggestion Parameters</p>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">From</label>
+                      <input 
+                        type="datetime-local" 
+                        value={suggestionStart} 
+                        onChange={(e) => setSuggestionStart(e.target.value)} 
+                        className="w-full px-3 py-2 border border-indigo-200 rounded-md text-xs shadow-sm bg-white" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Until</label>
+                      <input 
+                        type="datetime-local" 
+                        value={suggestionEnd} 
+                        onChange={(e) => setSuggestionEnd(e.target.value)} 
+                        className="w-full px-3 py-2 border border-indigo-200 rounded-md text-xs shadow-sm bg-white" 
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleSuggest}
+                      disabled={loading || isSuggesting}
+                      className="w-full py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-md text-sm font-black shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      {isSuggesting ? "Analyzing..." : "Find Optimized Match"}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -237,16 +351,42 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
                     {results.map((facility, idx) => (
                       <div key={facility.id ?? facility.facilityId ?? facility.name ?? idx} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-slate-900">{facility.name}</h4>
-                            <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-slate-600">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-semibold text-slate-900">{facility.name}</h4>
+                              {facility.isSmartMatch && (
+                                <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center animate-pulse tracking-widest uppercase">
+                                  ✨ Smart Match
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-2 text-[13px] text-slate-600">
                               <div><span className="font-medium">Type:</span> {facility.type?.replace(/_/g, " ")}</div>
-                              <div><span className="font-medium">Capacity:</span> {facility.capacity}</div>
+                              <div><span className="font-medium">Capacity:</span> <span className="text-slate-900 font-black">{facility.capacity}</span></div>
                               <div><span className="font-medium">Building:</span> {facility.building}</div>
-                              <div><span className="font-medium">Floor:</span> {facility.floor}</div>
+                              {facility.isSmartMatch ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium">Free Period:</span>
+                                  <span className="text-emerald-600 font-bold">{facility.timetableStatus}</span>
+                                </div>
+                              ) : (
+                                <div><span className="font-medium">Floor:</span> {facility.floor}</div>
+                              )}
                               <div><span className="font-medium">Location:</span> {facility.location}</div>
                               <div><span className="font-medium">Status:</span> <span className={facility.status === "ACTIVE" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{facility.status}</span></div>
                             </div>
+
+                            {facility.isSmartMatch && (
+                              <div className="mt-3 bg-gray-50 rounded-lg p-2 border border-gray-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500" style={{ width: `${facility.utilizationScore}%` }} />
+                                  </div>
+                                  <span className="text-[10px] text-gray-400 font-bold uppercase">{Math.round(facility.utilizationScore)}% Opt.</span>
+                                </div>
+                                <span className="text-[10px] text-indigo-500 font-black italic">✓ Suggested for load balance</span>
+                              </div>
+                            )}
                           </div>
 
                           <button type="button" onClick={() => handleSelectFacility(facility)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-all duration-200 active:scale-95 whitespace-nowrap self-center">Select</button>
@@ -340,6 +480,36 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Building</label>
               <input type="text" value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="e.g., Building A" className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+
+            <div className="md:col-span-2 pt-2 flex flex-col gap-4">
+               <button
+                  type="button"
+                  onClick={() => setIsSuggestionMode(!isSuggestionMode)}
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-bold text-sm transition-all border-2 ${
+                    isSuggestionMode 
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
+                      : "bg-white border-dashed border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600"
+                  }`}
+                >
+                  <span>{isSuggestionMode ? "✨ Smart Suggestions: Active" : "✨ Tap for Smart Suggestions"}</span>
+                </button>
+
+                {isSuggestionMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in slide-in-from-top-2">
+                    <div>
+                      <label className="block text-[10px] font-black text-indigo-600 uppercase mb-1">From</label>
+                      <input type="datetime-local" value={suggestionStart} onChange={(e) => setSuggestionStart(e.target.value)} className="w-full px-3 py-2 border border-indigo-200 rounded-md shadow-sm text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-indigo-600 uppercase mb-1">Until</label>
+                      <input type="datetime-local" value={suggestionEnd} onChange={(e) => setSuggestionEnd(e.target.value)} className="w-full px-3 py-2 border border-indigo-200 rounded-md shadow-sm text-sm" />
+                    </div>
+                    <div className="flex items-end">
+                      <button type="button" onClick={handleSuggest} disabled={loading} className="w-full py-2 bg-indigo-600 text-white rounded-md font-bold shadow-lg hover:bg-indigo-700 transition">Get Matches</button>
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
 
