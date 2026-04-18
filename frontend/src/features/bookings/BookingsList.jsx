@@ -258,9 +258,9 @@ export default function BookingsList() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans">
+    <div className="w-full font-sans">
       {/* Top Header Section */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
             B
@@ -270,48 +270,26 @@ export default function BookingsList() {
             <p className="text-sm text-[#64748b]">Manage and track your facility reservations</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-700">ME</div>
-          </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#475569] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors shadow-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-            New Booking
-          </button>
-        </div>
       </div>
 
       {/* Tabs and Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[#e2e8f0] pb-px">
-        <div className="flex items-center gap-6 overflow-x-auto">
-          {["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"].map((status) => {
-            const isActive = filter === status;
-            return (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  isActive
-                    ? "text-[#0f172a] border-[#0f172a]"
-                    : "text-[#64748b] border-transparent hover:text-[#475569]"
-                }`}
-              >
-                {status === "ALL" ? "All Bookings" : status.charAt(0) + status.slice(1).toLowerCase()}
-              </button>
-            );
-          })}
-        </div>
-        
-        <div className="flex items-center gap-3 pb-3">
-          <div className="relative">
-            <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <input type="text" placeholder="Search..." className="pl-9 pr-4 py-1.5 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-48 transition-shadow" />
-          </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#475569] border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-            Filter
-          </button>
-        </div>
+      <div className="flex items-center gap-6 overflow-x-auto mb-6 border-b border-[#e2e8f0] pb-px">
+        {["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"].map((status) => {
+          const isActive = filter === status;
+          return (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                isActive
+                  ? "text-[#0f172a] border-[#0f172a]"
+                  : "text-[#64748b] border-transparent hover:text-[#475569]"
+              }`}
+            >
+              {status === "ALL" ? "All Bookings" : status.charAt(0) + status.slice(1).toLowerCase()}
+            </button>
+          );
+        })}
       </div>
 
       {/* Errors */}

@@ -17,170 +17,183 @@ function AppShell() {
   const isDashboardActive = location.pathname === "/" || isActive("/dashboard");
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="py-4 mb-4">
-            <h1 className="text-xl font-semibold mb-2">
-              Smart Campus Operations Hub
-            </h1>
-            {isAuthenticated && (
-              <p className="text-xs text-slate-600">
-                Logged in as {user?.displayName || user?.email} • Roles:{" "}
-                {user?.roles?.join(", ") || "No roles"}
-              </p>
-            )}
+    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+      {/* Sidebar */}
+      {isAuthenticated && (
+        <aside className="w-64 h-screen sticky top-0 bg-white border-r border-slate-200 flex flex-col">
+          {/* Brand/Logo */}
+          <div className="p-6 border-b border-slate-200">
+            <h1 className="text-lg font-semibold text-indigo-600">Smart Campus</h1>
           </div>
 
           {/* Navigation */}
-          {isAuthenticated && (
-            <nav className="flex items-center justify-between border-t border-slate-200 pt-4">
-              <div className="flex items-center gap-6">
-                <Link
-                  to="/dashboard"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isDashboardActive
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/tickets"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/tickets")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Tickets
-                </Link>
-                <Link
-                  to="/bookings"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/bookings")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Create Booking
-                </Link>
-                <Link
-                  to="/my-bookings"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/my-bookings")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/facilities"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/facilities")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Facilities
-                </Link>
-                <Link
-                  to="/appeals"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/appeals")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Appeals
-                </Link>
-                <Link
-                  to="/notifications"
-                  className={`pb-2 text-sm font-medium transition ${
-                    isActive("/notifications")
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Notifications
-                </Link>
-                {canApproveBookings && (
-                  <Link
-                    to="/approvals/bookings"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive("/approvals/bookings")
-                        ? "border-b-2 border-indigo-600 text-indigo-600"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Booking Approvals
-                  </Link>
-                )}
-                {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
-                  <Link
-                    to="/admin/bookings"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive("/admin/bookings")
-                        ? "border-b-2 border-indigo-600 text-indigo-600"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    All Bookings
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link
-                    to="/approvals"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive("/approvals")
-                        ? "border-b-2 border-indigo-600 text-indigo-600"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Approval Queue
-                  </Link>
-                )}
-                {/* Underutilized is available under the Facilities menu for admins */}
-                {isAdmin && (
-                  <Link
-                    to="/analytics"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive("/analytics")
-                        ? "border-b-2 border-indigo-600 text-indigo-600"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Utilization
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link
-                    to="/admin/user-management"
-                    className={`pb-2 text-sm font-medium transition ${
-                      isActive("/admin/user-management")
-                        ? "border-b-2 border-indigo-600 text-indigo-600"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    User Management
-                  </Link>
-                )}
-              </div>
-              <button
-                onClick={logout}
-                className="text-xs px-3 py-1 text-slate-600 hover:text-slate-900 transition"
+          <nav className="flex-1 overflow-hidden px-4 py-6 space-y-1">
+            <Link
+              to="/dashboard"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isDashboardActive
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/tickets"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/tickets")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Tickets
+            </Link>
+            <Link
+              to="/bookings"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/bookings") && !isActive("/admin/bookings")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Create Booking
+            </Link>
+            <Link
+              to="/my-bookings"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/my-bookings")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              My Bookings
+            </Link>
+            <Link
+              to="/facilities"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/facilities")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Facilities
+            </Link>
+            <Link
+              to="/appeals"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/appeals")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Appeals
+            </Link>
+            <Link
+              to="/notifications"
+              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                isActive("/notifications")
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Notifications
+            </Link>
+            {canApproveBookings && (
+              <Link
+                to="/approvals/bookings"
+                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                  isActive("/approvals/bookings")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
               >
-                Sign Out
-              </button>
-            </nav>
-          )}
+                Booking Approvals
+              </Link>
+            )}
+            {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
+              <Link
+                to="/admin/bookings"
+                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                  isActive("/admin/bookings")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                All Bookings
+              </Link>
+            )}
+            {isAdmin && (
+              <Link
+                to="/approvals"
+                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                  isActive("/approvals") && !isActive("/approvals/bookings")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                Approval Queue
+              </Link>
+            )}
+            {isAdmin && (
+              <Link
+                to="/analytics"
+                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                  isActive("/analytics")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                Utilization
+              </Link>
+            )}
+            {isAdmin && (
+              <Link
+                to="/admin/user-management"
+                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                  isActive("/admin/user-management")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                User Management
+              </Link>
+            )}
+          </nav>
+
+          {/* User Info & Logout */}
+          <div className="border-t border-slate-200 p-4 space-y-4">
+            {isAuthenticated && (
+              <div className="text-xs text-slate-600 space-y-1">
+                <p className="font-medium text-slate-900">
+                  {user?.displayName || user?.email}
+                </p>
+                <p className="text-slate-500">{user?.roles?.join(", ") || "No roles"}</p>
+              </div>
+            )}
+            <button
+              onClick={logout}
+              className="w-full px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+            >
+              Sign Out
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
+        {isAuthenticated && (
+          <header className="bg-white border-b border-slate-200 px-8 py-4">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Smart Campus Operations Hub
+            </h2>
+          </header>
+        )}
+        <div className="flex-1 overflow-y-auto px-8 py-8">
+          <Outlet />
         </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <Outlet />
       </main>
+
       <ToastContainer
         position="bottom-right"
         autoClose={3000}
