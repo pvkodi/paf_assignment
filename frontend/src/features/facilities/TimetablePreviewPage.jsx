@@ -82,7 +82,7 @@ const TimetablePreviewPage = () => {
 
   const renderSchedule = (roomCode) => {
     if (!result.roomSchedules || !result.roomSchedules[roomCode]) {
-      return <div className="text-gray-500 text-sm mt-2">No schedules extracted or past 18:00</div>;
+      return <div className="text-[#64748b] text-sm mt-2">No schedules extracted or past 18:00</div>;
     }
 
     const scheduleObj = result.roomSchedules[roomCode];
@@ -91,15 +91,15 @@ const TimetablePreviewPage = () => {
     return (
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-full">
         {days.map(day => (
-          <div key={day} className="border border-gray-100 rounded-lg bg-gray-50 p-3">
-             <div className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+          <div key={day} className="border border-[#f1f5f9] rounded-2xl bg-[#f8fafc] p-3">
+             <div className="flex items-center text-sm font-semibold text-[#334155] mb-2">
                 <Calendar className="w-4 h-4 mr-2 text-indigo-500" />
                 {day}
              </div>
              <div className="flex flex-wrap gap-2">
                {scheduleObj[day].map((time, i) => (
-                 <span key={i} className="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-600 shadow-sm">
-                   <Clock className="w-3 h-3 mr-1 text-gray-400" />
+                 <span key={i} className="inline-flex items-center px-2 py-1 bg-white border border-[#e2e8f0] rounded text-xs font-medium text-[#475569] shadow-sm">
+                   <Clock className="w-3 h-3 mr-1 text-[#94a3b8]" />
                    {time}
                  </span>
                ))}
@@ -117,44 +117,44 @@ const TimetablePreviewPage = () => {
         <div>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors mb-2"
+            className="flex items-center text-sm text-[#64748b] hover:text-[#0f172a] transition-colors mb-2"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </button>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Timetable Extractor</h2>
-          <p className="text-gray-500 mt-1">Review the rooms and schedules extracted from the uploaded HTML.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-[#0f172a]">Timetable Extractor</h2>
+          <p className="text-[#64748b] mt-1">Review the rooms and schedules extracted from the uploaded HTML.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white border rounded-xl p-6 shadow-sm flex items-center shadow-indigo-100/50">
-          <div className="p-4 bg-indigo-50 rounded-lg text-indigo-600 mr-4">
+          <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 mr-4">
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Total Valid Extracted Slots</p>
-            <p className="text-2xl font-bold text-gray-900">{result.totalSlotsExtracted}</p>
+            <p className="text-sm font-medium text-[#64748b]">Total Valid Extracted Slots</p>
+            <p className="text-2xl font-bold tracking-tight text-[#0f172a]">{result.totalSlotsExtracted}</p>
           </div>
         </div>
 
         <div className="bg-white border rounded-xl p-6 shadow-sm flex items-center  shadow-green-100/50">
-          <div className="p-4 bg-emerald-50 rounded-lg text-emerald-600 mr-4">
+          <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600 mr-4">
              <Building className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Matched Recognized Facilities</p>
-            <p className="text-2xl font-bold text-gray-900">{result.matchedRooms?.length || 0}</p>
+            <p className="text-sm font-medium text-[#64748b]">Matched Recognized Facilities</p>
+            <p className="text-2xl font-bold tracking-tight text-[#0f172a]">{result.matchedRooms?.length || 0}</p>
           </div>
         </div>
 
         <div className="bg-white border rounded-xl p-6 shadow-sm flex items-center shadow-amber-100/50">
-          <div className="p-4 bg-amber-50 rounded-lg text-amber-600 mr-4">
+          <div className="p-4 bg-amber-50 rounded-2xl text-amber-600 mr-4">
              <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Unregistered Facilities Identified</p>
-            <p className="text-2xl font-bold text-amber-600">{result.unmatchedRooms?.length || 0}</p>
+            <p className="text-sm font-medium text-[#64748b]">Unregistered Facilities Identified</p>
+            <p className="text-2xl font-bold tracking-tight text-amber-600">{result.unmatchedRooms?.length || 0}</p>
           </div>
         </div>
       </div>
@@ -174,7 +174,7 @@ const TimetablePreviewPage = () => {
                <button
                   onClick={handleBatchImport}
                   disabled={isSubmitting}
-                  className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow font-medium transition-all"
+                  className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow font-medium transition-all"
                 >
                   {isSubmitting ? (
                     <span className="animate-pulse">Importing...</span>
@@ -188,7 +188,7 @@ const TimetablePreviewPage = () => {
              </div>
              
              {error && (
-                <div className="mx-6 mt-4 p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                <div className="mx-6 mt-4 p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-2xl">
                   {error}
                 </div>
               )}
@@ -200,58 +200,58 @@ const TimetablePreviewPage = () => {
                     <div key={room.facilityCode} className="py-6 first:pt-0 last:pb-0">
                       <div className="flex flex-col md:flex-row md:items-start space-y-4 md:space-y-0 md:space-x-8">
                         <div className="w-full md:w-1/4">
-                          <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                          <h4 className="text-lg font-bold text-[#0f172a] flex items-center">
                             <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
                             {room.facilityCode}
                           </h4>
-                          <div className="mt-2 text-sm text-gray-500 space-y-1">
+                          <div className="mt-2 text-sm text-[#64748b] space-y-1">
                              <p>Suggested Details</p>
-                             <p className="text-xs text-gray-400">Based on heuristics.</p>
+                             <p className="text-xs text-[#94a3b8]">Based on heuristics.</p>
                           </div>
                         </div>
 
                         <div className="w-full md:w-3/4">
                            {/* Grid Editor */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-[#f8fafc] rounded-xl border border-[#f1f5f9]">
                              <div>
-                               <label className="flex items-center text-xs font-semibold text-gray-500 mb-1 tracking-wide uppercase">
+                               <label className="flex items-center text-xs font-semibold text-[#64748b] mb-1 tracking-wide uppercase">
                                  <Building className="w-3 h-3 mr-1" /> Building
                                </label>
                                <input
                                   type="text"
-                                  className="w-full text-sm p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full text-sm p-2 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                   value={draft.location || ""}
                                   onChange={(e) => handleDraftChange(room.facilityCode, "location", e.target.value)}
                                 />
                              </div>
                              <div>
-                                <label className="flex items-center text-xs font-semibold text-gray-500 mb-1 tracking-wide uppercase">
+                                <label className="flex items-center text-xs font-semibold text-[#64748b] mb-1 tracking-wide uppercase">
                                   <MapPin className="w-3 h-3 mr-1" /> Floor
                                 </label>
                                 <input
                                   type="text"
-                                  className="w-full text-sm p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full text-sm p-2 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                   value={draft.floor || ""}
                                   onChange={(e) => handleDraftChange(room.facilityCode, "floor", e.target.value)}
                                 />
                              </div>
                              <div>
-                                <label className="flex items-center text-xs font-semibold text-gray-500 mb-1 tracking-wide uppercase">
+                                <label className="flex items-center text-xs font-semibold text-[#64748b] mb-1 tracking-wide uppercase">
                                   <Users className="w-3 h-3 mr-1" /> Capacity
                                 </label>
                                 <input
                                   type="number"
-                                  className="w-full text-sm p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full text-sm p-2 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                   value={draft.capacity || ""}
                                   onChange={(e) => handleDraftChange(room.facilityCode, "capacity", parseInt(e.target.value) || 0)}
                                 />
                              </div>
                              <div>
-                                <label className="flex items-center text-xs font-semibold text-gray-500 mb-1 tracking-wide uppercase">
+                                <label className="flex items-center text-xs font-semibold text-[#64748b] mb-1 tracking-wide uppercase">
                                   <Tag className="w-3 h-3 mr-1" /> Type
                                 </label>
                                 <select
-                                  className="w-full text-sm p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full text-sm p-2 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                                   value={draft.type || ""}
                                   onChange={(e) => handleDraftChange(room.facilityCode, "type", e.target.value)}
                                 >
@@ -265,7 +265,7 @@ const TimetablePreviewPage = () => {
 
                            {/* Extracted Schedule */}
                            <div className="mt-4">
-                             <h5 className="text-sm font-semibold text-gray-700">Extracted Sessions (Before 6 PM)</h5>
+                             <h5 className="text-sm font-semibold text-[#334155]">Extracted Sessions (Before 6 PM)</h5>
                              {renderSchedule(room.facilityCode)}
                            </div>
                         </div>
@@ -279,19 +279,19 @@ const TimetablePreviewPage = () => {
 
         {/* Existing / Recognized Rooms */}
         {result.matchedRooms && result.matchedRooms.length > 0 && (
-          <div className="border border-gray-200 bg-white shadow-sm rounded-xl overflow-hidden mt-8">
-             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-               <h3 className="font-semibold text-gray-800 flex items-center text-lg">
+          <div className="border border-[#e2e8f0] bg-white shadow-sm rounded-xl overflow-hidden mt-8">
+             <div className="bg-[#f8fafc] px-6 py-4 border-b border-[#e2e8f0]">
+               <h3 className="font-semibold text-[#1e293b] flex items-center text-lg">
                   <CheckCircle className="w-5 h-5 mr-2 text-indigo-600" />
                   {result.matchedRooms.length} Established Facilities Ready
                </h3>
-               <p className="text-sm text-gray-500 mt-1">These room schedules will be accurately validated in booking engine queries.</p>
+               <p className="text-sm text-[#64748b] mt-1">These room schedules will be accurately validated in booking engine queries.</p>
              </div>
              
              <div className="p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {result.matchedRooms.map((rc) => (
-                  <div key={rc} className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm hover:shadow transition-shadow">
-                    <h4 className="text-md font-bold text-gray-900 mb-3 flex items-center">
+                  <div key={rc} className="border border-[#f1f5f9] rounded-2xl p-4 bg-white shadow-sm hover:shadow transition-shadow">
+                    <h4 className="text-md font-bold text-[#0f172a] mb-3 flex items-center">
                        <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
                        {rc}
                     </h4>

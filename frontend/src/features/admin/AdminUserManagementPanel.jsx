@@ -219,8 +219,8 @@ export default function AdminUserManagementPanel() {
 
   if (!hasRole("ADMIN")) {
     return (
-      <div className="bg-white rounded-lg p-6 border border-slate-200">
-        <p className="text-slate-600">
+      <div className="bg-white rounded-2xl p-6 border border-[#e2e8f0]">
+        <p className="text-[#64748b]">
           You do not have permission to access the admin panel. Only ADMIN role
           users can access this area.
         </p>
@@ -231,13 +231,13 @@ export default function AdminUserManagementPanel() {
   return (
     <div className="space-y-6">
       {/* Header with Refresh */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#e2e8f0]">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-[#0f172a]">
               User Management
             </h1>
-            <p className="text-slate-600 mt-1 text-sm">
+            <p className="text-[#64748b] mt-1 text-sm">
               Manage registrations and user data
             </p>
           </div>
@@ -245,7 +245,7 @@ export default function AdminUserManagementPanel() {
             onClick={() =>
               activeTab === "registrations" ? fetchRequests() : fetchUsers()
             }
-            className="px-4 py-2 text-slate-900 bg-slate-100 hover:bg-slate-200 font-semibold rounded-md transition-all duration-200 active:scale-95"
+            className="px-4 py-2 text-[#0f172a] bg-[#f1f5f9] hover:bg-[#e2e8f0] font-semibold rounded-xl transition-all duration-200 active:scale-95"
           >
             Refresh
           </button>
@@ -253,14 +253,14 @@ export default function AdminUserManagementPanel() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="flex border-b border-slate-200">
+      <div className="bg-white rounded-2xl border border-[#e2e8f0]">
+        <div className="flex border-b border-[#e2e8f0]">
           <button
             onClick={() => setActiveTab("registrations")}
             className={`flex-1 py-4 px-6 font-semibold transition-all ${
               activeTab === "registrations"
                 ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                : "text-[#64748b] hover:text-[#0f172a] hover:bg-[#f8fafc]"
             }`}
           >
             Registration Requests
@@ -270,7 +270,7 @@ export default function AdminUserManagementPanel() {
             className={`flex-1 py-4 px-6 font-semibold transition-all ${
               activeTab === "userData"
                 ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                : "text-[#64748b] hover:text-[#0f172a] hover:bg-[#f8fafc]"
             }`}
           >
             User Data
@@ -288,10 +288,10 @@ export default function AdminUserManagementPanel() {
                   <button
                     key={status}
                     onClick={() => setRequestStatus(status)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    className={`px-4 py-2 rounded-2xl font-medium transition-all ${
                       requestStatus === status
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-[#f1f5f9] text-[#334155] hover:bg-[#e2e8f0]"
                     }`}
                   >
                     {status === "PENDING" && "⏳"}
@@ -304,15 +304,15 @@ export default function AdminUserManagementPanel() {
 
               {/* Error State */}
               {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                  <p className="text-sm font-medium text-red-900">{error}</p>
+                <div className="rounded-2xl bg-[#fef2f2] border border-[#fca5a5] p-4">
+                  <p className="text-sm font-medium text-[#991b1b]">{error}</p>
                 </div>
               )}
 
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-slate-500">
+                  <div className="text-[#94a3b8]">
                     Loading registration requests...
                   </div>
                 </div>
@@ -320,8 +320,8 @@ export default function AdminUserManagementPanel() {
 
               {/* Empty State */}
               {!loading && requests.length === 0 && (
-                <div className="text-center py-12 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
-                  <p className="text-slate-600 font-medium">
+                <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc]">
+                  <p className="text-[#64748b] font-medium">
                     No {requestStatus.toLowerCase()} requests
                   </p>
                 </div>
@@ -329,53 +329,53 @@ export default function AdminUserManagementPanel() {
 
               {/* Table View */}
               {!loading && requests.length > 0 && (
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="border border-[#e2e8f0] rounded-2xl overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                    <thead className="bg-[#f8fafc] border-b border-[#e2e8f0]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Email
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Role
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Submitted
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Action
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#e2e8f0]">
                       {requests.map((request) => (
                         <React.Fragment key={request.id}>
-                          <tr className="hover:bg-slate-50 transition">
+                          <tr className="hover:bg-[#f8fafc] transition">
                             <td className="px-6 py-4">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-semibold text-[#0f172a]">
                                 {request.displayName}
                               </p>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-[#64748b]">
                                 {request.email}
                               </p>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+                              <span className="px-3 py-1 bg-[#f1f5f9] text-[#334155] rounded text-xs font-medium">
                                 {request.roleRequested === "USER"
                                   ? "Student"
                                   : request.roleRequested.replace(/_/g, " ")}
                               </span>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-[#64748b]">
                                 {new Date(
                                   request.createdAt,
                                 ).toLocaleDateString()}
@@ -387,8 +387,8 @@ export default function AdminUserManagementPanel() {
                                   request.status === "PENDING"
                                     ? "bg-yellow-100 text-yellow-700"
                                     : request.status === "APPROVED"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-red-100 text-red-700"
+                                      ? "bg-green-100 text-[#15803d]"
+                                      : "bg-red-100 text-[#b91c1c]"
                                 }`}
                               >
                                 {request.status === "PENDING" && "⏳ Pending"}
@@ -414,17 +414,17 @@ export default function AdminUserManagementPanel() {
 
                           {/* Expanded Row */}
                           {expandedId === request.id && (
-                            <tr className="bg-slate-50">
+                            <tr className="bg-[#f8fafc]">
                               <td colSpan="6" className="px-6 py-4">
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
-                                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                      <p className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-1">
                                         {request.roleRequested === "USER"
                                           ? "Registration Number"
                                           : "Employee Number"}
                                       </p>
-                                      <p className="text-sm text-slate-900">
+                                      <p className="text-sm text-[#0f172a]">
                                         {request.roleRequested === "USER"
                                           ? request.registrationNumber
                                           : request.employeeNumber}
@@ -432,10 +432,10 @@ export default function AdminUserManagementPanel() {
                                     </div>
                                     {request.reviewedAt && (
                                       <div>
-                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                        <p className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-1">
                                           Reviewed
                                         </p>
-                                        <p className="text-sm text-slate-900">
+                                        <p className="text-sm text-[#0f172a]">
                                           {new Date(
                                             request.reviewedAt,
                                           ).toLocaleString()}
@@ -446,19 +446,19 @@ export default function AdminUserManagementPanel() {
 
                                   {request.rejectionReason && (
                                     <div>
-                                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                      <p className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-1">
                                         Rejection Reason
                                       </p>
-                                      <p className="text-sm text-slate-700 bg-white p-3 rounded border border-slate-200">
+                                      <p className="text-sm text-[#334155] bg-white p-3 rounded border border-[#e2e8f0]">
                                         {request.rejectionReason}
                                       </p>
                                     </div>
                                   )}
 
                                   {request.status === "PENDING" && (
-                                    <div className="space-y-3 pt-3 border-t border-slate-300">
+                                    <div className="space-y-3 pt-3 border-t border-[#cbd5e1]">
                                       <div>
-                                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                        <label className="block text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-2">
                                           Add Note (Optional)
                                         </label>
                                         <textarea
@@ -479,7 +479,7 @@ export default function AdminUserManagementPanel() {
                                           }}
                                           placeholder="Add a note for the applicant..."
                                           rows="2"
-                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
+                                          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
                                         />
                                       </div>
 
@@ -489,7 +489,7 @@ export default function AdminUserManagementPanel() {
                                             handleApprove(request.id)
                                           }
                                           disabled={processingId === request.id}
-                                          className="flex-1 px-4 py-2 text-sm bg-green-50 text-green-600 border-2 border-green-600 hover:bg-green-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="flex-1 px-4 py-2 text-sm bg-[#f0fdf4] text-[#16a34a] border-2 border-[#22c55e] hover:bg-green-100 font-medium rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {processingId === request.id
                                             ? "Processing..."
@@ -500,7 +500,7 @@ export default function AdminUserManagementPanel() {
                                             handleReject(request.id)
                                           }
                                           disabled={processingId === request.id}
-                                          className="flex-1 px-4 py-2 text-sm bg-red-50 text-red-600 border-2 border-red-600 hover:bg-red-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="flex-1 px-4 py-2 text-sm bg-[#fef2f2] text-[#dc2626] border-2 border-[#ef4444] hover:bg-red-100 font-medium rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                           {processingId === request.id
                                             ? "Processing..."
@@ -526,9 +526,9 @@ export default function AdminUserManagementPanel() {
           {activeTab === "userData" && (
             <div className="space-y-6">
               {/* Search and Filter Bar */}
-              <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-3">
+              <div className="bg-[#f8fafc] rounded-2xl border border-[#e2e8f0] p-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  <label className="block text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-2">
                     Search
                   </label>
                   <input
@@ -536,22 +536,22 @@ export default function AdminUserManagementPanel() {
                     placeholder="Search by email or display name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    className="w-full px-4 py-2 border border-[#cbd5e1] bg-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  <label className="block text-xs font-semibold text-[#94a3b8] uppercase tracking-wide mb-2">
                     Filter by Roles
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableRoles.map((role) => (
                       <label
                         key={role}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 cursor-pointer transition ${
                           selectedRoles.includes(role)
                             ? "border-indigo-600 bg-indigo-50"
-                            : "border-slate-300 hover:border-slate-400"
+                            : "border-[#cbd5e1] hover:border-[#cbd5e1]"
                         }`}
                       >
                         <input
@@ -568,7 +568,7 @@ export default function AdminUserManagementPanel() {
                           }}
                           className="w-4 h-4 cursor-pointer"
                         />
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-sm font-medium text-[#334155]">
                           {role}
                         </span>
                       </label>
@@ -577,7 +577,7 @@ export default function AdminUserManagementPanel() {
                   {selectedRoles.length > 0 && (
                     <button
                       onClick={() => setSelectedRoles([])}
-                      className="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
+                      className="mt-2 text-xs text-[#94a3b8] hover:text-[#334155] underline"
                     >
                       Clear filters
                     </button>
@@ -587,62 +587,62 @@ export default function AdminUserManagementPanel() {
 
               {/* Error State */}
               {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                  <p className="text-sm font-medium text-red-900">{error}</p>
+                <div className="rounded-2xl bg-[#fef2f2] border border-[#fca5a5] p-4">
+                  <p className="text-sm font-medium text-[#991b1b]">{error}</p>
                 </div>
               )}
 
               {/* Loading State */}
               {loading && (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-slate-500">Loading users...</div>
+                  <div className="text-[#94a3b8]">Loading users...</div>
                 </div>
               )}
 
               {/* Empty State */}
               {!loading && users.length === 0 && (
-                <div className="text-center py-12 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50">
-                  <p className="text-slate-600 font-medium">No users found</p>
+                <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc]">
+                  <p className="text-[#64748b] font-medium">No users found</p>
                 </div>
               )}
 
               {/* Table View */}
               {!loading && users.length > 0 && (
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="border border-[#e2e8f0] rounded-2xl overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                    <thead className="bg-[#f8fafc] border-b border-[#e2e8f0]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Email
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Roles
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           No-Shows
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wide">
                           Action
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#e2e8f0]">
                       {users.map((user) => (
                         <React.Fragment key={user.id}>
-                          <tr className="hover:bg-slate-50 transition">
+                          <tr className="hover:bg-[#f8fafc] transition">
                             <td className="px-6 py-4">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-semibold text-[#0f172a]">
                                 {user.displayName}
                               </p>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-[#64748b]">
                                 {user.email}
                               </p>
                             </td>
@@ -660,7 +660,7 @@ export default function AdminUserManagementPanel() {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm text-slate-900 font-medium">
+                              <p className="text-sm text-[#0f172a] font-medium">
                                 {user.noShowCount}
                               </p>
                             </td>
@@ -669,8 +669,8 @@ export default function AdminUserManagementPanel() {
                                 className={`px-3 py-1 rounded text-xs font-medium ${
                                   user.suspendedUntil &&
                                   new Date(user.suspendedUntil) > new Date()
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-green-100 text-green-700"
+                                    ? "bg-red-100 text-[#b91c1c]"
+                                    : "bg-green-100 text-[#15803d]"
                                 }`}
                               >
                                 {user.suspendedUntil &&
@@ -706,15 +706,15 @@ export default function AdminUserManagementPanel() {
                           {/* Expanded Row - Edit Form */}
                           {expandedId === user.id &&
                             editingUserId === user.id && (
-                              <tr className="bg-slate-50 border-t-2 border-t-slate-300">
+                              <tr className="bg-[#f8fafc] border-t-2 border-t-[#cbd5e1]">
                                 <td colSpan="6" className="px-6 py-6">
                                   <div className="max-w-2xl">
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                                    <h3 className="text-lg font-semibold text-[#0f172a] mb-4">
                                       Edit User
                                     </h3>
                                     <div className="grid grid-cols-2 gap-4 mb-6">
                                       <div>
-                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                        <label className="block text-sm font-semibold text-[#0f172a] mb-2">
                                           Display Name
                                         </label>
                                         <input
@@ -726,12 +726,12 @@ export default function AdminUserManagementPanel() {
                                               displayName: e.target.value,
                                             })
                                           }
-                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                                         />
                                       </div>
 
                                       <div>
-                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                        <label className="block text-sm font-semibold text-[#0f172a] mb-2">
                                           Email
                                         </label>
                                         <input
@@ -743,12 +743,12 @@ export default function AdminUserManagementPanel() {
                                               email: e.target.value,
                                             })
                                           }
-                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                                         />
                                       </div>
 
                                       <div>
-                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                        <label className="block text-sm font-semibold text-[#0f172a] mb-2">
                                           No-Show Count
                                         </label>
                                         <input
@@ -761,12 +761,12 @@ export default function AdminUserManagementPanel() {
                                             })
                                           }
                                           min="0"
-                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                                         />
                                       </div>
 
                                       <div>
-                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                        <label className="block text-sm font-semibold text-[#0f172a] mb-2">
                                           Suspend Until
                                         </label>
                                         <input
@@ -778,12 +778,12 @@ export default function AdminUserManagementPanel() {
                                               suspendedUntil: e.target.value,
                                             })
                                           }
-                                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                                         />
                                       </div>
                                     </div>
 
-                                    <p className="text-xs text-slate-500 mb-4">
+                                    <p className="text-xs text-[#94a3b8] mb-4">
                                       Leave "Suspend Until" empty to unsuspend
                                       the user
                                     </p>
@@ -792,7 +792,7 @@ export default function AdminUserManagementPanel() {
                                       <button
                                         onClick={() => handleSaveUser(user.id)}
                                         disabled={processingId === user.id}
-                                        className="flex-1 px-4 py-2 text-sm bg-green-50 text-green-600 border-2 border-green-600 hover:bg-green-100 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 px-4 py-2 text-sm bg-[#f0fdf4] text-[#16a34a] border-2 border-[#22c55e] hover:bg-green-100 font-medium rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         {processingId === user.id
                                           ? "Saving..."
@@ -804,7 +804,7 @@ export default function AdminUserManagementPanel() {
                                           setExpandedId(null);
                                         }}
                                         disabled={processingId === user.id}
-                                        className="flex-1 px-4 py-2 text-sm bg-slate-100 text-slate-600 border-2 border-slate-300 hover:bg-slate-200 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 px-4 py-2 text-sm bg-[#f1f5f9] text-[#64748b] border-2 border-[#cbd5e1] hover:bg-[#e2e8f0] font-medium rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         Cancel
                                       </button>

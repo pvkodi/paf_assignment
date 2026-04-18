@@ -20,16 +20,16 @@ function GaugeChart({ value = 0, max = 100, label, color = "#6366f1", size = 120
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={half} cy={half} r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
+        <circle cx={half} cy={half} r={r} fill="none" stroke="#f8fafc" strokeWidth="10" />
         <circle cx={half} cy={half} r={r} fill="none" stroke={color} strokeWidth="10"
           strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
           strokeLinecap="round" transform={`rotate(-90 ${half} ${half})`}
           style={{ transition: "stroke-dashoffset 1s ease" }} />
-        <text x={half} y={half - 4} textAnchor="middle" className="fill-gray-900 text-lg font-black"
+        <text x={half} y={half - 4} textAnchor="middle" className="fill-[#0f172a] text-lg font-black"
           dominantBaseline="central" style={{ fontSize: size * 0.22 }}>
           {typeof value === "number" ? value.toFixed(1) : value}
         </text>
-        <text x={half} y={half + size * 0.14} textAnchor="middle" className="fill-gray-400"
+        <text x={half} y={half + size * 0.14} textAnchor="middle" className="fill-[#94a3b8]"
           style={{ fontSize: size * 0.09, fontWeight: 700 }}>
           {label || "%"}
         </text>
@@ -40,13 +40,13 @@ function GaugeChart({ value = 0, max = 100, label, color = "#6366f1", size = 120
 
 // ── Vertical Bar Chart ────────────────────────────────────────────────────────
 function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", label }) {
-  if (!data.length) return <p className="text-xs text-gray-400 italic p-4">No data</p>;
+  if (!data.length) return <p className="text-xs text-[#94a3b8] italic p-4">No data</p>;
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const barW = Math.max(4, Math.min(28, (width - 40) / data.length - 4));
   const chartH = height - 30;
   return (
     <div>
-      {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label}</p>}
+      {label && <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-2">{label}</p>}
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {data.map((d, i) => {
           const h = (d.value / maxVal) * chartH;
@@ -58,7 +58,7 @@ function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", 
                 <title>{`${d.name}: ${d.value.toFixed(1)}%`}</title>
               </rect>
               <text x={x + barW / 2} y={height - 4} textAnchor="middle"
-                style={{ fontSize: 9, fontWeight: 700 }} className="fill-gray-400">{d.name}</text>
+                style={{ fontSize: 9, fontWeight: 700 }} className="fill-[#94a3b8]">{d.name}</text>
             </g>
           );
         })}
@@ -67,8 +67,8 @@ function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", 
           const y = chartH - (v / maxVal) * chartH;
           return y >= 0 && y <= chartH ? (
             <g key={v}>
-              <line x1={18} y1={y} x2={width} y2={y} stroke="#f1f5f9" strokeWidth={1} />
-              <text x={14} y={y + 3} textAnchor="end" style={{ fontSize: 8 }} className="fill-gray-300">{v}</text>
+              <line x1={18} y1={y} x2={width} y2={y} stroke="#f8fafc" strokeWidth={1} />
+              <text x={14} y={y + 3} textAnchor="end" style={{ fontSize: 8 }} className="fill-[#cbd5e1]">{v}</text>
             </g>
           ) : null;
         })}
@@ -80,21 +80,21 @@ function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", 
 // ── Horizontal Bar Chart (Rankings) ───────────────────────────────────────────
 function HBarChart({ data = [], maxItems = 5, height = 160, color = "#6366f1", label }) {
   const items = data.slice(0, maxItems);
-  if (!items.length) return <p className="text-xs text-gray-400 italic p-4">No data</p>;
+  if (!items.length) return <p className="text-xs text-[#94a3b8] italic p-4">No data</p>;
   const maxVal = Math.max(...items.map(d => d.value), 1);
   const barH = Math.min(20, (height - 10) / items.length - 6);
   return (
     <div>
-      {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{label}</p>}
+      {label && <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-3">{label}</p>}
       <div className="space-y-2">
         {items.map((d, i) => (
           <div key={i} className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-gray-500 w-24 truncate text-right">{d.name}</span>
-            <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden relative">
+            <span className="text-[10px] font-bold text-[#64748b] w-24 truncate text-right">{d.name}</span>
+            <div className="flex-1 bg-[#f1f5f9] rounded-full h-4 overflow-hidden relative">
               <div className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${(d.value / maxVal) * 100}%`, background: d.color || color }} />
             </div>
-            <span className="text-xs font-black text-gray-700 w-12 text-right">{d.value.toFixed(1)}%</span>
+            <span className="text-xs font-black text-[#334155] w-12 text-right">{d.value.toFixed(1)}%</span>
           </div>
         ))}
       </div>
@@ -111,7 +111,7 @@ function DonutChart({ segments = [], size = 140, label }) {
   let cumOffset = 0;
   return (
     <div className="flex flex-col items-center">
-      {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label}</p>}
+      {label && <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-2">{label}</p>}
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {segments.map((seg, i) => {
           const pct = seg.value / total;
@@ -129,11 +129,11 @@ function DonutChart({ segments = [], size = 140, label }) {
           );
         })}
         <text x={half} y={half} textAnchor="middle" dominantBaseline="central"
-          style={{ fontSize: size * 0.16, fontWeight: 900 }} className="fill-gray-900">{total}</text>
+          style={{ fontSize: size * 0.16, fontWeight: 900 }} className="fill-[#0f172a]">{total}</text>
       </svg>
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
         {segments.map((seg, i) => (
-          <span key={i} className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+          <span key={i} className="flex items-center gap-1 text-[10px] font-bold text-[#64748b]">
             <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
             {seg.name}
           </span>
@@ -145,7 +145,7 @@ function DonutChart({ segments = [], size = 140, label }) {
 
 // ── Area Sparkline ────────────────────────────────────────────────────────────
 function AreaChart({ data = [], width = 300, height = 80, color = "#6366f1", label, showDots }) {
-  if (data.length < 2) return <p className="text-xs text-gray-400 italic p-4">Insufficient data</p>;
+  if (data.length < 2) return <p className="text-xs text-[#94a3b8] italic p-4">Insufficient data</p>;
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const minVal = 0;
   const range = maxVal - minVal || 1;
@@ -157,7 +157,7 @@ function AreaChart({ data = [], width = 300, height = 80, color = "#6366f1", lab
   const area = `${line} L${pts[pts.length - 1].x},${height - 10} L${pts[0].x},${height - 10} Z`;
   return (
     <div>
-      {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label}</p>}
+      {label && <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-2">{label}</p>}
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <defs>
           <linearGradient id={`ag-${label}`} x1="0" y1="0" x2="0" y2="1">
@@ -200,7 +200,7 @@ function MiniHeatmap({ heatmapData = [], compact }) {
           <div className="flex mb-0.5 ml-8">
             {Array(24).fill(0).map((_, h) => (
               <div key={h} style={{ width: sz, fontSize: 7, marginRight: 1 }}
-                className="text-center text-gray-300">
+                className="text-center text-[#cbd5e1]">
                 {h % 6 === 0 ? h : ""}
               </div>
             ))}
@@ -208,7 +208,7 @@ function MiniHeatmap({ heatmapData = [], compact }) {
         )}
         {grid.map((row, d) => (
           <div key={d} className="flex items-center gap-px mb-px">
-            <div className="text-gray-400 uppercase" style={{ width: 28, fontSize: 8, fontWeight: 800 }}>{days[d]}</div>
+            <div className="text-[#94a3b8] uppercase" style={{ width: 28, fontSize: 8, fontWeight: 800 }}>{days[d]}</div>
             {row.map((val, h) => {
               const avg = counts[d][h] > 0 ? val / counts[d][h] : 0;
               return <div key={h} style={{ width: sz, height: sz, background: getColor(avg), borderRadius: 2 }}
@@ -217,7 +217,7 @@ function MiniHeatmap({ heatmapData = [], compact }) {
           </div>
         ))}
       </div>
-      <div className="mt-2 flex justify-end items-center gap-2 text-[8px] text-gray-400 font-bold">
+      <div className="mt-2 flex justify-end items-center gap-2 text-[8px] text-[#94a3b8] font-bold">
         <span>Low</span>
         {colors.slice(1).map((c, i) => <div key={i} className="rounded-sm" style={{ width: 8, height: 8, background: c }} />)}
         <span>Peak</span>
@@ -229,20 +229,20 @@ function MiniHeatmap({ heatmapData = [], compact }) {
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 function StatCard({ title, value, subtitle, icon, color = "#6366f1", trend }) {
   return (
-    <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+    <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between relative z-10">
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
-          <p className="text-2xl font-black text-gray-900 mt-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{value}</p>
-          {subtitle && <p className="text-[10px] text-gray-400 font-bold mt-0.5">{subtitle}</p>}
+          <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest">{title}</p>
+          <p className="text-2xl font-black text-[#0f172a] mt-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{value}</p>
+          {subtitle && <p className="text-[10px] text-[#94a3b8] font-bold mt-0.5">{subtitle}</p>}
           {trend !== undefined && (
             <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black mt-2 ${trend >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
               {trend >= 0 ? "↑" : "↓"} {Math.abs(trend).toFixed(1)}%
             </div>
           )}
         </div>
-        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl group-hover:bg-indigo-50 group-hover:scale-110 transition-all duration-300 shadow-inner">
+        <div className="w-10 h-10 rounded-xl bg-[#f8fafc] flex items-center justify-center text-xl group-hover:bg-indigo-50 group-hover:scale-110 transition-all duration-300 shadow-inner">
           {icon || "📊"}
         </div>
       </div>
@@ -414,8 +414,8 @@ export function UtilizationDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-        <h2 className="text-xl font-bold text-gray-400">Administration Access Required</h2>
+      <div className="p-10 text-center bg-[#f8fafc] rounded-2xl border-2 border-dashed border-[#e2e8f0]">
+        <h2 className="text-xl font-bold text-[#94a3b8]">Administration Access Required</h2>
       </div>
     );
   }
@@ -435,41 +435,41 @@ export function UtilizationDashboard() {
 
       {/* Row 2: Heavy Visuals */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-3 bg-white/90 backdrop-blur-xl rounded-3xl border border-gray-100 p-6 shadow-sm flex flex-col items-center justify-between min-h-[220px]">
+        <div className="md:col-span-3 bg-white/90 backdrop-blur-xl rounded-3xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col items-center justify-between min-h-[220px]">
           <GaugeChart value={insights.overallAvg || 0} label="Efficiency Index" color="#6366f1" size={140} />
-          <p className="text-[9px] font-bold text-gray-400 uppercase mt-2 text-center">Score weighted by capacity & hourly throughput</p>
+          <p className="text-[9px] font-bold text-[#94a3b8] uppercase mt-2 text-center">Score weighted by capacity & hourly throughput</p>
         </div>
-        <div className="md:col-span-5 bg-white/90 backdrop-blur-xl rounded-3xl border border-gray-100 p-6 shadow-sm">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="md:col-span-5 bg-white/90 backdrop-blur-xl rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
+          <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
             Global Heatmap Matrix
           </p>
           <MiniHeatmap heatmapData={analytics?.heatmap || []} />
         </div>
-        <div className="md:col-span-4 bg-white/90 backdrop-blur-xl rounded-3xl border border-gray-100 p-6 shadow-sm flex flex-col items-center justify-center">
+        <div className="md:col-span-4 bg-white/90 backdrop-blur-xl rounded-3xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col items-center justify-center">
           <DonutChart segments={insights.typeSegments || []} size={150} label="Asset Inventory" />
         </div>
       </div>
 
       {/* Row 3: Deep Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
           <AreaChart data={insights.byHour || []} width={400} height={180} label="24H Utilization Profile" color="#6366f1" showDots />
         </div>
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
           <BarChart data={insights.byDay || []} width={400} height={180} label="Weekly Load Distribution" barColor="#818cf8" />
         </div>
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm flex flex-col items-center justify-center">
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col items-center justify-center">
           <DonutChart segments={insights.byPeriod || []} size={160} label="Shift Efficiency" />
         </div>
       </div>
 
       {/* Row 4: Rankings & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-4 bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <div className="lg:col-span-4 bg-white/80 backdrop-blur-xl rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
            <HBarChart data={(insights.perFacility || []).slice(0, 8)} maxItems={8} height={240} color="#22c55e" label="🚀 Top Performer Ranking" />
         </div>
-        <div className="lg:col-span-4 bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <div className="lg:col-span-4 bg-white/80 backdrop-blur-xl rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
            <HBarChart data={(insights.perFacility || []).slice(-8).reverse().map(d => ({ ...d, color: "#ef4444" }))}
             maxItems={8} height={240} color="#ef4444" label="🚨 Critical Attention Reqd" />
         </div>
@@ -493,17 +493,17 @@ export function UtilizationDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-gray-900 rounded-3xl p-6 text-white shadow-xl flex-1">
+          <div className="bg-[#0f172a] rounded-3xl p-6 text-white shadow-xl flex-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-2">Ghost Town Warning</p>
             <div className="space-y-2 mt-4">
                {insights.distribution?.slice(0,2).map((d,i) => (
                  <div key={i} className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-gray-500">{d.name} Brackets</span>
+                    <span className="text-[10px] font-bold text-[#64748b]">{d.name} Brackets</span>
                     <span className="text-xs font-black">{d.value} Units</span>
                  </div>
                ))}
             </div>
-            <p className="text-[10px] text-gray-500 italic mt-6">* Units below 10% avg util require audit</p>
+            <p className="text-[10px] text-[#64748b] italic mt-6">* Units below 10% avg util require audit</p>
           </div>
         </div>
       </div>
@@ -569,43 +569,43 @@ export function UtilizationDashboard() {
 
         {/* Row 2: Gauges */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <GaugeChart value={fOverall} label="Current Rate" color="#6366f1" size={130} />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <GaugeChart value={u30} label="30-Day" color="#22c55e" size={130} />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <GaugeChart value={u7} label="7-Day" color={u7 > u30 ? "#22c55e" : "#ef4444"} size={130} />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <DonutChart segments={periodData} size={130} label="Usage by Period" />
           </div>
         </div>
 
         {/* Row 3: Heatmap + hourly curve */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">This Facility Heatmap</p>
+          <div className="lg:col-span-3 bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+            <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-4">This Facility Heatmap</p>
             <MiniHeatmap heatmapData={cells} />
           </div>
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
             <AreaChart data={fByHour} width={380} height={150} label="Hourly Profile" color="#8b5cf6" showDots />
           </div>
         </div>
 
         {/* Row 4: Day bars + Period bars */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
             <BarChart data={fByDay} width={340} height={170} label="Utilization by Day" barColor="#818cf8" />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
             <BarChart data={periodData} width={340} height={170} label="Utilization by Period" />
           </div>
         </div>
 
         {/* Row 5: Best booking slots */}
-        <div className="bg-gray-900 rounded-2xl p-6 text-white shadow-xl">
+        <div className="bg-[#0f172a] rounded-2xl p-6 text-white shadow-xl">
           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-4">💡 Optimal Booking Windows</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {(ins.best_booking_slots || []).slice(0, 8).map((slot, i) => (
@@ -615,7 +615,7 @@ export function UtilizationDashboard() {
               </div>
             ))}
             {(!ins.best_booking_slots || ins.best_booking_slots.length === 0) && (
-              <p className="text-xs text-gray-500 col-span-4 italic">No slot data yet — awaiting more booking history.</p>
+              <p className="text-xs text-[#64748b] col-span-4 italic">No slot data yet — awaiting more booking history.</p>
             )}
           </div>
         </div>
@@ -627,7 +627,7 @@ export function UtilizationDashboard() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-5">
       {/* Live pulse header */}
-      <section className="bg-gray-900 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+      <section className="bg-[#0f172a] rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-600 opacity-20 blur-[80px] -mr-32 -mt-16 rounded-full" />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
           <div>
@@ -641,39 +641,39 @@ export function UtilizationDashboard() {
             <h2 className="text-3xl font-black tracking-tight">Facility Analytics</h2>
           </div>
           <div className="flex gap-8 bg-black/20 rounded-xl p-4 border border-white/5">
-            <div className="text-center"><p className="text-3xl font-black text-emerald-400">{realTime?.vacantNow ?? "—"}</p><p className="text-[9px] font-bold text-gray-500 uppercase">Free</p></div>
-            <div className="text-center"><p className="text-3xl font-black text-indigo-400">{realTime?.occupiedNow ?? "—"}</p><p className="text-[9px] font-bold text-gray-500 uppercase">Booked</p></div>
-            <div className="text-center"><p className="text-3xl font-black text-amber-400">{realTime?.maintenanceCount ?? "—"}</p><p className="text-[9px] font-bold text-gray-500 uppercase">Down</p></div>
+            <div className="text-center"><p className="text-3xl font-black text-emerald-400">{realTime?.vacantNow ?? "—"}</p><p className="text-[9px] font-bold text-[#64748b] uppercase">Free</p></div>
+            <div className="text-center"><p className="text-3xl font-black text-indigo-400">{realTime?.occupiedNow ?? "—"}</p><p className="text-[9px] font-bold text-[#64748b] uppercase">Booked</p></div>
+            <div className="text-center"><p className="text-3xl font-black text-amber-400">{realTime?.maintenanceCount ?? "—"}</p><p className="text-[9px] font-bold text-[#64748b] uppercase">Down</p></div>
           </div>
         </div>
       </section>
 
       {/* Control bar */}
-      <section className="bg-white border border-gray-100 rounded-xl py-3 px-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <section className="bg-white border border-[#e2e8f0] rounded-xl py-3 px-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+          <div className="flex bg-[#f1f5f9] p-1 rounded-lg">
             <button onClick={() => setScope("campus")}
-              className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${scope === "campus" ? "bg-white shadow text-indigo-600" : "text-gray-400"}`}>
+              className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${scope === "campus" ? "bg-white shadow text-indigo-600" : "text-[#94a3b8]"}`}>
               Campus
             </button>
             <button onClick={() => setScope("facility")}
-              className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${scope === "facility" ? "bg-white shadow text-indigo-600" : "text-gray-400"}`}>
+              className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${scope === "facility" ? "bg-white shadow text-indigo-600" : "text-[#94a3b8]"}`}>
               Facility
             </button>
           </div>
           {scope === "facility" && (
             <select value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)}
-              className="bg-gray-50 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-700 border-none outline-none focus:ring-2 focus:ring-indigo-500">
+              className="bg-[#f8fafc] rounded-lg px-3 py-1.5 text-xs font-bold text-[#334155] border-none outline-none focus:ring-2 focus:ring-indigo-500">
               {facList.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
           )}
         </div>
         <div className="flex items-center gap-2">
           <input type="date" value={dateRange.from} onChange={e => setDateRange(p => ({ ...p, from: e.target.value }))}
-            className="bg-gray-50 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-600 border-none outline-none" />
-          <span className="text-gray-300">→</span>
+            className="bg-[#f8fafc] rounded-lg px-2 py-1.5 text-xs font-bold text-[#475569] border-none outline-none" />
+          <span className="text-[#cbd5e1]">→</span>
           <input type="date" value={dateRange.to} onChange={e => setDateRange(p => ({ ...p, to: e.target.value }))}
-            className="bg-gray-50 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-600 border-none outline-none" />
+            className="bg-[#f8fafc] rounded-lg px-2 py-1.5 text-xs font-bold text-[#475569] border-none outline-none" />
           <button onClick={scope === "campus" ? loadCampus : loadFacility} disabled={loading}
             className="bg-indigo-600 text-white px-5 py-1.5 rounded-lg text-xs font-black hover:bg-indigo-700 transition disabled:opacity-50">
             {loading ? "..." : "Analyze"}
