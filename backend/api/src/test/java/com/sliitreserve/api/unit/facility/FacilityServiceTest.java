@@ -13,6 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import com.sliitreserve.api.repositories.bookings.BookingRepository;
+import com.sliitreserve.api.repositories.bookings.CheckInRepository;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
+import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
+import com.sliitreserve.api.observers.EventPublisher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.sliitreserve.api.util.mapping.FacilityMapper;
 import org.springframework.data.domain.Page;
@@ -42,17 +48,38 @@ public class FacilityServiceTest {
     @Mock
     private FacilityFactory facilityFactory;
 
+    @Mock
+    private com.sliitreserve.api.services.facility.FacilityTimetableService facilityTimetableService;
+
     private FacilityMapper facilityMapper;
 
     @Mock
     private MaintenanceIntegrationService maintenanceIntegrationService;
+    @Mock
+    private BookingRepository bookingRepository;
+    @Mock
+    private CheckInRepository checkInRepository;
+    @Mock
+    private ApprovalStepRepository approvalStepRepository;
+    @Mock
+    private MaintenanceTicketRepository maintenanceTicketRepository;
+    @Mock
+    private UtilizationSnapshotRepository utilizationSnapshotRepository;
+    @Mock
+    private EventPublisher notificationService;
 
     private FacilityService facilityService;
 
     @BeforeEach
     void init() {
         facilityMapper = org.mockito.Mockito.spy(new FacilityMapper());
-        facilityService = new FacilityService(facilityRepository, facilityFactory, facilityMapper, maintenanceIntegrationService);
+        facilityService = new FacilityService(
+            facilityRepository, facilityFactory, facilityMapper, 
+            maintenanceIntegrationService, facilityTimetableService,
+            bookingRepository, maintenanceTicketRepository,
+            utilizationSnapshotRepository, checkInRepository,
+            approvalStepRepository, notificationService
+        );
     }
 
     @Test

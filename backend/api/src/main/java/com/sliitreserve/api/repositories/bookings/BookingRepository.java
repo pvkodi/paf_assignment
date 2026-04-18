@@ -211,4 +211,8 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("statusList") List<BookingStatus> statusList,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    long countByFacility_Id(UUID facilityId);
+
+    List<Booking> findByFacility_Id(UUID facilityId);
 }

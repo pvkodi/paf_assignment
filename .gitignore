@@ -32,3 +32,5 @@ backend/uploads/
 uploads/
 /specs/006-feat-pamali-facilities-core
 /specs/014-feat-pamali-facilities-optimization-ui
+backend/api/localdb.lock.db
+backend/api/localdb.mv.db

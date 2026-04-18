@@ -15,7 +15,6 @@ import {
   AnalyticsPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
-  UnderutilizedPage,
   FacilitySuggestionsPage,
   NotificationsPage,
 } from "./pages";
@@ -44,10 +43,6 @@ const router = createBrowserRouter([
       {
         path: "facility/:id",
         element: <FacilityDetailRoutePage />,
-      },
-      {
-        path: "facilities/underutilized",
-        element: <UnderutilizedPage />,
       },
       {
         path: "facilities/suggestions",

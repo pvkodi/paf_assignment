@@ -7,8 +7,7 @@ import { UtilizationDashboard } from "../features/analytics";
 import {
   FacilityDetailsPage,
   FacilityManagementDashboard,
-  FacilitySuggestionsView,
-  UnderutilizedFacilitiesView,
+  TimetablePreviewPage,
 } from "../features/facilities";
 import FacilitySearch from "../features/facilities/FacilitySearch";
 import {
@@ -97,12 +96,12 @@ function FacilityDetailRoutePage() {
   return <FacilityDetailsPage />;
 }
 
-function UnderutilizedPage() {
-  return <UnderutilizedFacilitiesView />;
-}
-
 function FacilitySuggestionsPage() {
   return <FacilitySuggestionsView />;
+}
+
+function TimetableImportPreviewPage() {
+  return <TimetablePreviewPage />;
 }
 
 function BookingRecommendationsPage() {
@@ -136,8 +135,20 @@ function AdminBookingsPage() {
 function FacilitiesAndBookingsPage() {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [prefillData, setPrefillData] = useState(null);
 
   const handleFacilitySelect = (facility) => {
+    // Check if the facility object has suggestion-related date/time fields
+    if (facility && facility.suggestedDate) {
+      setPrefillData({
+        date: facility.suggestedDate,
+        startTime: facility.suggestedStartTime,
+        endTime: facility.suggestedEndTime,
+      });
+    } else {
+      setPrefillData(null);
+    }
+
     setSelectedFacility(facility);
     setIsBookingOpen(true);
   };
@@ -145,6 +156,7 @@ function FacilitiesAndBookingsPage() {
   const closeBooking = () => {
     setIsBookingOpen(false);
     setSelectedFacility(null);
+    setPrefillData(null);
   };
 
   return (
@@ -189,6 +201,7 @@ function FacilitiesAndBookingsPage() {
               <div className="flex-1 overflow-auto px-6 pb-6">
                 <BookingForm
                   facility={selectedFacility}
+                  prefill={prefillData}
                   isModal
                   onClose={closeBooking}
                   onBookingComplete={() => {
@@ -233,8 +246,8 @@ export {
   AnalyticsPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
-  UnderutilizedPage,
   FacilitySuggestionsPage,
+  TimetableImportPreviewPage,
   BookingRecommendationsPage,
   BookingsPage,
   BookingApprovalsPage,
