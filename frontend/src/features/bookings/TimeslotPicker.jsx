@@ -26,16 +26,11 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
       const response = await apiClient.get("/v1/bookings");
       const allBookings = Array.isArray(response.data) ? response.data : [];
       
-      console.log("📅 TimeslotPicker - Fetched bookings:", allBookings.length);
-      console.log("📅 TimeslotPicker - Looking for facility:", facilityId, "date:", selectedDate);
-      
       const dayBookings = allBookings.filter(b => 
         b.facility?.id === facilityId && 
         b.bookingDate === selectedDate &&
         (b.status === "APPROVED" || b.status === "PENDING")
       );
-      
-      console.log("📅 TimeslotPicker - Found conflicts for this date:", dayBookings.length);
       
       const bookedSlots = dayBookings.map(b => ({
         start: b.startTime,
@@ -68,29 +63,31 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
 
   if (!selectedDate) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm text-slate-600">Select a date to view available time slots</p>
+      <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-6 text-center">
+        <p className="text-sm font-medium text-[#64748b]">Select a date to view available time slots</p>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-        <p className="text-sm text-slate-600">Loading availability...</p>
+      <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-6 flex flex-col items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin mb-2"></div>
+        <p className="text-sm font-medium text-[#64748b]">Loading availability...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm text-red-700">{error}</p>
+      <div className="rounded-xl border border-[#fca5a5] bg-[#fef2f2] p-4 flex items-center gap-3">
+        <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p className="text-sm font-semibold text-[#991b1b]">{error}</p>
       </div>
     );
   }
 
-  // Parse times for comparison - DEFINE FIRST BEFORE USING
+  // Parse times for comparison
   const parseTime = (timeStr) => {
     if (!timeStr) return 0;
     try {
@@ -119,9 +116,12 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
 
   if (!timeslotData || (!timeslotData.bookedSlots && !timeslotData.freeSlots)) {
     return (
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-700">✓ No conflicts - Time slot appears to be available</p>
-        <p className="text-xs text-blue-600 mt-2">You can select any time between 08:00 and 20:00</p>
+      <div className="rounded-xl border border-[#dcfce3] bg-[#f0fdf4] p-4 flex items-start gap-3">
+        <svg className="w-5 h-5 text-[#16a34a] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div>
+          <p className="text-sm font-semibold text-[#166534]">No conflicts found</p>
+          <p className="text-xs text-[#15803d] mt-1">You can select any time between 08:00 and 20:00.</p>
+        </div>
       </div>
     );
   }
@@ -130,24 +130,6 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
   const freeSlots = timeslotData?.freeSlots || [];
   const availStart = timeslotData?.availabilityStart || "08:00:00";
   const availEnd = timeslotData?.availabilityEnd || "20:00:00";
-
-  // If there are booked slots, show them prominently
-  if (bookedSlots.length > 0) {
-    return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <div className="text-sm font-semibold text-amber-900 mb-2">⏰ Booked times on this date:</div>
-        <div className="space-y-1">
-          {bookedSlots.map((slot, idx) => (
-            <div key={idx} className="text-sm text-amber-800">
-              • {formatTimeDisplay(slot.start)} - {formatTimeDisplay(slot.end)}
-              {slot.purpose && <span className="text-xs text-amber-700 ml-2">({slot.purpose})</span>}
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-amber-700 mt-3">💡 Select a time outside these slots to avoid conflicts</p>
-      </div>
-    );
-  }
 
   // Generate time slots (hourly) for the picker
   const generateTimeOptions = () => {
@@ -183,41 +165,28 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
   };
 
   return (
-    <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
-      <div>
-        <h3 className="text-sm font-semibold text-slate-900">Available Time Slots</h3>
-        <p className="text-xs text-slate-600 mt-1">
-          Facility available: {formatTimeDisplay(availStart)} - {formatTimeDisplay(availEnd)}
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xs font-bold text-[#64748b] uppercase tracking-wider">Availability Overview</h3>
+          <p className="text-sm text-[#0f172a] font-medium mt-1">
+            {formatTimeDisplay(availStart)} - {formatTimeDisplay(availEnd)}
+          </p>
+        </div>
       </div>
 
       {/* Booked Slots Display */}
       {bookedSlots.length > 0 && (
-        <div className="rounded bg-yellow-50 border border-yellow-200 p-3">
-          <h4 className="text-xs font-semibold text-yellow-900 mb-2">Booked Times</h4>
-          <div className="space-y-1">
+        <div className="rounded-xl bg-[#fffbeb] border border-[#fde68a] p-4">
+          <h4 className="text-[10px] font-bold text-[#b45309] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Booked Timeslots
+          </h4>
+          <div className="flex flex-wrap gap-2">
             {bookedSlots.map((slot, idx) => (
-              <div key={idx} className="text-xs text-yellow-800">
-                <span className="font-medium">
-                  {formatTimeDisplay(slot.start)} - {formatTimeDisplay(slot.end)}
-                </span>
-                {slot.purpose && <span className="text-yellow-700"> • {slot.purpose}</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Free Slots Display */}
-      {freeSlots.length > 0 && (
-        <div className="rounded bg-green-50 border border-green-200 p-3">
-          <h4 className="text-xs font-semibold text-green-900 mb-2">Available Times</h4>
-          <div className="space-y-1">
-            {freeSlots.map((slot, idx) => (
-              <div key={idx} className="text-xs text-green-800">
-                <span className="font-medium">
-                  {formatTimeDisplay(slot.start)} - {formatTimeDisplay(slot.end)}
-                </span>
+              <div key={idx} className="bg-white border border-[#fcd34d] px-3 py-1.5 rounded-lg text-xs font-semibold text-[#92400e] shadow-sm flex items-center gap-2">
+                <span>{formatTimeDisplay(slot.start)} - {formatTimeDisplay(slot.end)}</span>
+                {slot.purpose && <span className="text-[#b45309] border-l border-[#fde68a] pl-2">{slot.purpose}</span>}
               </div>
             ))}
           </div>
@@ -225,71 +194,86 @@ export default function TimeslotPicker({ facilityId, selectedDate, onTimeSelect 
       )}
 
       {/* Time Slot Selector */}
-      <div className="space-y-3 border-t border-slate-200 pt-3">
-        <h4 className="text-sm font-semibold text-slate-900">Select Your Time</h4>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-5">
+        <h4 className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider mb-4">Select Your Time</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-[#475569] mb-1.5">
               Start Time
             </label>
-            <select
-              value={selectedStartTime}
-              onChange={(e) => setSelectedStartTime(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Select start time</option>
-              {timeOptions.map((time) => (
-                <option key={time} value={time}>
-                  {formatTimeDisplay(time)}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedStartTime}
+                onChange={(e) => setSelectedStartTime(e.target.value)}
+                className="w-full rounded-xl bg-white border border-[#e2e8f0] pl-4 pr-10 py-3 text-sm font-medium text-[#0f172a] focus:ring-2 focus:ring-[#6366f1] focus:border-transparent outline-none appearance-none transition-all shadow-sm"
+              >
+                <option value="">Select start time</option>
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>
+                    {formatTimeDisplay(time)}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#64748b]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-[#475569] mb-1.5">
               End Time
             </label>
-            <select
-              value={selectedEndTime}
-              onChange={(e) => {
-                setSelectedEndTime(e.target.value);
-                if (selectedStartTime && e.target.value) {
-                  if (isTimeSlotAvailable(selectedStartTime, e.target.value)) {
-                    handleTimeSelect(selectedStartTime, e.target.value);
+            <div className="relative">
+              <select
+                value={selectedEndTime}
+                onChange={(e) => {
+                  setSelectedEndTime(e.target.value);
+                  if (selectedStartTime && e.target.value) {
+                    if (isTimeSlotAvailable(selectedStartTime, e.target.value)) {
+                      handleTimeSelect(selectedStartTime, e.target.value);
+                    }
                   }
-                }
-              }}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Select end time</option>
-              {timeOptions.map((time) => (
-                <option key={time} value={time}>
-                  {formatTimeDisplay(time)}
-                </option>
-              ))}
-            </select>
+                }}
+                className="w-full rounded-xl bg-white border border-[#e2e8f0] pl-4 pr-10 py-3 text-sm font-medium text-[#0f172a] focus:ring-2 focus:ring-[#6366f1] focus:border-transparent outline-none appearance-none transition-all shadow-sm"
+              >
+                <option value="">Select end time</option>
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>
+                    {formatTimeDisplay(time)}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#64748b]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </div>
         </div>
 
         {selectedStartTime && selectedEndTime && (
           <div
-            className={`rounded p-3 text-sm ${
+            className={`mt-4 rounded-xl p-3.5 text-sm flex items-start gap-2.5 ${
               isTimeSlotAvailable(selectedStartTime, selectedEndTime)
-                ? "bg-green-50 border border-green-200"
-                : "bg-red-50 border border-red-200"
+                ? "bg-[#f0fdf4] border border-[#dcfce3]"
+                : "bg-[#fef2f2] border border-[#fca5a5]"
             }`}
           >
+            {isTimeSlotAvailable(selectedStartTime, selectedEndTime) ? (
+              <svg className="w-5 h-5 text-[#16a34a] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            ) : (
+              <svg className="w-5 h-5 text-[#ef4444] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            )}
             <p
-              className={
+              className={`font-semibold mt-0.5 ${
                 isTimeSlotAvailable(selectedStartTime, selectedEndTime)
-                  ? "text-green-800 font-medium"
-                  : "text-red-800 font-medium"
-              }
+                  ? "text-[#166534]"
+                  : "text-[#991b1b]"
+              }`}
             >
               {isTimeSlotAvailable(selectedStartTime, selectedEndTime)
-                ? "✓ This time slot is available"
-                : "✗ This time slot has a conflict. Please choose another time."}
+                ? "This time slot is available and ready to book."
+                : "Conflict detected. This facility is already booked during this time."}
             </p>
           </div>
         )}

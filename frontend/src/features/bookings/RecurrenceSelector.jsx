@@ -78,30 +78,30 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
   const previewCount = rule ? occurrences : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 bg-[#f8fafc] p-5 rounded-2xl border border-[#e2e8f0]">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">
           Recurrence Pattern
         </label>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex p-1 bg-[#f1f5f9] rounded-xl flex-wrap">
           <button
             type="button"
             onClick={() => setRecurrenceType("NONE")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 min-w-[80px] px-3 py-2 rounded-lg font-semibold text-xs transition-all shadow-sm ${
               recurrenceType === "NONE"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                ? "bg-white text-[#0f172a]"
+                : "text-[#64748b] shadow-none hover:text-[#0f172a]"
             }`}
           >
-            None (One-time)
+            None
           </button>
           <button
             type="button"
             onClick={() => setRecurrenceType("DAILY")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 min-w-[80px] px-3 py-2 rounded-lg font-semibold text-xs transition-all shadow-sm ${
               recurrenceType === "DAILY"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                ? "bg-white text-[#0f172a]"
+                : "text-[#64748b] shadow-none hover:text-[#0f172a]"
             }`}
           >
             Daily
@@ -109,10 +109,10 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
           <button
             type="button"
             onClick={() => setRecurrenceType("WEEKLY")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 min-w-[80px] px-3 py-2 rounded-lg font-semibold text-xs transition-all shadow-sm ${
               recurrenceType === "WEEKLY"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                ? "bg-white text-[#0f172a]"
+                : "text-[#64748b] shadow-none hover:text-[#0f172a]"
             }`}
           >
             Weekly
@@ -120,10 +120,10 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
           <button
             type="button"
             onClick={() => setRecurrenceType("MONTHLY")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 min-w-[80px] px-3 py-2 rounded-lg font-semibold text-xs transition-all shadow-sm ${
               recurrenceType === "MONTHLY"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                ? "bg-white text-[#0f172a]"
+                : "text-[#64748b] shadow-none hover:text-[#0f172a]"
             }`}
           >
             Monthly
@@ -132,23 +132,23 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
       </div>
 
       {recurrenceType !== "NONE" && (
-        <>
-          {/* Repeat Every */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+        <div className="space-y-5 pt-2">
+          {/* Settings Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="bg-white p-4 rounded-xl border border-[#e2e8f0]">
+              <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">
                 Repeat Every
               </label>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-3 items-center">
                 <input
                   type="number"
                   min="1"
                   max="52"
                   value={repeatEvery}
                   onChange={(e) => setRepeatEvery(Math.max(1, Number(e.target.value)))}
-                  className="w-20 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-20 px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] font-medium transition-all"
                 />
-                <span className="text-slate-700 font-medium">
+                <span className="text-[#475569] text-sm font-semibold">
                   {recurrenceType === "DAILY" && "day(s)"}
                   {recurrenceType === "WEEKLY" && "week(s)"}
                   {recurrenceType === "MONTHLY" && "month(s)"}
@@ -156,12 +156,11 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
               </div>
             </div>
 
-            {/* Number of Occurrences */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Number of Occurrences
+            <div className="bg-white p-4 rounded-xl border border-[#e2e8f0]">
+              <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">
+                Total Occurrences
               </label>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-3 items-center">
                 <input
                   type="number"
                   min="1"
@@ -170,24 +169,24 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
                   onChange={(e) =>
                     setOccurrences(Math.min(maxOccurrences, Math.max(1, Number(e.target.value))))
                   }
-                  className="w-20 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-20 px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] font-medium transition-all"
                 />
-                <span className="text-slate-600 text-sm">Max: {maxOccurrences}</span>
+                <span className="text-[#94a3b8] text-xs font-semibold">Max: {maxOccurrences}</span>
               </div>
             </div>
           </div>
 
           {/* Weekly Day Selection */}
           {recurrenceType === "WEEKLY" && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700">
+            <div className="bg-white p-4 rounded-xl border border-[#e2e8f0]">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider">
                   Days of Week
                 </label>
                 <button
                   type="button"
                   onClick={handleSelectAllWeekdays}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-xs text-[#6366f1] hover:text-[#4f46e5] font-semibold transition-colors"
                 >
                   {selectedDaysCount === 7 ? "Deselect All" : "Select All Weekdays"}
                 </button>
@@ -198,10 +197,10 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
                     key={day}
                     type="button"
                     onClick={() => handleWeekDayToggle(day)}
-                    className={`p-2 rounded-md font-medium text-sm transition-colors ${
+                    className={`p-2 rounded-lg font-semibold text-xs transition-colors border ${
                       weekDays[day]
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                        ? "bg-[#0f172a] text-white border-[#0f172a]"
+                        : "bg-[#f8fafc] text-[#475569] border-[#e2e8f0] hover:bg-[#f1f5f9]"
                     }`}
                   >
                     {day.substring(0, 3)}
@@ -209,20 +208,23 @@ export default function RecurrenceSelector({ onRuleChange, maxOccurrences = 52 }
                 ))}
               </div>
               {selectedDaysCount === 0 && (
-                <p className="text-xs text-red-600 mt-1">Please select at least one day</p>
+                <p className="text-[10px] text-[#ef4444] font-bold uppercase tracking-wider mt-2">Please select at least one day</p>
               )}
             </div>
           )}
 
           {/* Preview */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm font-medium text-blue-900 mb-1">Preview</p>
-            <p className="text-sm text-blue-800">
-              Creates {previewCount} {previewCount === 1 ? "booking" : "bookings"}
-            </p>
-            <p className="text-xs text-blue-600 font-mono mt-1">Rule: {rule || "None"}</p>
+          <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-xl p-4 flex items-start gap-3">
+            <svg className="w-5 h-5 text-[#3b82f6] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+              <p className="text-[10px] font-bold text-[#1e40af] uppercase tracking-wider mb-0.5">Recurrence Summary</p>
+              <p className="text-sm text-[#1e3a8a] font-medium">
+                This rule will create <span className="font-bold">{previewCount}</span> {previewCount === 1 ? "booking" : "bookings"}.
+              </p>
+              <p className="text-xs text-[#3b82f6] font-mono mt-1 opacity-80 break-all">{rule || "Incomplete rule"}</p>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
