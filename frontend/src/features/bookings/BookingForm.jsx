@@ -259,25 +259,30 @@ export default function BookingForm({
 
   if (!facility && !success) {
     return (
-      <div className={`bg-white rounded-lg shadow-md p-6 ${isModal ? 'h-full flex items-center justify-center' : ''}`}>
-        <p className="text-slate-600">Please select a facility to create a booking.</p>
+      <div className={`bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 ${isModal ? 'h-[90vh] overflow-y-auto flex items-center justify-center' : ''}`}>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mx-auto mb-4 border border-slate-100">
+            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+          </div>
+          <p className="text-slate-500 font-medium text-lg">Please select a facility back in the list to create a booking.</p>
+        </div>
       </div>
     );
   }
 
   const rootClass = isModal
     ? 'bg-transparent h-full flex flex-col p-0'
-    : 'bg-white rounded-md shadow p-4 border border-slate-100';
+    : 'bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 border border-slate-100';
 
   const selectedBoxClass = isModal
-    ? 'mb-4 p-4 flex justify-between items-center gap-4'
-    : 'mb-4 p-4 bg-slate-50 rounded-md border border-slate-100 flex justify-between items-center gap-4';
+    ? 'mb-6 p-5 flex justify-between items-center gap-4 bg-slate-50 rounded-2xl border border-slate-100/50'
+    : 'mb-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center gap-4';
 
   return (
     <div className={rootClass}>
-      <div>
-        <h2 className="text-xl font-semibold mb-1 text-slate-900">Create Booking</h2>
-        <p className="text-slate-600 mb-4 text-sm">Fill the details below to request this facility.</p>
+      <div className="mb-8 border-b border-slate-100 pb-4">
+        <h2 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Create Booking</h2>
+        <p className="text-slate-500 font-medium">Verify your facility and set your schedule below.</p>
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -316,34 +321,37 @@ export default function BookingForm({
           <>
             <div className={selectedBoxClass}>
               <div className="min-w-0">
-                <p className="text-sm text-slate-500 font-medium">Selected facility</p>
-                <p className="text-sm font-semibold text-slate-900 line-clamp-1">{facility.name}</p>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-1">{facility.location}, {facility.building} • Floor {facility.floor}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Selected facility</p>
+                <p className="text-lg font-bold text-slate-900 truncate">{facility.name}</p>
+                <p className="text-sm font-medium text-slate-500 mt-1 truncate">
+                  <svg className="w-3.5 h-3.5 inline mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  {facility.location}, {facility.building} • Fl {facility.floor}
+                </p>
               </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-bold text-indigo-600">{facility.capacity}</div>
-                <div className="text-xs text-slate-500">Capacity</div>
+              <div className="text-right flex-shrink-0 bg-white p-3 rounded-xl border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+                <div className="text-2xl font-black text-slate-900 leading-none">{facility.capacity}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Capacity</div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Booking Date *</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Date *</label>
                   <input 
                     type="date" 
                     min={minDate}
                     value={bookingDate} 
                     onChange={(e) => setBookingDate(e.target.value)} 
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} 
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-medium text-slate-800 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 ${validationErrors.bookingDate ? 'border-red-300 bg-red-50 focus:ring-red-100' : 'border-transparent focus:border-slate-300'}`} 
                   />
-                  {validationErrors.bookingDate && <p className="text-sm text-red-600 mt-1">{validationErrors.bookingDate}</p>}
+                  {validationErrors.bookingDate && <p className="text-xs font-semibold text-red-500 mt-2">{validationErrors.bookingDate}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Number of Attendees * (Max: {facility.capacity})</label>
-                  <input type="number" min="1" max={facility.capacity} value={attendees} onChange={(e) => setAttendees(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.attendees ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
-                  {validationErrors.attendees && <p className="text-sm text-red-600 mt-1">{validationErrors.attendees}</p>}
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Attendees * <span className="text-slate-400 font-medium ml-1">(Max {facility.capacity})</span></label>
+                  <input type="number" min="1" max={facility.capacity} value={attendees} onChange={(e) => setAttendees(e.target.value)} placeholder="0" className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-medium text-slate-800 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 ${validationErrors.attendees ? 'border-red-300 bg-red-50 focus:ring-red-100' : 'border-transparent focus:border-slate-300'}`} />
+                  {validationErrors.attendees && <p className="text-xs font-semibold text-red-500 mt-2">{validationErrors.attendees}</p>}
                 </div>
 
                 {/* Availability Display Section */}
@@ -391,9 +399,10 @@ export default function BookingForm({
                                     setStartTime(slot.startTime.substring(0, 5));
                                     setEndTime(slot.endTime.substring(0, 5));
                                   }}
-                                  className="w-full text-left px-3 py-2 bg-white border border-green-200 rounded-md hover:bg-green-100 transition text-xs text-green-900 font-medium"
+                                  className="w-full text-left px-4 py-3 bg-white border border-green-200 rounded-xl hover:bg-green-50 hover:border-green-300 shadow-[0_2px_8px_rgb(0,0,0,0.02)] transition-all text-sm text-green-800 font-bold flex justify-between items-center group"
                                 >
-                                  {slot.startTime} - {slot.endTime}
+                                  <span>{slot.startTime} - {slot.endTime}</span>
+                                  <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-green-200 text-green-900 px-2 py-1 rounded-md">Use Slot</span>
                                 </button>
                               ))}
                             </div>
@@ -414,27 +423,27 @@ export default function BookingForm({
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Start Time *</label>
-                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.startTime ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
-                  {validationErrors.startTime && <p className="text-sm text-red-600 mt-1">{validationErrors.startTime}</p>}
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Start Time *</label>
+                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-medium text-slate-800 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 ${validationErrors.startTime ? 'border-red-300 bg-red-50 focus:ring-red-100' : 'border-transparent focus:border-slate-300'}`} />
+                  {validationErrors.startTime && <p className="text-xs font-semibold text-red-500 mt-2">{validationErrors.startTime}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">End Time *</label>
-                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.endTime ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
-                  {validationErrors.endTime && <p className="text-sm text-red-600 mt-1">{validationErrors.endTime}</p>}
+                  <label className="block text-sm font-bold text-slate-700 mb-2">End Time *</label>
+                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-medium text-slate-800 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 ${validationErrors.endTime ? 'border-red-300 bg-red-50 focus:ring-red-100' : 'border-transparent focus:border-slate-300'}`} />
+                  {validationErrors.endTime && <p className="text-xs font-semibold text-red-500 mt-2">{validationErrors.endTime}</p>}
                 </div>
 
                 {validationErrors.timeRange && (
-                  <div className="rounded-md bg-red-50 p-3 border border-red-200">
-                    <p className="text-sm text-red-600">{validationErrors.timeRange}</p>
+                  <div className="col-span-full rounded-xl bg-red-50/50 p-4 border border-red-100">
+                    <p className="text-sm font-bold text-red-600">{validationErrors.timeRange}</p>
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Purpose of Booking * (Min 3 characters)</label>
-                  <textarea value={purpose} onChange={(e) => setPurpose(e.target.value)} rows="3" placeholder="Describe the purpose of this booking..." className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${validationErrors.purpose ? 'border-red-300 bg-red-50' : 'border-slate-300'}`} />
-                  {validationErrors.purpose && <p className="text-sm text-red-600 mt-1">{validationErrors.purpose}</p>}
+                <div className="col-span-full">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Purpose * <span className="text-slate-400 font-medium ml-1">(Min 3 chars)</span></label>
+                  <textarea value={purpose} onChange={(e) => setPurpose(e.target.value)} rows="3" placeholder="Briefly describe what this booking is for..." className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-medium text-slate-800 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-100 resize-none ${validationErrors.purpose ? 'border-red-300 bg-red-50 focus:ring-red-100' : 'border-transparent focus:border-slate-300'}`} />
+                  {validationErrors.purpose && <p className="text-xs font-semibold text-red-500 mt-2">{validationErrors.purpose}</p>}
                 </div>
 
                 {canBookForOthers && (
@@ -496,9 +505,9 @@ export default function BookingForm({
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-200">
-                <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition">{loading ? 'Submitting...' : 'Create Booking'}</button>
-                <button type="button" onClick={handleClear} className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-md hover:bg-slate-200 transition">Clear</button>
+              <div className="flex gap-4 pt-6 border-t border-slate-100">
+                <button type="submit" disabled={loading} className="w-2/3 py-3.5 bg-[#49BBBB] text-white font-bold rounded-xl shadow-[0_4px_14px_rgba(73,187,187,0.3)] hover:bg-[#3CA0A0] hover:shadow-[0_6px_20px_rgba(73,187,187,0.4)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all duration-200">{loading ? 'Submitting...' : 'Confirm Book'}</button>
+                <button type="button" onClick={handleClear} className="w-1/3 py-3.5 bg-slate-50 text-slate-600 font-bold rounded-xl border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors">Clear</button>
               </div>
             </form>
           </>

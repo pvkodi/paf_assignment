@@ -1,4 +1,10 @@
-import React, { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
@@ -64,7 +70,11 @@ const BLANK_FORM = {
   availabilityWindows: [],
 };
 
-const BLANK_WINDOW = { dayOfWeek: "MONDAY", startTime: "08:00", endTime: "17:00" };
+const BLANK_WINDOW = {
+  dayOfWeek: "MONDAY",
+  startTime: "08:00",
+  endTime: "17:00",
+};
 
 // ─── Timetable Uploader ────────────────────────────────────────────────────────
 
@@ -92,13 +102,16 @@ function TimetableUploader({ onUploadComplete }) {
         render: `Successfully parsed timetable. Proceeding to preview...`,
         type: "success",
         isLoading: false,
-        autoClose: 2000
+        autoClose: 2000,
       });
 
       if (onUploadComplete) onUploadComplete();
       navigate("/facilities/timetable-preview", { state: { result: res } });
     } catch (err) {
-      toast.error("Failed to upload timetable: " + (err?.response?.data?.error || err.message));
+      toast.error(
+        "Failed to upload timetable: " +
+          (err?.response?.data?.error || err.message),
+      );
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -122,8 +135,18 @@ function TimetableUploader({ onUploadComplete }) {
           disabled={uploading}
           className="shrink-0 flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors disabled:opacity-50"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+            />
           </svg>
           {uploading ? "Uploading..." : "Upload Timetable"}
         </button>
@@ -143,13 +166,31 @@ function formatTime(t) {
 
 function StatusBadge({ status }) {
   const config = {
-    ACTIVE: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 ring-emerald-200" },
-    MAINTENANCE: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50 ring-amber-200" },
-    OUT_OF_SERVICE: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50 ring-red-200" },
-  }[status] || { dot: "bg-gray-400", text: "text-gray-600", bg: "bg-gray-50 ring-gray-200" };
+    ACTIVE: {
+      dot: "bg-emerald-500",
+      text: "text-emerald-700",
+      bg: "bg-emerald-50 ring-emerald-200",
+    },
+    MAINTENANCE: {
+      dot: "bg-amber-500",
+      text: "text-amber-700",
+      bg: "bg-amber-50 ring-amber-200",
+    },
+    OUT_OF_SERVICE: {
+      dot: "bg-red-500",
+      text: "text-red-700",
+      bg: "bg-red-50 ring-red-200",
+    },
+  }[status] || {
+    dot: "bg-gray-400",
+    text: "text-gray-600",
+    bg: "bg-gray-50 ring-gray-200",
+  };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${config.bg} ${config.text}`}
+    >
       <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
       {toLabel(status)}
     </span>
@@ -205,7 +246,8 @@ function WindowScheduleBuilder({ windows, onChange }) {
             key={i}
             className="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200"
           >
-            {DAY_ABBR[w.dayOfWeek]} {formatTime(w.startTime)}–{formatTime(w.endTime)}
+            {DAY_ABBR[w.dayOfWeek]} {formatTime(w.startTime)}–
+            {formatTime(w.endTime)}
             <button
               type="button"
               onClick={() => remove(i)}
@@ -213,7 +255,12 @@ function WindowScheduleBuilder({ windows, onChange }) {
               aria-label={`Remove ${w.dayOfWeek} window`}
             >
               <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
-                <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path
+                  d="M9 3L3 9M3 3l6 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </span>
@@ -228,11 +275,15 @@ function WindowScheduleBuilder({ windows, onChange }) {
           <label className="text-xs font-medium text-gray-600">Day</label>
           <select
             value={draft.dayOfWeek}
-            onChange={(e) => setDraft((p) => ({ ...p, dayOfWeek: e.target.value }))}
+            onChange={(e) =>
+              setDraft((p) => ({ ...p, dayOfWeek: e.target.value }))
+            }
             className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             {DAYS_OF_WEEK.map((d) => (
-              <option key={d} value={d}>{DAY_ABBR[d]}</option>
+              <option key={d} value={d}>
+                {DAY_ABBR[d]}
+              </option>
             ))}
           </select>
         </div>
@@ -242,7 +293,9 @@ function WindowScheduleBuilder({ windows, onChange }) {
           <input
             type="time"
             value={draft.startTime}
-            onChange={(e) => setDraft((p) => ({ ...p, startTime: e.target.value }))}
+            onChange={(e) =>
+              setDraft((p) => ({ ...p, startTime: e.target.value }))
+            }
             className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
@@ -252,7 +305,9 @@ function WindowScheduleBuilder({ windows, onChange }) {
           <input
             type="time"
             value={draft.endTime}
-            onChange={(e) => setDraft((p) => ({ ...p, endTime: e.target.value }))}
+            onChange={(e) =>
+              setDraft((p) => ({ ...p, endTime: e.target.value }))
+            }
             className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
@@ -281,7 +336,9 @@ function BulkActionBar({ selectedCount, onDeactivate, onDelete, onClear }) {
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[11px] font-black">
             {selectedCount}
           </span>
-          <span className="text-sm font-semibold tracking-tight">Items selected</span>
+          <span className="text-sm font-semibold tracking-tight">
+            Items selected
+          </span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -289,15 +346,39 @@ function BulkActionBar({ selectedCount, onDeactivate, onDelete, onClear }) {
             onClick={onDeactivate}
             className="flex items-center gap-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-widest"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636" /></svg>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18.364 18.364A9 9 0 005.636 5.636"
+              />
+            </svg>
             Deactivate
           </button>
-          
+
           <button
             onClick={onDelete}
             className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-red-400 transition-colors uppercase tracking-widest"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6" /></svg>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6"
+              />
+            </svg>
             Delete Permanently
           </button>
         </div>
@@ -315,16 +396,26 @@ function BulkActionBar({ selectedCount, onDeactivate, onDelete, onClear }) {
 
 // ─── Form Modal ───────────────────────────────────────────────────────────────
 
-function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, onClose, saving }) {
+function FacilityFormModal({
+  isOpen,
+  editing,
+  formData,
+  setFormData,
+  onSubmit,
+  onClose,
+  saving,
+}) {
   if (!isOpen) return null;
 
   const errors = useMemo(() => {
     const e = {};
     if (!formData.name.trim()) e.name = "Name is required.";
     const cap = Number(formData.capacity);
-    if (!formData.capacity || isNaN(cap) || cap < 1) e.capacity = "Capacity must be greater than 0.";
+    if (!formData.capacity || isNaN(cap) || cap < 1)
+      e.capacity = "Capacity must be greater than 0.";
     if (!formData.building.trim()) e.building = "Building is required.";
-    if (!formData.locationDescription.trim()) e.locationDescription = "Location description is required.";
+    if (!formData.locationDescription.trim())
+      e.locationDescription = "Location description is required.";
     return e;
   }, [formData]);
 
@@ -332,16 +423,19 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
 
   const field = (id, label, children, error) => (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium text-gray-700">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-gray-700">
+        {label}
+      </label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 
   const inputCls = (err) =>
-    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-shadow ${err
-      ? "border-red-400 focus:ring-red-300"
-      : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-200"
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-shadow ${
+      err
+        ? "border-red-400 focus:ring-red-300"
+        : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-200"
     }`;
 
   return (
@@ -362,8 +456,18 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
             className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
             aria-label="Close dialog"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6l8 8M6 14L14 6" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 20 20"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M6 6l8 8M6 14L14 6"
+              />
             </svg>
           </button>
         </div>
@@ -376,55 +480,75 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
                 Basic Information
               </legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {field("fac-name", "Name *",
+                {field(
+                  "fac-name",
+                  "Name *",
                   <input
                     id="fac-name"
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, name: e.target.value }))
+                    }
                     className={inputCls(errors.name)}
                     placeholder="e.g. Lecture Hall A"
                   />,
-                  errors.name
+                  errors.name,
                 )}
 
-                {field("fac-type", "Type *",
+                {field(
+                  "fac-type",
+                  "Type *",
                   <select
                     id="fac-type"
                     value={formData.type}
-                    onChange={(e) => setFormData((p) => ({ ...p, type: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, type: e.target.value }))
+                    }
                     className={inputCls()}
                   >
                     {FACILITY_TYPES.map((t) => (
-                      <option key={t} value={t}>{toLabel(t)}</option>
+                      <option key={t} value={t}>
+                        {toLabel(t)}
+                      </option>
                     ))}
-                  </select>
+                  </select>,
                 )}
 
-                {field("fac-capacity", "Capacity *",
+                {field(
+                  "fac-capacity",
+                  "Capacity *",
                   <input
                     id="fac-capacity"
                     type="number"
                     min="1"
                     value={formData.capacity}
-                    onChange={(e) => setFormData((p) => ({ ...p, capacity: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, capacity: e.target.value }))
+                    }
                     className={inputCls(errors.capacity)}
                     placeholder="e.g. 120"
                   />,
-                  errors.capacity
+                  errors.capacity,
                 )}
 
-                {field("fac-status", "Status",
+                {field(
+                  "fac-status",
+                  "Status",
                   <select
                     id="fac-status"
                     value={formData.status}
-                    onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, status: e.target.value }))
+                    }
                     className={inputCls()}
                   >
                     {FACILITY_STATUSES.map((s) => (
-                      <option key={s} value={s}>{toLabel(s)}</option>
+                      <option key={s} value={s}>
+                        {toLabel(s)}
+                      </option>
                     ))}
-                  </select>
+                  </select>,
                 )}
               </div>
             </fieldset>
@@ -435,40 +559,55 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
                 Location
               </legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {field("fac-building", "Building *",
+                {field(
+                  "fac-building",
+                  "Building *",
                   <input
                     id="fac-building"
                     type="text"
                     value={formData.building}
-                    onChange={(e) => setFormData((p) => ({ ...p, building: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, building: e.target.value }))
+                    }
                     className={inputCls(errors.building)}
                     placeholder="e.g. Engineering Block"
                   />,
-                  errors.building
+                  errors.building,
                 )}
 
-                {field("fac-floor", "Floor",
+                {field(
+                  "fac-floor",
+                  "Floor",
                   <input
                     id="fac-floor"
                     type="text"
                     value={formData.floor}
-                    onChange={(e) => setFormData((p) => ({ ...p, floor: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, floor: e.target.value }))
+                    }
                     className={inputCls()}
                     placeholder="e.g. 2nd Floor"
-                  />
+                  />,
                 )}
 
                 <div className="sm:col-span-2">
-                  {field("fac-location", "Location Description *",
+                  {field(
+                    "fac-location",
+                    "Location Description *",
                     <input
                       id="fac-location"
                       type="text"
                       value={formData.locationDescription}
-                      onChange={(e) => setFormData((p) => ({ ...p, locationDescription: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          locationDescription: e.target.value,
+                        }))
+                      }
                       className={inputCls(errors.locationDescription)}
                       placeholder="e.g. North wing, near the main entrance"
                     />,
-                    errors.locationDescription
+                    errors.locationDescription,
                   )}
                 </div>
               </div>
@@ -480,11 +619,14 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
                 Availability Schedule
               </legend>
               <p className="text-xs text-gray-500 mb-3">
-                Add one or more time windows. Multiple windows per day are supported.
+                Add one or more time windows. Multiple windows per day are
+                supported.
               </p>
               <WindowScheduleBuilder
                 windows={formData.availabilityWindows}
-                onChange={(ws) => setFormData((p) => ({ ...p, availabilityWindows: ws }))}
+                onChange={(ws) =>
+                  setFormData((p) => ({ ...p, availabilityWindows: ws }))
+                }
               />
             </fieldset>
           </div>
@@ -502,7 +644,11 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
               disabled={saving || hasErrors}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
             >
-              {saving ? "Saving..." : editing ? "Save Changes" : "Create Facility"}
+              {saving
+                ? "Saving..."
+                : editing
+                  ? "Save Changes"
+                  : "Create Facility"}
             </button>
           </div>
         </form>
@@ -518,7 +664,12 @@ export default function FacilityManagementDashboard() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole("ADMIN");
 
-  const [filters, setFilters] = useState({ type: "", minCapacity: "", building: "", status: "" });
+  const [filters, setFilters] = useState({
+    type: "",
+    minCapacity: "",
+    building: "",
+    status: "",
+  });
   const [facilities, setFacilities] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -541,43 +692,48 @@ export default function FacilityManagementDashboard() {
     targetId: null,
     loading: false,
     isForce: false,
-    errorMessage: null
+    errorMessage: null,
   });
 
   const debounceRef = useRef(null);
 
   const filtersActive = useMemo(
     () => Object.values(filters).some((v) => String(v).trim() !== ""),
-    [filters]
+    [filters],
   );
 
   // ── Data loading ──────────────────────────────────────────────────────────
 
-  const load = useCallback(async (p = 0) => {
-    try {
-      setLoading(true);
-      const params = { page: p, size: PAGE_SIZE };
-      const payload = filtersActive
-        ? await searchFacilities({
-          ...params,
-          ...(filters.type ? { type: filters.type } : {}),
-          ...(filters.minCapacity ? { minCapacity: Number(filters.minCapacity) } : {}),
-          ...(filters.building ? { building: filters.building } : {}),
-          ...(filters.status ? { status: filters.status } : {}),
-        })
-        : await fetchFacilities(params);
+  const load = useCallback(
+    async (p = 0) => {
+      try {
+        setLoading(true);
+        const params = { page: p, size: PAGE_SIZE };
+        const payload = filtersActive
+          ? await searchFacilities({
+              ...params,
+              ...(filters.type ? { type: filters.type } : {}),
+              ...(filters.minCapacity
+                ? { minCapacity: Number(filters.minCapacity) }
+                : {}),
+              ...(filters.building ? { building: filters.building } : {}),
+              ...(filters.status ? { status: filters.status } : {}),
+            })
+          : await fetchFacilities(params);
 
-      setFacilities(payload?.content ?? []);
-      setTotal(payload?.totalElements ?? 0);
-      setTotalPages(Math.max(1, payload?.totalPages ?? 1));
-      setPage(payload?.number ?? p);
-    } catch {
-      toast.error("Failed to load facilities.");
-      setFacilities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filtersActive, filters]);
+        setFacilities(payload?.content ?? []);
+        setTotal(payload?.totalElements ?? 0);
+        setTotalPages(Math.max(1, payload?.totalPages ?? 1));
+        setPage(payload?.number ?? p);
+      } catch {
+        toast.error("Failed to load facilities.");
+        setFacilities([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filtersActive, filters],
+  );
 
   // Debounced filter reaction
   useEffect(() => {
@@ -617,7 +773,10 @@ export default function FacilityManagementDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isAdmin) { toast.error("Only admins can modify facilities."); return; }
+    if (!isAdmin) {
+      toast.error("Only admins can modify facilities.");
+      return;
+    }
     try {
       setSaving(true);
       const payload = {
@@ -625,7 +784,8 @@ export default function FacilityManagementDashboard() {
         capacity: Number(formData.capacity),
         availabilityWindows: formData.availabilityWindows.map((w) => ({
           dayOfWeek: w.dayOfWeek,
-          startTime: w.startTime.length === 5 ? `${w.startTime}:00` : w.startTime,
+          startTime:
+            w.startTime.length === 5 ? `${w.startTime}:00` : w.startTime,
           endTime: w.endTime.length === 5 ? `${w.endTime}:00` : w.endTime,
         })),
       };
@@ -646,11 +806,14 @@ export default function FacilityManagementDashboard() {
   };
 
   const handleMarkOOS = async (id) => {
-    if (!isAdmin) { toast.error("Only admins can modify facilities."); return; }
+    if (!isAdmin) {
+      toast.error("Only admins can modify facilities.");
+      return;
+    }
     try {
-      const facility = facilities.find(f => f.id === id);
+      const facility = facilities.find((f) => f.id === id);
       const isOOS = facility?.status === "OUT_OF_SERVICE";
-      
+
       if (isOOS) {
         // Reactivate
         await updateFacility(id, { ...facility, status: "ACTIVE" });
@@ -672,36 +835,61 @@ export default function FacilityManagementDashboard() {
       isOpen: true,
       type: "SINGLE_DELETE",
       targetId: id,
-      loading: false
+      loading: false,
     });
   };
 
   const executeHardDelete = async () => {
     const id = confirmModal.targetId;
     if (!id) return;
-    
+
     try {
-      setConfirmModal(prev => ({ ...prev, loading: true, errorMessage: null }));
+      setConfirmModal((prev) => ({
+        ...prev,
+        loading: true,
+        errorMessage: null,
+      }));
       await hardDeleteFacility(id, confirmModal.isForce);
-      toast.success(confirmModal.isForce ? "Facility and all associated data deleted." : "Facility permanently deleted.");
-      setSelectedIds(prev => {
+      toast.success(
+        confirmModal.isForce
+          ? "Facility and all associated data deleted."
+          : "Facility permanently deleted.",
+      );
+      setSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      setConfirmModal({ isOpen: false, type: null, targetId: null, loading: false, isForce: false, errorMessage: null });
+      setConfirmModal({
+        isOpen: false,
+        type: null,
+        targetId: null,
+        loading: false,
+        isForce: false,
+        errorMessage: null,
+      });
       await load(page);
     } catch (err) {
       if (err?.response?.status === 409) {
-        setConfirmModal(prev => ({ 
-          ...prev, 
-          loading: false, 
+        setConfirmModal((prev) => ({
+          ...prev,
+          loading: false,
           isForce: true,
-          errorMessage: err.response.data.message || "This facility has active bookings."
+          errorMessage:
+            err.response.data.message || "This facility has active bookings.",
         }));
       } else {
-        toast.error(err?.response?.data?.message || "Failed to delete facility.");
-        setConfirmModal({ isOpen: false, type: null, targetId: null, loading: false, isForce: false, errorMessage: null });
+        toast.error(
+          err?.response?.data?.message || "Failed to delete facility.",
+        );
+        setConfirmModal({
+          isOpen: false,
+          type: null,
+          targetId: null,
+          loading: false,
+          isForce: false,
+          errorMessage: null,
+        });
       }
     }
   };
@@ -712,38 +900,71 @@ export default function FacilityManagementDashboard() {
       isOpen: true,
       type: action === "DELETE" ? "BULK_DELETE" : "BULK_DEACTIVATE",
       targetId: null,
-      loading: false
+      loading: false,
     });
   };
 
   const executeBulkAction = async () => {
-    const action = confirmModal.type === "BULK_DELETE" ? "DELETE" : "DEACTIVATE";
+    const action =
+      confirmModal.type === "BULK_DELETE" ? "DELETE" : "DEACTIVATE";
     if (!isAdmin || selectedIds.size === 0) return;
- 
+
     try {
-      setConfirmModal(prev => ({ ...prev, loading: true, errorMessage: null }));
-      await bulkActionFacilities(Array.from(selectedIds), action, confirmModal.isForce);
-      toast.success(`Successfully ${action === "DELETE" ? "deleted" : "deactivated"} ${selectedIds.size} facilities.`);
+      setConfirmModal((prev) => ({
+        ...prev,
+        loading: true,
+        errorMessage: null,
+      }));
+      await bulkActionFacilities(
+        Array.from(selectedIds),
+        action,
+        confirmModal.isForce,
+      );
+      toast.success(
+        `Successfully ${action === "DELETE" ? "deleted" : "deactivated"} ${selectedIds.size} facilities.`,
+      );
       setSelectedIds(new Set());
-      setConfirmModal({ isOpen: false, type: null, targetId: null, loading: false, isForce: false, errorMessage: null });
+      setConfirmModal({
+        isOpen: false,
+        type: null,
+        targetId: null,
+        loading: false,
+        isForce: false,
+        errorMessage: null,
+      });
       await load(page);
     } catch (err) {
       if (err?.response?.status === 409) {
-        setConfirmModal(prev => ({ 
-          ...prev, 
-          loading: false, 
+        setConfirmModal((prev) => ({
+          ...prev,
+          loading: false,
           isForce: true,
-          errorMessage: "One or more facilities have active bookings. Force deletion will cancel these bookings and notify users."
+          errorMessage:
+            "One or more facilities have active bookings. Force deletion will cancel these bookings and notify users.",
         }));
       } else {
         toast.error("Bulk operation failed.");
-        setConfirmModal({ isOpen: false, type: null, targetId: null, loading: false, isForce: false, errorMessage: null });
+        setConfirmModal({
+          isOpen: false,
+          type: null,
+          targetId: null,
+          loading: false,
+          isForce: false,
+          errorMessage: null,
+        });
       }
     }
   };
 
   const closeConfirmModal = () => {
-    setConfirmModal({ isOpen: false, type: null, targetId: null, loading: false, isForce: false, errorMessage: null });
+    setConfirmModal({
+      isOpen: false,
+      type: null,
+      targetId: null,
+      loading: false,
+      isForce: false,
+      errorMessage: null,
+    });
   };
 
   const toggleSelection = (id) => {
@@ -756,10 +977,10 @@ export default function FacilityManagementDashboard() {
   };
 
   const toggleAll = () => {
-    const allOnPage = facilities.every(f => selectedIds.has(f.id));
+    const allOnPage = facilities.every((f) => selectedIds.has(f.id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      facilities.forEach(f => {
+      facilities.forEach((f) => {
         if (allOnPage) next.delete(f.id);
         else next.add(f.id);
       });
@@ -779,10 +1000,11 @@ export default function FacilityManagementDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Facilities</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Manage campus resources, availability schedules, and operational status.
+            Manage campus resources, availability schedules, and operational
+            status.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {/* View Toggle */}
           <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">
@@ -791,14 +1013,38 @@ export default function FacilityManagementDashboard() {
               className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-white shadow text-indigo-600" : "text-gray-500 hover:text-gray-900"}`}
               title="Grid View"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
             </button>
             <button
               onClick={() => setViewMode("table")}
               className={`p-1.5 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow text-indigo-600" : "text-gray-500 hover:text-gray-900"}`}
               title="Table View"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
             </button>
           </div>
 
@@ -811,8 +1057,18 @@ export default function FacilityManagementDashboard() {
                 onClick={openCreate}
                 className="shrink-0 flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 Add Facility
               </button>
@@ -825,56 +1081,88 @@ export default function FacilityManagementDashboard() {
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-type" className="text-xs font-medium text-gray-500">Type</label>
+            <label
+              htmlFor="filter-type"
+              className="text-xs font-medium text-gray-500"
+            >
+              Type
+            </label>
             <select
               id="filter-type"
               value={filters.type}
-              onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, type: e.target.value }))
+              }
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">All types</option>
               {FACILITY_TYPES.map((t) => (
-                <option key={t} value={t}>{toLabel(t)}</option>
+                <option key={t} value={t}>
+                  {toLabel(t)}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-capacity" className="text-xs font-medium text-gray-500">Min Capacity</label>
+            <label
+              htmlFor="filter-capacity"
+              className="text-xs font-medium text-gray-500"
+            >
+              Min Capacity
+            </label>
             <input
               id="filter-capacity"
               type="number"
               min="1"
               placeholder="e.g. 50"
               value={filters.minCapacity}
-              onChange={(e) => setFilters((p) => ({ ...p, minCapacity: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, minCapacity: e.target.value }))
+              }
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-building" className="text-xs font-medium text-gray-500">Building</label>
+            <label
+              htmlFor="filter-building"
+              className="text-xs font-medium text-gray-500"
+            >
+              Building
+            </label>
             <input
               id="filter-building"
               type="text"
               placeholder="e.g. Block A"
               value={filters.building}
-              onChange={(e) => setFilters((p) => ({ ...p, building: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, building: e.target.value }))
+              }
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-status" className="text-xs font-medium text-gray-500">Status</label>
+            <label
+              htmlFor="filter-status"
+              className="text-xs font-medium text-gray-500"
+            >
+              Status
+            </label>
             <select
               id="filter-status"
               value={filters.status}
-              onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, status: e.target.value }))
+              }
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">All statuses</option>
               {FACILITY_STATUSES.map((s) => (
-                <option key={s} value={s}>{toLabel(s)}</option>
+                <option key={s} value={s}>
+                  {toLabel(s)}
+                </option>
               ))}
             </select>
           </div>
@@ -902,13 +1190,19 @@ export default function FacilityManagementDashboard() {
       {/* Result View (Grid or Table) */}
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : facilities.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white py-16 text-center">
-          <p className="text-sm font-medium text-gray-900">No facilities found</p>
+          <p className="text-sm font-medium text-gray-900">
+            No facilities found
+          </p>
           <p className="mt-1 text-xs text-gray-500">
-            {filtersActive ? "Try adjusting or clearing your filters." : "Add a facility to get started."}
+            {filtersActive
+              ? "Try adjusting or clearing your filters."
+              : "Add a facility to get started."}
           </p>
         </div>
       ) : viewMode === "grid" ? (
@@ -928,7 +1222,7 @@ export default function FacilityManagementDashboard() {
           ))}
         </div>
       ) : (
-        <FacilityTable 
+        <FacilityTable
           facilities={facilities}
           selectedIds={selectedIds}
           onSelect={toggleSelection}
@@ -942,7 +1236,7 @@ export default function FacilityManagementDashboard() {
       )}
 
       {/* Bulk Action Bar */}
-      <BulkActionBar 
+      <BulkActionBar
         selectedCount={selectedIds.size}
         onDeactivate={() => handleBulkAction("DEACTIVATE")}
         onDelete={() => handleBulkAction("DELETE")}
@@ -957,9 +1251,20 @@ export default function FacilityManagementDashboard() {
         isLoading={confirmModal.loading}
         variant={confirmModal.isForce ? "warning" : "danger"}
         confirmWord={confirmModal.isForce ? null : "DELETE"}
-        title={confirmModal.isForce ? "⚠️ Warning: Active Bookings" : "Delete Facility?"}
-        message={confirmModal.errorMessage || "Are you sure you want to permanently delete this facility? This operation is IRREVERSIBLE."}
-        confirmText={confirmModal.isForce ? "Force Delete & Notify Users" : "Yes, Delete Permanently"}
+        title={
+          confirmModal.isForce
+            ? "⚠️ Warning: Active Bookings"
+            : "Delete Facility?"
+        }
+        message={
+          confirmModal.errorMessage ||
+          "Are you sure you want to permanently delete this facility? This operation is IRREVERSIBLE."
+        }
+        confirmText={
+          confirmModal.isForce
+            ? "Force Delete & Notify Users"
+            : "Yes, Delete Permanently"
+        }
       />
 
       <ConfirmationModal
@@ -980,9 +1285,20 @@ export default function FacilityManagementDashboard() {
         isLoading={confirmModal.loading}
         variant={confirmModal.isForce ? "warning" : "danger"}
         confirmWord={confirmModal.isForce ? null : "DELETE"}
-        title={confirmModal.isForce ? "⚠️ Warning: Active Bookings Found" : "Bulk Permanent Deletion"}
-        message={confirmModal.errorMessage || `Are you absolutely sure you want to permanently delete ${selectedIds.size} facilities? This operation is IRREVERSIBLE and will attempt to remove all associated data.`}
-        confirmText={confirmModal.isForce ? "Force Delete All & Notify" : `Delete ${selectedIds.size} Items Permanently`}
+        title={
+          confirmModal.isForce
+            ? "⚠️ Warning: Active Bookings Found"
+            : "Bulk Permanent Deletion"
+        }
+        message={
+          confirmModal.errorMessage ||
+          `Are you absolutely sure you want to permanently delete ${selectedIds.size} facilities? This operation is IRREVERSIBLE and will attempt to remove all associated data.`
+        }
+        confirmText={
+          confirmModal.isForce
+            ? "Force Delete All & Notify"
+            : `Delete ${selectedIds.size} Items Permanently`
+        }
       />
 
       {/* Pagination */}

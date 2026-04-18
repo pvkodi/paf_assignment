@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/AuthContext";
-import { 
-  fetchFacilityById, 
-  fetchFacilityTimetable, 
-  markFacilityOutOfService, 
-  hardDeleteFacility, 
-  updateFacility 
+import {
+  fetchFacilityById,
+  fetchFacilityTimetable,
+  markFacilityOutOfService,
+  hardDeleteFacility,
+  updateFacility,
 } from "./api";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
@@ -44,7 +44,15 @@ function formatTime(t) {
 }
 
 function currentDayOfWeek() {
-  const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+  const days = [
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+  ];
   return days[new Date().getDay()];
 }
 
@@ -55,23 +63,44 @@ function currentTime() {
 
 function isTimeInWindow(startTime, endTime) {
   const now = currentTime();
-  return now >= String(startTime).slice(0, 5) && now < String(endTime).slice(0, 5);
+  return (
+    now >= String(startTime).slice(0, 5) && now < String(endTime).slice(0, 5)
+  );
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }) {
   const config = {
-    ACTIVE: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 ring-emerald-200" },
-    MAINTENANCE: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50 ring-amber-200" },
-    OUT_OF_SERVICE: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50 ring-red-200" },
-  }[status] || { dot: "bg-gray-400", text: "text-gray-600", bg: "bg-gray-50 ring-gray-200" };
+    ACTIVE: {
+      dot: "bg-emerald-500",
+      text: "text-emerald-700",
+      bg: "bg-emerald-50 ring-emerald-200",
+    },
+    MAINTENANCE: {
+      dot: "bg-amber-500",
+      text: "text-amber-700",
+      bg: "bg-amber-50 ring-amber-200",
+    },
+    OUT_OF_SERVICE: {
+      dot: "bg-red-500",
+      text: "text-red-700",
+      bg: "bg-red-50 ring-red-200",
+    },
+  }[status] || {
+    dot: "bg-gray-400",
+    text: "text-gray-600",
+    bg: "bg-gray-50 ring-gray-200",
+  };
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${config.bg} ${config.text}`}
     >
-      <span className={`h-2 w-2 rounded-full ${config.dot}`} aria-hidden="true" />
+      <span
+        className={`h-2 w-2 rounded-full ${config.dot}`}
+        aria-hidden="true"
+      />
       {toLabel(status)}
     </span>
   );
@@ -83,7 +112,9 @@ function DetailRow({ label, value }) {
   return (
     <div className="flex justify-between gap-4 py-2.5 border-b border-gray-100 last:border-0">
       <dt className="text-sm text-gray-500 shrink-0">{label}</dt>
-      <dd className="text-sm font-medium text-gray-900 text-right">{value || "—"}</dd>
+      <dd className="text-sm font-medium text-gray-900 text-right">
+        {value || "—"}
+      </dd>
     </div>
   );
 }
@@ -95,7 +126,9 @@ function WeeklyScheduleGrid({ windows, status }) {
 
   const windowsByDay = useMemo(() => {
     const map = {};
-    ALL_DAYS.forEach((d) => { map[d] = []; });
+    ALL_DAYS.forEach((d) => {
+      map[d] = [];
+    });
     (windows ?? []).forEach((w) => {
       if (map[w.dayOfWeek]) map[w.dayOfWeek].push(w);
     });
@@ -105,13 +138,15 @@ function WeeklyScheduleGrid({ windows, status }) {
   const isCurrentlyAvailable = useMemo(() => {
     if (status !== "ACTIVE") return false;
     return (windowsByDay[today] ?? []).some((w) =>
-      isTimeInWindow(w.startTime, w.endTime)
+      isTimeInWindow(w.startTime, w.endTime),
     );
   }, [windowsByDay, today, status]);
 
   if (!windows || windows.length === 0) {
     return (
-      <p className="text-sm text-gray-400 italic">No availability windows configured.</p>
+      <p className="text-sm text-gray-400 italic">
+        No availability windows configured.
+      </p>
     );
   }
 
@@ -123,8 +158,12 @@ function WeeklyScheduleGrid({ windows, status }) {
           className={`h-2 w-2 rounded-full ${isCurrentlyAvailable ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`}
           aria-hidden="true"
         />
-        <span className={`text-xs font-medium ${isCurrentlyAvailable ? "text-emerald-700" : "text-gray-500"}`}>
-          {isCurrentlyAvailable ? "Currently available" : "Currently unavailable"}
+        <span
+          className={`text-xs font-medium ${isCurrentlyAvailable ? "text-emerald-700" : "text-gray-500"}`}
+        >
+          {isCurrentlyAvailable
+            ? "Currently available"
+            : "Currently unavailable"}
         </span>
       </div>
 
@@ -138,7 +177,9 @@ function WeeklyScheduleGrid({ windows, status }) {
               key={day}
               className={`flex items-center gap-3 rounded-md px-3 py-2 ${isToday ? "bg-indigo-50 ring-1 ring-inset ring-indigo-100" : "bg-gray-50"}`}
             >
-              <span className={`w-24 shrink-0 text-xs font-medium ${isToday ? "text-indigo-700" : "text-gray-500"}`}>
+              <span
+                className={`w-24 shrink-0 text-xs font-medium ${isToday ? "text-indigo-700" : "text-gray-500"}`}
+              >
                 {DAY_LABEL[day]}
                 {isToday && (
                   <span className="ml-1.5 rounded-sm bg-indigo-100 px-1 py-0.5 text-[9px] uppercase tracking-wider text-indigo-600 font-bold">
@@ -190,13 +231,17 @@ function TimetableLiveGrid({ facilityId }) {
       }
     };
     fetchTimetable();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [facilityId, day]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <label htmlFor="timetable-day-select" className="sr-only">Select Day</label>
+        <label htmlFor="timetable-day-select" className="sr-only">
+          Select Day
+        </label>
         <select
           id="timetable-day-select"
           value={day}
@@ -204,14 +249,21 @@ function TimetableLiveGrid({ facilityId }) {
           className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           {ALL_DAYS.map((d) => (
-            <option key={d} value={d}>{DAY_LABEL[d]}{d === currentDayOfWeek() ? " (Today)" : ""}</option>
+            <option key={d} value={d}>
+              {DAY_LABEL[d]}
+              {d === currentDayOfWeek() ? " (Today)" : ""}
+            </option>
           ))}
         </select>
-        
+
         {data && data.timetableLoaded && (
           <div className="flex gap-3 text-[10px] font-medium">
-            <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded leading-none flex items-center">{data.totalAvailableCount} Free</span>
-            <span className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded leading-none flex items-center">{data.totalOccupiedCount} Busy</span>
+            <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded leading-none flex items-center">
+              {data.totalAvailableCount} Free
+            </span>
+            <span className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded leading-none flex items-center">
+              {data.totalOccupiedCount} Busy
+            </span>
           </div>
         )}
       </div>
@@ -220,17 +272,26 @@ function TimetableLiveGrid({ facilityId }) {
         <div className="h-16 rounded-md bg-gray-100 animate-pulse" />
       ) : !data || !data.timetableLoaded ? (
         <div className="rounded-md border border-dashed border-gray-300 px-3 py-4 text-center">
-          <p className="text-xs text-gray-400 italic">No timetable data loaded for this facility.</p>
+          <p className="text-xs text-gray-400 italic">
+            No timetable data loaded for this facility.
+          </p>
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {(() => {
             // Merge all slots to show a full timeline
-            const allTimes = new Set([...(data.occupiedSlots || []), ...(data.availableSlots || [])]);
+            const allTimes = new Set([
+              ...(data.occupiedSlots || []),
+              ...(data.availableSlots || []),
+            ]);
             if (allTimes.size === 0) {
-              return <p className="text-xs text-gray-400 italic w-full text-center py-2">No slots defined</p>;
+              return (
+                <p className="text-xs text-gray-400 italic w-full text-center py-2">
+                  No slots defined
+                </p>
+              );
             }
-            
+
             return Array.from(allTimes)
               .sort()
               .map((time) => {
@@ -239,11 +300,15 @@ function TimetableLiveGrid({ facilityId }) {
                   <span
                     key={time}
                     className={`rounded-md border px-2 py-1 text-xs font-medium shadow-sm transition-colors ${
-                      isOccupied 
-                        ? "border-red-200 bg-red-50 text-red-700 opacity-75" 
+                      isOccupied
+                        ? "border-red-200 bg-red-50 text-red-700 opacity-75"
                         : "border-emerald-200 bg-emerald-50 text-emerald-700"
                     }`}
-                    title={isOccupied ? "Occupied in Timetable" : "Available in Timetable"}
+                    title={
+                      isOccupied
+                        ? "Occupied in Timetable"
+                        : "Available in Timetable"
+                    }
                   >
                     {time}
                   </span>
@@ -261,9 +326,14 @@ function TimetableLiveGrid({ facilityId }) {
 function ResourceTags({ subtypeAttributes }) {
   if (!subtypeAttributes) return null;
   const tags = [];
-  if (subtypeAttributes.avEquipment || subtypeAttributes.avEnabled || subtypeAttributes.soundSystem)
+  if (
+    subtypeAttributes.avEquipment ||
+    subtypeAttributes.avEnabled ||
+    subtypeAttributes.soundSystem
+  )
     tags.push("AV Equipped");
-  if (subtypeAttributes.wheelchairAccessible) tags.push("Wheelchair Accessible");
+  if (subtypeAttributes.wheelchairAccessible)
+    tags.push("Wheelchair Accessible");
   if (subtypeAttributes.cateringAllowed) tags.push("Catering Allowed");
   if (subtypeAttributes.labType) tags.push(subtypeAttributes.labType);
   if (subtypeAttributes.softwareList) tags.push("Software Lab");
@@ -298,10 +368,10 @@ export default function FacilityDetailsPage() {
   const [error, setError] = useState(null);
 
   // Modal states
-  const [confirmModal, setConfirmModal] = useState({ 
-    isOpen: false, 
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
     type: null, // 'DEACTIVATE' | 'DELETE'
-    loading: false 
+    loading: false,
   });
 
   useEffect(() => {
@@ -319,22 +389,27 @@ export default function FacilityDetailsPage() {
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleStatusToggle = async () => {
     if (!facility) return;
     const isOOS = facility.status === "OUT_OF_SERVICE";
-    
+
     try {
-      setConfirmModal(prev => ({ ...prev, loading: true }));
+      setConfirmModal((prev) => ({ ...prev, loading: true }));
       if (isOOS) {
-        const updated = await updateFacility(id, { ...facility, status: "ACTIVE" });
+        const updated = await updateFacility(id, {
+          ...facility,
+          status: "ACTIVE",
+        });
         setFacility(updated);
         toast.success("Facility reactivated successfully.");
       } else {
         await markFacilityOutOfService(id);
-        setFacility(prev => ({ ...prev, status: "OUT_OF_SERVICE" }));
+        setFacility((prev) => ({ ...prev, status: "OUT_OF_SERVICE" }));
         toast.success("Facility deactivated.");
       }
     } catch {
@@ -346,7 +421,7 @@ export default function FacilityDetailsPage() {
 
   const handleDelete = async () => {
     try {
-      setConfirmModal(prev => ({ ...prev, loading: true }));
+      setConfirmModal((prev) => ({ ...prev, loading: true }));
       await hardDeleteFacility(id);
       toast.success("Facility permanently deleted.");
       navigate("/facilities");
@@ -377,14 +452,26 @@ export default function FacilityDetailsPage() {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <p className="text-sm text-red-700">{error || "Facility not found."}</p>
+          <p className="text-sm text-red-700">
+            {error || "Facility not found."}
+          </p>
         </div>
         <Link
           to="/facilities"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 12l-4-4 4-4" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 16 16"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M10 12l-4-4 4-4"
+            />
           </svg>
           Back to Facilities
         </Link>
@@ -394,8 +481,11 @@ export default function FacilityDetailsPage() {
 
   // ── Main ─────────────────────────────────────────────────────────────────
 
-  const hasTags = facility.subtypeAttributes &&
-    Object.keys(facility.subtypeAttributes).some((k) => facility.subtypeAttributes[k]);
+  const hasTags =
+    facility.subtypeAttributes &&
+    Object.keys(facility.subtypeAttributes).some(
+      (k) => facility.subtypeAttributes[k],
+    );
 
   return (
     <div className="space-y-6">
@@ -404,8 +494,18 @@ export default function FacilityDetailsPage() {
         to="/facilities"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 12l-4-4 4-4" />
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 16 16"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M10 12l-4-4 4-4"
+          />
         </svg>
         Facilities
       </Link>
@@ -413,20 +513,29 @@ export default function FacilityDetailsPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">{facility.name}</h2>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+            {facility.name}
+          </h2>
           <p className="mt-1 text-sm text-gray-500 font-medium">
-            {toLabel(facility.type)}&nbsp;&middot;&nbsp;{facility.building || "Unknown building"}
+            {toLabel(facility.type)}&nbsp;&middot;&nbsp;
+            {facility.building || "Unknown building"}
             {facility.floor ? `, ${facility.floor}` : ""}
           </p>
           <div className="mt-4">
             <StatusBadge status={facility.status} />
           </div>
         </div>
-        
+
         {isAdmin && (
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setConfirmModal({ isOpen: true, type: "DEACTIVATE", loading: false })}
+              onClick={() =>
+                setConfirmModal({
+                  isOpen: true,
+                  type: "DEACTIVATE",
+                  loading: false,
+                })
+              }
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition-all active:scale-95 ${
                 facility.status === "OUT_OF_SERVICE"
                   ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-1 ring-emerald-200"
@@ -435,21 +544,63 @@ export default function FacilityDetailsPage() {
             >
               {facility.status === "OUT_OF_SERVICE" ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                   Reactivate
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18.364 18.364A9 9 0 005.636 5.636"
+                    />
+                  </svg>
                   Deactivate
                 </>
               )}
             </button>
             <button
-              onClick={() => setConfirmModal({ isOpen: true, type: "DELETE", loading: false })}
+              onClick={() =>
+                setConfirmModal({
+                  isOpen: true,
+                  type: "DELETE",
+                  loading: false,
+                })
+              }
               className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-black text-red-700 hover:bg-red-100 ring-1 ring-red-200 transition-all active:scale-95"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
               Delete Permanently
             </button>
           </div>
@@ -459,22 +610,34 @@ export default function FacilityDetailsPage() {
       {/* Confirmation Modals */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen && confirmModal.type === "DEACTIVATE"}
-        onClose={() => setConfirmModal({ isOpen: false, type: null, loading: false })}
+        onClose={() =>
+          setConfirmModal({ isOpen: false, type: null, loading: false })
+        }
         onConfirm={handleStatusToggle}
         isLoading={confirmModal.loading}
         variant="warning"
-        title={facility.status === "OUT_OF_SERVICE" ? "Reactivate Facility?" : "Deactivate Facility?"}
+        title={
+          facility.status === "OUT_OF_SERVICE"
+            ? "Reactivate Facility?"
+            : "Deactivate Facility?"
+        }
         message={
           facility.status === "OUT_OF_SERVICE"
             ? `This will make ${facility.name} available for bookings once again.`
             : `Are you sure you want to deactivate ${facility.name}? It will be hidden from the public booking flow, but all records will be preserved.`
         }
-        confirmText={facility.status === "OUT_OF_SERVICE" ? "Yes, Reactivate" : "Yes, Deactivate"}
+        confirmText={
+          facility.status === "OUT_OF_SERVICE"
+            ? "Yes, Reactivate"
+            : "Yes, Deactivate"
+        }
       />
 
       <ConfirmationModal
         isOpen={confirmModal.isOpen && confirmModal.type === "DELETE"}
-        onClose={() => setConfirmModal({ isOpen: false, type: null, loading: false })}
+        onClose={() =>
+          setConfirmModal({ isOpen: false, type: null, loading: false })
+        }
         onConfirm={handleDelete}
         isLoading={confirmModal.loading}
         variant="danger"
@@ -486,7 +649,6 @@ export default function FacilityDetailsPage() {
 
       {/* Info grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-
         {/* Core details */}
         <section
           className="rounded-lg border border-gray-200 bg-white p-5"
