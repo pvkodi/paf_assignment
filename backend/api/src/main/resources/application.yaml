@@ -1,10 +1,15 @@
 spring:
   application:
     name: api
+  config:
+    import:
+      - optional:file:backend/.env[.properties]
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://db.ynehtjptdbyaekwvzlly.supabase.co:5432/postgres
-    username: postgres
-    password: Adithya123@
+    url: ${SPRING_DATASOURCE_URL:replace-me}
+    username: ${SPRING_DATASOURCE_USERNAME:replace-me}
+    password: ${SPRING_DATASOURCE_PASSWORD:replace-me}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -26,8 +31,8 @@ app:
       expiration: 86400000 # 24 hours in milliseconds
       refresh-expiration: 604800000 # 7 days in milliseconds
     google:
-      client-id: 954142944464-qroe8pd2cpv00lt158p4o7dj2a1sc6vd.apps.googleusercontent.com
-      client-secret: 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
+      client-id: ${GOOGLE_CLIENT_ID:replace-me}
+      client-secret: ${GOOGLE_CLIENT_SECRET:replace-me}
   file-storage:
     upload-dir: uploads
     max-file-size: 5242880 # 5 MB in bytes

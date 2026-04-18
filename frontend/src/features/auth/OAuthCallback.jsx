@@ -55,7 +55,9 @@ export function OAuthCallback() {
         }
 
         // Avoid duplicate callback execution in React StrictMode (dev) and page re-entry.
-        const callbackLock = sessionStorage.getItem("oauth_callback_in_progress");
+        const callbackLock = sessionStorage.getItem(
+          "oauth_callback_in_progress",
+        );
         if (callbackLock === "true") {
           return;
         }
