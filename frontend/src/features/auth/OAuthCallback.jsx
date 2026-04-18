@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import authService from "../../services/authService";
 
 /**
  * OAuth Callback Handler Page
@@ -15,6 +16,8 @@ export function OAuthCallback() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let redirectTimeout;
+
     const handleCallback = async () => {
       try {
         // Extract authorization code from URL
@@ -51,25 +54,55 @@ export function OAuthCallback() {
           throw new Error("No authorization code received from OAuth provider");
         }
 
+        // Avoid duplicate callback execution in React StrictMode (dev) and page re-entry.
+        const callbackLock = sessionStorage.getItem("oauth_callback_in_progress");
+        if (callbackLock === "true") {
+          return;
+        }
+
+        const processedCode = sessionStorage.getItem("oauth_processed_code");
+        if (processedCode && processedCode === code) {
+          if (authService.isAuthenticated()) {
+            navigate("/dashboard", { replace: true });
+          }
+          return;
+        }
+
+        sessionStorage.setItem("oauth_callback_in_progress", "true");
+
         // Exchange code for tokens
         await login(code);
+        sessionStorage.setItem("oauth_processed_code", code);
 
         // Redirect to dashboard on success
         navigate("/dashboard", { replace: true });
       } catch (err) {
         console.error("OAuth callback error:", err);
+
+        // If a duplicate in-flight request already logged the user in, continue to app.
+        if (authService.isAuthenticated()) {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+
         setError(err.message || "Authentication failed. Please try again.");
 
         // Redirect to login after 3 seconds
-        const timeout = setTimeout(() => {
+        redirectTimeout = setTimeout(() => {
           navigate("/login", { replace: true });
         }, 3000);
-
-        return () => clearTimeout(timeout);
+      } finally {
+        sessionStorage.removeItem("oauth_callback_in_progress");
       }
     };
 
     handleCallback();
+
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
   }, [login, navigate]);
 
   if (error) {
