@@ -25,6 +25,8 @@ public class FacilityHeatmapService {
     
     private static final String[] DAY_NAMES = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     
+    public static final String ALL_CAMPUS_ID_STR = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2";
+
     /**
      * Get weekly heatmap data for a facility
      * Returns 168 cells (7 days × 24 hours)
@@ -32,9 +34,13 @@ public class FacilityHeatmapService {
     public List<HeatmapCellDTO> getWeeklyHeatmap(String facilityId, LocalDate startDate, LocalDate endDate) {
         log.debug("Getting weekly heatmap for facility: {}, dates: {} to {}", facilityId, startDate, endDate);
         
-        // Get heatmap data from database (grouped by DOW and hour)
-        Map<String, Integer> heatmapData = utilizationSnapshotRepository
-            .getWeeklyHeatmapData(facilityId, startDate, endDate);
+        // Get heatmap data from database
+        Map<String, Integer> heatmapData;
+        if (ALL_CAMPUS_ID_STR.equals(facilityId)) {
+            heatmapData = utilizationSnapshotRepository.getCampusWeeklyHeatmapData(startDate, endDate);
+        } else {
+            heatmapData = utilizationSnapshotRepository.getWeeklyHeatmapData(facilityId, startDate, endDate);
+        }
         
         List<HeatmapCellDTO> cells = new ArrayList<>();
         

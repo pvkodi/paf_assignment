@@ -10,6 +10,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.sliitreserve.api.repositories.bookings.BookingRepository;
+import com.sliitreserve.api.repositories.bookings.CheckInRepository;
+import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
+import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
+import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
+import com.sliitreserve.api.services.facility.FacilityTimetableService;
+import com.sliitreserve.api.services.integration.MaintenanceIntegrationService;
+import com.sliitreserve.api.util.mapping.FacilityMapper;
+import com.sliitreserve.api.observers.EventPublisher;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
@@ -25,6 +34,26 @@ public class FacilityServiceExpandedTest {
 
     @Mock
     private FacilityRepository facilityRepository;
+    @Mock
+    private BookingRepository bookingRepository;
+    @Mock
+    private MaintenanceTicketRepository maintenanceTicketRepository;
+    @Mock
+    private UtilizationSnapshotRepository utilizationSnapshotRepository;
+    @Mock
+    private CheckInRepository checkInRepository;
+    @Mock
+    private ApprovalStepRepository approvalStepRepository;
+    @Mock
+    private FacilityFactory facilityFactory;
+    @Mock
+    private FacilityMapper facilityMapper;
+    @Mock
+    private MaintenanceIntegrationService maintenanceIntegrationService;
+    @Mock
+    private FacilityTimetableService facilityTimetableService;
+    @Mock
+    private EventPublisher notificationService;
 
     @InjectMocks
     private FacilityService facilityService;

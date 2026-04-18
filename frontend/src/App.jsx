@@ -14,12 +14,11 @@ import {
   DashboardPage,
   FacilitiesPage,
   FacilityDetailRoutePage,
-  FacilitySuggestionsPage,
+  TimetableImportPreviewPage,
   NotFoundPage,
   NotificationsPage,
   TicketDetailPage,
   TicketsPage,
-  UnderutilizedPage,
   BookingRecommendationsPage,
   AnalyticsPage,
   AppealsPage,
@@ -71,13 +70,14 @@ function App() {
               path="facilities/:id"
               element={<FacilityDetailRoutePage />}
             />
+
             <Route
-              path="facilities/underutilized"
-              element={<UnderutilizedPage />}
-            />
-            <Route
-              path="facilities/suggestions"
-              element={<FacilitySuggestionsPage />}
+              path="facilities/timetable-preview"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER"]}>
+                  <TimetableImportPreviewPage />
+                </ProtectedRoute>
+              }
             />
 
             {/* Booking Approvals - for LECTURER, FACILITY_MANAGER, ADMIN */}

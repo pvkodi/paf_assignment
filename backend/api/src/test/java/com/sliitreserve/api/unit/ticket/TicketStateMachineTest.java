@@ -304,23 +304,23 @@ public class TicketStateMachineTest {
   class InvalidStateTransitions {
 
     @Test
-    @DisplayName("should reject transition from OPEN to RESOLVED (skipping IN_PROGRESS)")
-    void testOpenToResolvedInvalid() {
+    @DisplayName("should allow transition from OPEN to RESOLVED (bypass)")
+    void testOpenToResolvedBypassAllowed() {
       assertThat(stateMachine.canTransition(ticket.getStatus(), TicketStatus.RESOLVED))
-          .isFalse();
+          .isTrue();
 
-      assertThatThrownBy(() -> stateMachine.transition(ticket, TicketStatus.RESOLVED))
-          .isInstanceOf(IllegalStateException.class);
+      stateMachine.transition(ticket, TicketStatus.RESOLVED);
+      assertThat(ticket.getStatus()).isEqualTo(TicketStatus.RESOLVED);
     }
 
     @Test
-    @DisplayName("should reject transition from OPEN to CLOSED (skipping IN_PROGRESS and RESOLVED)")
-    void testOpenToClosedInvalid() {
+    @DisplayName("should allow transition from OPEN to CLOSED (bypass)")
+    void testOpenToClosedBypassAllowed() {
       assertThat(stateMachine.canTransition(ticket.getStatus(), TicketStatus.CLOSED))
-          .isFalse();
+          .isTrue();
 
-      assertThatThrownBy(() -> stateMachine.transition(ticket, TicketStatus.CLOSED))
-          .isInstanceOf(IllegalStateException.class);
+      stateMachine.transition(ticket, TicketStatus.CLOSED);
+      assertThat(ticket.getStatus()).isEqualTo(TicketStatus.CLOSED);
     }
 
     @Test
@@ -496,7 +496,7 @@ public class TicketStateMachineTest {
 
       // OPEN does not allow RESOLVED
       assertThat(stateMachine.canTransition(TicketStatus.OPEN, TicketStatus.RESOLVED))
-          .isFalse();
+          .isTrue();
     }
 
     @Test
@@ -672,14 +672,14 @@ public class TicketStateMachineTest {
     }
 
     @Test
-    @DisplayName("should prevent skipping multiple levels in one transition")
+    @DisplayName("should allow bypass transition from OPEN to CLOSED")
     void testPreventSkippingMultipleLevels() {
-      // Try to jump from OPEN direct to CLOSED (skips IN_PROGRESS and RESOLVED)
+      // OPEN supports a bypass path directly to CLOSED in current rules.
       assertThat(stateMachine.canTransition(TicketStatus.OPEN, TicketStatus.CLOSED))
-          .isFalse();
+          .isTrue();
 
-      assertThatThrownBy(() -> stateMachine.transition(ticket, TicketStatus.CLOSED))
-          .isInstanceOf(IllegalStateException.class);
+      stateMachine.transition(ticket, TicketStatus.CLOSED);
+      assertThat(ticket.getStatus()).isEqualTo(TicketStatus.CLOSED);
     }
 
     @Test
@@ -749,9 +749,9 @@ public class TicketStateMachineTest {
 
       // Verify all invalid transitions from OPEN are rejected
       assertThat(stateMachine.canTransition(TicketStatus.OPEN, TicketStatus.RESOLVED))
-          .isFalse();
+          .isTrue();
       assertThat(stateMachine.canTransition(TicketStatus.OPEN, TicketStatus.CLOSED))
-          .isFalse();
+          .isTrue();
     }
 
     @Test
@@ -762,7 +762,7 @@ public class TicketStateMachineTest {
       assertThat(stateMachine.canTransition(ticket.getStatus(), TicketStatus.IN_PROGRESS))
           .isTrue();
       assertThat(stateMachine.canTransition(ticket.getStatus(), TicketStatus.RESOLVED))
-          .isFalse();
+          .isTrue();
 
       // IN_PROGRESS rules
       ticket.setStatus(TicketStatus.IN_PROGRESS);

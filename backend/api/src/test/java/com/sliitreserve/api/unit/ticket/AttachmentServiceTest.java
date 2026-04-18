@@ -160,7 +160,7 @@ public class AttachmentServiceTest {
     @Test
     @DisplayName("Should produce SHA-256 checksums (64 character hex)")
     void shouldComputeChecksum() {
-      String checksumLength = "d404b97a77644e8b3a1f2d5ee373fae55c6e92a149471b621f2800fbc8f4e5f";
+      String checksumLength = "d404b97a77644e8b3a1f2d5ee373fae55c6e92a149471b621f2800fbc8f4e5f0";
       assertThat(checksumLength).hasSize(64);
     }
 

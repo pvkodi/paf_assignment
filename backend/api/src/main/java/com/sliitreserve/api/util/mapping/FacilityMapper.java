@@ -1,8 +1,10 @@
 package com.sliitreserve.api.util.mapping;
 
+import com.sliitreserve.api.dto.facility.AvailabilityWindowDTO;
 import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
 import com.sliitreserve.api.entities.facility.Auditorium;
+import com.sliitreserve.api.entities.facility.AvailabilityWindow;
 import com.sliitreserve.api.entities.facility.Equipment;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Lab;
@@ -11,8 +13,11 @@ import com.sliitreserve.api.entities.facility.MeetingRoom;
 import com.sliitreserve.api.entities.facility.SportsFacility;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Mapper for converting between Facility entities and DTOs.
@@ -45,6 +50,18 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         dto.setStatus(facility.getStatus());
         dto.setAvailabilityStartTime(facility.getAvailabilityStartTime());
         dto.setAvailabilityEndTime(facility.getAvailabilityEndTime());
+        // Map multi-window schedule
+        if (facility.getAvailabilityWindows() != null) {
+            dto.setAvailabilityWindows(
+                facility.getAvailabilityWindows().stream()
+                    .map(w -> AvailabilityWindowDTO.builder()
+                        .dayOfWeek(w.getDayOfWeek())
+                        .startTime(w.getStartTime())
+                        .endTime(w.getEndTime())
+                        .build())
+                    .collect(Collectors.toList())
+            );
+        }
         dto.setSubtypeAttributes(extractSubtypeAttributes(facility));
         dto.setCreatedAt(facility.getCreatedAt());
         dto.setUpdatedAt(facility.getUpdatedAt());
@@ -107,6 +124,18 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         existingFacility.setStatus(requestDTO.getStatus());
         existingFacility.setAvailabilityStartTime(requestDTO.getAvailabilityStartTime());
         existingFacility.setAvailabilityEndTime(requestDTO.getAvailabilityEndTime());
+        // Replace availability windows if provided
+        if (requestDTO.getAvailabilityWindows() != null) {
+            List<AvailabilityWindow> windows = requestDTO.getAvailabilityWindows().stream()
+                .map(dto -> AvailabilityWindow.builder()
+                    .dayOfWeek(dto.getDayOfWeek())
+                    .startTime(dto.getStartTime())
+                    .endTime(dto.getEndTime())
+                    .build())
+                .collect(Collectors.toList());
+            existingFacility.getAvailabilityWindows().clear();
+            existingFacility.getAvailabilityWindows().addAll(windows);
+        }
 
         return existingFacility;
     }

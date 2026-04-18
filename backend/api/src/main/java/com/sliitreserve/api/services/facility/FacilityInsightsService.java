@@ -30,12 +30,18 @@ public class FacilityInsightsService {
     private final BookingRepository bookingRepository;
     private final UtilizationSnapshotRepository utilizationSnapshotRepository;
     
+    public static final String ALL_CAMPUS_ID_STR = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2";
+
     /**
      * Get comprehensive availability insights for a facility
      */
     public AvailabilityStatusDTO getFacilityInsights(String facilityIdStr) {
         log.debug("Getting insights for facility: {}", facilityIdStr);
         
+        if (ALL_CAMPUS_ID_STR.equals(facilityIdStr)) {
+            return getCampusWideInsights();
+        }
+
         UUID facilityId = UUID.fromString(facilityIdStr);
         Facility facility = facilityRepository.findById(facilityId)
             .orElseThrow(() -> new IllegalArgumentException("Facility not found: " + facilityIdStr));
@@ -192,5 +198,36 @@ public class FacilityInsightsService {
             case 6 -> "Saturday";
             default -> "Unknown";
         };
+    }
+
+    /**
+     * Get aggregate insights for the entire campus
+     */
+    private AvailabilityStatusDTO getCampusWideInsights() {
+        List<Facility> activeFacilities = facilityRepository.findByStatus(Facility.FacilityStatus.ACTIVE);
+        int totalCapacity = activeFacilities.stream().mapToInt(Facility::getCapacity).sum();
+        
+        LocalDateTime now = LocalDateTime.now();
+        long totalCurrentBookings = 0;
+        for (Facility f : activeFacilities) {
+            totalCurrentBookings += bookingRepository.countActiveBookings(f.getId().toString(), now);
+        }
+        
+        String currentStatus = calculateStatus(totalCurrentBookings, totalCapacity);
+        
+        return AvailabilityStatusDTO.builder()
+            .facilityId(ALL_CAMPUS_ID_STR)
+            .facilityName("All Campus")
+            .facilityType("CAMPUS")
+            .building("Main Campus")
+            .capacity(totalCapacity)
+            .currentStatus(currentStatus)
+            .spotsAvailable((int) Math.max(0, totalCapacity - totalCurrentBookings))
+            .avgUtilization30day(0) // Aggregation would be slow, return 0 for now
+            .avgUtilization7day(0)
+            .trendDirection("STABLE")
+            .trendPercentChange(0.0)
+            .bestBookingSlots(new ArrayList<>())
+            .build();
     }
 }
