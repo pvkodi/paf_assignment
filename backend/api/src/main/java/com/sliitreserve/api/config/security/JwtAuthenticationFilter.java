@@ -1,12 +1,15 @@
 package com.sliitreserve.api.config.security;
 
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,7 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * JWT Authentication Filter for Spring Security.
@@ -67,6 +70,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -133,17 +139,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtUtil.getEmailFromToken(token);
             
             if (StringUtils.hasText(email)) {
-                // Create authentication with email as principal, no credentials, empty authorities
-                // Roles/authorities will be loaded from User entity (T027) for detailed RBAC
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    email,
-                    null,  // No credentials stored
-                    new ArrayList<>()  // Authorities loaded later from User entity
-                );
-                
+                var userOpt = userRepository.findByEmail(email);
+                if (userOpt.isEmpty()) {
+                    log.warn("JWT subject email not found in user repository: {}", email);
+                    return;
+                }
+
+                List<GrantedAuthority> authorities = userOpt.get().getRoles() == null
+                    ? List.of()
+                    : userOpt.get().getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                        .map(GrantedAuthority.class::cast)
+                        .toList();
+
+                Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT authentication set for user: {}", email);
-                
+                log.debug("JWT authentication set for user: {} with {} authorities", email, authorities.size());
             } else {
                 log.warn("Could not extract email from valid JWT token");
             }

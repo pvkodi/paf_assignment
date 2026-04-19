@@ -1,8 +1,9 @@
 package com.sliitreserve.api.services.auth;
 
+import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.exception.ForbiddenException;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -103,23 +104,30 @@ public class SuspensionPolicyService {
      * Check if user is currently suspended.
      *
      * <p>A user is considered suspended if suspendedUntil is set and in the future.
+     * If suspension time has passed, automatically clears the suspension field.
      *
      * @param user User entity to check
      * @return true if user is currently suspended; false if not suspended or suspension has expired
      */
+    @Transactional
     public boolean isSuspended(User user) {
         if (user == null || user.getSuspendedUntil() == null) {
             return false;
         }
 
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        boolean suspended = user.getSuspendedUntil().isAfter(now);
-
-        if (suspended) {
-            log.debug("User {} is suspended until {}", user.getEmail(), user.getSuspendedUntil());
+        
+        // Check if suspension has expired
+        if (!user.getSuspendedUntil().isAfter(now)) {
+            // Suspension time has passed - auto-unsuspend
+            log.info("Suspension expired for user {}. Auto-unsuspending.", user.getEmail());
+            user.setSuspendedUntil(null);
+            userRepository.save(user);
+            return false;
         }
-
-        return suspended;
+        
+        log.debug("User {} is suspended until {}", user.getEmail(), user.getSuspendedUntil());
+        return true;
     }
 
     /**
@@ -127,6 +135,8 @@ public class SuspensionPolicyService {
      *
      * <p>Implements FR-022: automatic 1-week suspension after 3 no-shows.
      * Called by CheckInService when a booking check-in fails (no check-in within 15 min of start).
+     *
+     * <p><b>Exception</b>: ADMIN and FACILITY_MANAGER users are exempt from suspension.
      *
      * @param user User entity to update with no-show
      * @return User entity with updated noShowCount and possibly new suspension
@@ -136,6 +146,15 @@ public class SuspensionPolicyService {
     public User recordNoShowAndApplySuspensionIfNeeded(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
+        }
+
+        // ADMIN and FACILITY_MANAGER are exempt from suspension
+        if (isAdminOrFacilityManager(user)) {
+            log.info("No-show recorded for privileged user {} - suspension exempted", user.getEmail());
+            // Still increment no-show count for auditing purposes
+            int currentNoShowCount = user.getNoShowCount() != null ? user.getNoShowCount() : 0;
+            user.setNoShowCount(currentNoShowCount + 1);
+            return userRepository.save(user);
         }
 
         // Increment no-show counter
@@ -157,18 +176,31 @@ public class SuspensionPolicyService {
     /**
      * Manually apply suspension to a user for 7 days from now.
      *
+     * <p><b>Multiple Suspension Handling</b>: If user is already suspended and existing suspension
+     * extends beyond the new suspension date, keeps the existing (longer) suspension. This implements
+     * suspension stacking - multiple violations extend the punishment.
+     *
      * <p><b>Note</b>: Typically called internally by recordNoShowAndApplySuspensionIfNeeded().
      * May also be called manually by admin for policy violations.
      *
      * @param user User entity to suspend
      */
     private void applySuspension(User user) {
-        LocalDateTime suspendedUntil = LocalDateTime.now(ZoneId.systemDefault())
+        LocalDateTime newSuspensionEnd = LocalDateTime.now(ZoneId.systemDefault())
                 .plusDays(SUSPENSION_DAYS);
         
-        user.setSuspendedUntil(suspendedUntil);
+        // Handle multiple suspensions: take the later date (stacking)
+        LocalDateTime currentSuspension = user.getSuspendedUntil();
+        if (currentSuspension != null && currentSuspension.isAfter(newSuspensionEnd)) {
+            // User already has a longer suspension - keep it
+            log.info("User {} already suspended until {}. Existing suspension is longer than new punishment.", 
+                user.getEmail(), currentSuspension);
+            return;  // Don't shorten the existing suspension
+        }
+        
+        user.setSuspendedUntil(newSuspensionEnd);
         log.warn("Suspended user {} until {} due to reaching no-show threshold", 
-            user.getEmail(), suspendedUntil);
+            user.getEmail(), newSuspensionEnd);
     }
 
     /**
@@ -297,5 +329,80 @@ public class SuspensionPolicyService {
      */
     public int getSuspensionDurationDays() {
         return SUSPENSION_DAYS;
+    }
+
+    /**
+     * Check if user is an admin or facility manager (privileged user exempt from suspension).
+     *
+     * @param user User entity to check
+     * @return true if user has ADMIN or FACILITY_MANAGER role, false otherwise
+     */
+    private boolean isAdminOrFacilityManager(User user) {
+        if (user == null || user.getRoles() == null) {
+            return false;
+        }
+        return user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.FACILITY_MANAGER);
+    }
+
+    /**
+     * Apply suspension if user has reached the no-show threshold (3 no-shows).
+     *
+     * <p>Called by NoShowScheduler after a no-show has been recorded and no-show count incremented.
+     * Checks if the count has reached 3, and if so, applies a 7-day suspension.
+     *
+     * <p>Used in the context where the user's no-show count has already been incremented.
+     *
+     * <p><b>Exception</b>: ADMIN and FACILITY_MANAGER users are exempt from suspension.
+     *
+     * @param user User entity that may be eligible for suspension
+     * @return User with suspension applied if threshold reached, unchanged otherwise
+     */
+    @Transactional
+    public User applySuspensionIfThresholdReached(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        // ADMIN and FACILITY_MANAGER are exempt from suspension
+        if (isAdminOrFacilityManager(user)) {
+            log.info("Suspension exempted for privileged user {} (ADMIN or FACILITY_MANAGER)", user.getEmail());
+            return user;
+        }
+
+        if (hasReachedNoShowThreshold(user)) {
+            applySuspension(user);
+            return userRepository.save(user);
+        }
+
+        return user;
+    }
+
+    /**
+     * Manually unsuspend a user (admin action).
+     *
+     * <p>Allows admin to immediately lift a user's suspension without requiring an appeal.
+     * Used for admin override scenarios (e.g., system error, special circumstances).
+     *
+     * <p><b>Note</b>: This is different from appeal approval - it's a direct admin action.
+     * No appeal record is created; suspension is simply cleared.
+     *
+     * @param user User entity to unsuspend
+     * @return User with suspension cleared
+     * @throws IllegalArgumentException if user is null
+     */
+    @Transactional
+    public User adminUnsuspend(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        if (user.getSuspendedUntil() != null) {
+            log.warn("Admin manual unsuspend for user: {}", user.getEmail());
+            user.setSuspendedUntil(null);
+            return userRepository.save(user);
+        }
+
+        log.info("Attempted to unsuspend user {} who is not suspended", user.getEmail());
+        return user;
     }
 }

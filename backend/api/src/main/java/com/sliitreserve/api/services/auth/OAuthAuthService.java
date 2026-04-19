@@ -9,11 +9,12 @@ import com.sliitreserve.api.dto.auth.OAuthCodeExchangeRequest;
 import com.sliitreserve.api.dto.auth.UserProfileResponse;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
-import com.sliitreserve.api.repositories.UserRepository;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,11 +94,15 @@ public class OAuthAuthService {
     public OAuthTokenResponse exchangeCodeForToken(OAuthCodeExchangeRequest request)
             throws IOException {
         log.debug("Exchanging authorization code for tokens: {}", request.getRedirectUri());
+        log.debug("Using Google Client ID: {}", googleClientId);
+        log.debug("Authorization code: {}", request.getCode().substring(0, Math.min(10, request.getCode().length())));
 
         try {
             // Step 1: Exchange authorization code for ID token with Google Token Endpoint
             // This implements RFC 6749 Section 4.1.3 - Authorization Code Exchange
-            GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
+            log.info("Calling Google Token Endpoint with redirect URI: {}", request.getRedirectUri());
+            
+            GoogleAuthorizationCodeTokenRequest tokenRequest = new GoogleAuthorizationCodeTokenRequest(
                     new NetHttpTransport(),
                     new GsonFactory(),
                     "https://oauth2.googleapis.com/token",  // Google Token Endpoint
@@ -105,7 +110,9 @@ public class OAuthAuthService {
                     googleClientSecret,
                     request.getCode(),                      // Authorization code from frontend
                     request.getRedirectUri()                // Must match registered redirect URI
-            ).execute();
+            );
+
+            GoogleTokenResponse tokenResponse = tokenRequest.execute();
 
             log.debug("Successfully exchanged authorization code for tokens");
 
@@ -140,8 +147,7 @@ public class OAuthAuthService {
             log.debug("Successfully verified Google ID token for user: {}", email);
 
             // Step 4: Look up or create user in database
-            User user = userRepository.findByGoogleSubject(googleSubject)
-                    .orElseGet(() -> createNewUser(googleSubject, email, displayName));
+            User user = getOrCreateOAuthUser(googleSubject, email, displayName);
 
             // Step 5: Update user profile if needed (name/picture may change)
             user.setEmail(email);
@@ -152,6 +158,7 @@ public class OAuthAuthService {
 
             // Step 6: Generate JWT session token
             String accessToken = jwtUtil.generateToken(email, displayName, picture);
+            String refreshToken = jwtUtil.generateRefreshToken(email);
             long expirationMs = 86400000; // 24 hours (matches JWT config)
             LocalDateTime expiresAt = LocalDateTime.now(ZoneId.systemDefault())
                     .plusSeconds(expirationMs / 1000);
@@ -165,13 +172,13 @@ public class OAuthAuthService {
                     user.getSuspendedUntil() != null && user.getSuspendedUntil().isAfter(LocalDateTime.now())
             );
 
-            return new OAuthTokenResponse(accessToken, expiresAt, userProfile);
+            return new OAuthTokenResponse(accessToken, refreshToken, expiresAt, userProfile);
 
         } catch (GeneralSecurityException e) {
-            log.warn("ID token verification failed: {}", e.getMessage());
+            log.warn("ID token verification failed: {}", e.getMessage(), e);
             throw new IllegalArgumentException("Invalid authorization code: token verification failed", e);
         } catch (IOException e) {
-            log.error("Error exchanging authorization code with Google: {}", e.getMessage(), e);
+            log.error("Error exchanging authorization code with Google: {} | Cause: {}", e.getMessage(), e.getCause() != null ? e.getCause().getMessage() : "unknown", e);
             throw e;
         }
     }
@@ -203,27 +210,51 @@ public class OAuthAuthService {
                 .suspendedUntil(null) // Not suspended
                 .build();
 
-        return userRepository.save(user);
+        // Flush here so uniqueness violations are raised inside this call.
+        return userRepository.saveAndFlush(user);
+    }
+
+    /**
+     * Resolve or create OAuth user while tolerating duplicate callback races.
+     */
+    private User getOrCreateOAuthUser(String googleSubject, String email, String displayName) {
+        return userRepository.findByGoogleSubject(googleSubject)
+                .orElseGet(() -> {
+                    try {
+                        return createNewUser(googleSubject, email, displayName);
+                    } catch (DataIntegrityViolationException ex) {
+                        log.warn("Concurrent OAuth user creation detected for {}. Reloading existing user.", email);
+                        return userRepository.findByGoogleSubject(googleSubject)
+                                .or(() -> userRepository.findByEmail(email))
+                                .orElseThrow(() -> ex);
+                    }
+                });
     }
 
     /**
      * Response DTO for OAuth authorization code exchange.
      *
-     * <p>Wraps the JWT token and user profile for the API response.
+     * <p>Wraps the JWT tokens and user profile for the API response.
      */
     public static class OAuthTokenResponse {
         private final String accessToken;
+        private final String refreshToken;
         private final LocalDateTime expiresAt;
         private final UserProfileResponse user;
 
-        public OAuthTokenResponse(String accessToken, LocalDateTime expiresAt, UserProfileResponse user) {
+        public OAuthTokenResponse(String accessToken, String refreshToken, LocalDateTime expiresAt, UserProfileResponse user) {
             this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
             this.expiresAt = expiresAt;
             this.user = user;
         }
 
         public String getAccessToken() {
             return accessToken;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
         }
 
         public LocalDateTime getExpiresAt() {

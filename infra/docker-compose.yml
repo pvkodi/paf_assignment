@@ -1,27 +1,150 @@
+# Smart Campus Operations Hub - Infrastructure Services
+# This Docker Compose file manages core infrastructure services:
+# - PostgreSQL 15: Primary data persistence layer
+# - MailDev: Email testing and debugging service
+#
+# Volume Strategy:
+# - postgres_data: Named volume for PostgreSQL data persistence
+#   Location: Docker managed (host-machine dependent)
+#   Backup: Use 'docker run --rm -v infra_postgres_data:/data -v $(pwd):/backup postgres pg_dump -U smartcampus smartcampus > backup.sql'
+#   Restore: Use 'docker exec smartcampus-postgres psql -U smartcampus smartcampus < backup.sql'
+#
+# Health Status:
+# Run 'docker compose ps' to verify service health
+# - PostgreSQL: Should show 'Up' status
+# - MailDev: Health check endpoint at http://localhost:1080
+
 version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15.17
     container_name: smartcampus-postgres
     restart: unless-stopped
+
+    # Environment configuration for database initialization
     environment:
       POSTGRES_DB: smartcampus
       POSTGRES_USER: smartcampus
       POSTGRES_PASSWORD: smartcampus
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Timezone for database (UTC - application handles timezone conversion)
+      TZ: UTC
+
+    # Port mapping: HOST:CONTAINER
+    # External: localhost:5432 -> Internal: postgres:5432
     ports:
       - "5432:5432"
+
+    # Data persistence - named volume managed by Docker
+    # Data survives container stop/start and removal
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Optional: Mount SQL migration scripts
+      # - ../backend/api/src/main/resources/db/migration:/docker-entrypoint-initdb.d
+
+    # Health check configuration
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcampus -d smartcampus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    # Resource limits (optional - uncomment if needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 256M
 
   mailtrap:
     image: maildev/maildev:2.1.0
     container_name: smartcampus-mailtrap
     restart: unless-stopped
+
+    # Port mapping
+    # 1025: SMTP server (for application email sending)
+    # 1080: Web UI (http://localhost:1080 for viewing emails)
     ports:
       - "1025:1025"
       - "1080:1080"
 
+    # Environment
+    environment:
+      TZ: UTC
+
+    # Health check for email service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1080/api/config"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Flyway migrations are performed by the backend application at startup (Spring Flyway)
+  # If you need to run Flyway separately, use the Flyway Docker image or the Maven plugin.
+
+  backend:
+    build:
+      context: ../backend/api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    # Load runtime configuration from the backend .env file
+    env_file:
+      - ../backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailtrap:
+        condition: service_started
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        # Pass Vite API base URL as build arg; value comes from infra/.env or environment
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://backend:8080/api/v1}
+    ports:
+      - "5173:80"
+    # Runtime env (optional) - copied from frontend/.env if present
+    env_file:
+      - ../frontend/.env
+    depends_on:
+      - backend
+    
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartcampus-pgadmin
+    restart: unless-stopped
+    
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@campus.edu
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    
+    ports:
+      - "5050:80"
+    
+    depends_on:
+      - postgres 
+
+# Named volumes - persist data across container lifecycle
+# Docker automatically manages volume location on host machine
 volumes:
   postgres_data:
+    # Label for identification in backups
+    labels:
+      description: "PostgreSQL 15 data persistence for Smart Campus application"
   uploads_data:
+    # Reserved for future use - uploaded files/thumbnails
+    labels:
+      description: "User uploads and thumbnail storage"

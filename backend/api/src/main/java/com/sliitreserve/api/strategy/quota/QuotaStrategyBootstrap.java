@@ -47,13 +47,16 @@ public class QuotaStrategyBootstrap {
     @Autowired(required = false)
     private AdminQuotaStrategy adminStrategy;
 
+    @Autowired(required = false)
+    private FacilityManagerQuotaStrategy facilityManagerStrategy;
+
     @PostConstruct
     public void registerStrategies() {
         log.info("Bootstrapping quota policy strategies");
 
         if (studentStrategy != null) {
-            rolePolicyResolver.registerStrategy("STUDENT", studentStrategy);
-            log.info("Registered STUDENT quota strategy");
+            rolePolicyResolver.registerStrategy("USER", studentStrategy);
+            log.info("Registered USER quota strategy");
         } else {
             log.warn("StudentQuotaStrategy not yet implemented (T053)");
         }
@@ -70,6 +73,13 @@ public class QuotaStrategyBootstrap {
             log.info("Registered ADMIN quota strategy");
         } else {
             log.warn("AdminQuotaStrategy not yet implemented (T053)");
+        }
+
+        if (facilityManagerStrategy != null) {
+            rolePolicyResolver.registerStrategy("FACILITY_MANAGER", facilityManagerStrategy);
+            log.info("Registered FACILITY_MANAGER quota strategy");
+        } else {
+            log.warn("FacilityManagerQuotaStrategy not yet implemented");
         }
 
         log.info("Quota policy bootstrap complete. Registered roles: {}", 

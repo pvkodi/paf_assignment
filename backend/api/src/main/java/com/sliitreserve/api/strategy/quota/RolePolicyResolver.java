@@ -1,5 +1,6 @@
 package com.sliitreserve.api.strategy.quota;
 
+import com.sliitreserve.api.entities.auth.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -7,6 +8,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Role-Policy Resolver for selecting applicable quota strategy.
@@ -21,13 +23,13 @@ import java.util.Map;
  * - User with only STUDENT role gets STUDENT policy
  * 
  * Strategy lookup:
- * - Strategies are registered with role keys (e.g., "STUDENT", "LECTURER", "ADMIN")
+ * - Strategies are registered with role keys (e.g., "USER", "LECTURER", "ADMIN")
  * - Registry is populated at application startup (T053 will implement concrete strategies)
  * - Unknown roles are rejected with clear error messaging
  * 
  * Usage:
  * <pre>
- * Set<String> userRoles = user.getRoles(); // e.g., {"STUDENT", "LECTURER"}
+ * Set<String> userRoles = user.getRoles(); // e.g., {"USER", "LECTURER"}
  * QuotaStrategy strategy = resolver.resolveStrategy(userRoles);
  * 
  * // Now use strategy for quota enforcement
@@ -46,7 +48,7 @@ public class RolePolicyResolver {
      * Register a quota strategy for a role.
      * Called at application startup by T053 (quota strategy implementations).
      * 
-     * @param roleName Role identifier (e.g., "STUDENT", "LECTURER", "ADMIN")
+     * @param roleName Role identifier (e.g., "USER", "LECTURER", "ADMIN")
      * @param strategy Strategy implementation for the role
      */
     public void registerStrategy(String roleName, QuotaStrategy strategy) {
@@ -63,8 +65,8 @@ public class RolePolicyResolver {
      * 3. Return the strategy with the highest priority
      * 
      * Example:
-     * - Input roles: {"STUDENT", "LECTURER"}
-     * - STUDENT strategy priority: 1
+     * - Input roles: {"USER", "LECTURER"}
+     * - USER strategy priority: 1
      * - LECTURER strategy priority: 2
      * - Returns LECTURER strategy (priority 2 > 1)
      * 
@@ -130,5 +132,34 @@ public class RolePolicyResolver {
      */
     public java.util.Set<String> getRegisteredRoles() {
         return strategyRegistry.keySet();
+    }
+
+    /**
+     * Get the most permissive role from a set of roles (FR-042).
+     * 
+     * For users with multiple roles, this resolves to the most permissive role
+     * based on the permissiveness hierarchy:
+     * ADMIN > FACILITY_MANAGER > LECTURER > TECHNICIAN > USER
+     * 
+     * @param roles Set of Role enums to evaluate
+     * @return The most permissive Role from the set
+     * @throws IllegalArgumentException if roles set is null or empty
+     */
+    public Role getMostPermissiveRole(Set<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            throw new IllegalArgumentException("Roles set cannot be null or empty");
+        }
+
+        // Permissiveness hierarchy (higher value = more permissive)
+        Map<Role, Integer> rolePriority = new HashMap<>();
+        rolePriority.put(Role.ADMIN, 5);
+        rolePriority.put(Role.FACILITY_MANAGER, 4);
+        rolePriority.put(Role.LECTURER, 3);
+        rolePriority.put(Role.TECHNICIAN, 2);
+        rolePriority.put(Role.USER, 1);
+
+        return roles.stream()
+                .max(Comparator.comparingInt(r -> rolePriority.getOrDefault(r, 0)))
+                .orElseThrow(() -> new IllegalArgumentException("Unable to determine most permissive role"));
     }
 }

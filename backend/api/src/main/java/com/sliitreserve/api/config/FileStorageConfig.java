@@ -43,11 +43,11 @@ public class FileStorageConfig implements WebMvcConfigurer {
 
     /**
      * Base upload directory path.
-     * Default: /uploads (configured for Docker environment)
+     * Default: uploads (at workspace root, outside backend folder)
      * Can be overridden via app.file-storage.upload-dir property
      */
-    // Use a workspace-local relative directory by default for development
-    @Value("${app.file-storage.upload-dir:uploads}")
+    // Use workspace root directory by default for development
+    @Value("${app.file-storage.upload-dir:../../../uploads}")
     private String uploadDir;
 
     /**
@@ -59,13 +59,13 @@ public class FileStorageConfig implements WebMvcConfigurer {
     /**
      * Allowed file extensions (comma-separated)
      */
-    @Value("${app.file-storage.allowed-extensions:jpg,jpeg,png,gif,webp}")
+    @Value("${app.file-storage.allowed-extensions:jpg,jpeg,png,gif,webp,pdf}")
     private String allowedExtensions;
 
     /**
      * Allowed MIME types (comma-separated)
      */
-    @Value("${app.file-storage.allowed-mime-types:image/jpeg,image/png,image/gif,image/webp}")
+    @Value("${app.file-storage.allowed-mime-types:image/jpeg,image/png,image/gif,image/webp,application/pdf}")
     private String allowedMimeTypes;
 
     /**

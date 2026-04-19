@@ -104,7 +104,7 @@ const exchangeGoogleToken = async (googleToken) => {
  * @param {string} accessToken - JWT access token
  * @param {string} refreshToken - JWT refresh token (optional)
  * @param {object} user - User profile data
- * @param {number} expiresIn - Token expiry in seconds (default 24h = 86400s)
+ * @param {number} expiresIn - Token expiry in seconds OR ISO timestamp string from backend
  */
 const setAuthTokens = (accessToken, refreshToken, user, expiresIn = 86400) => {
   // Store tokens
@@ -118,8 +118,15 @@ const setAuthTokens = (accessToken, refreshToken, user, expiresIn = 86400) => {
     localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(user));
   }
 
-  // Store expiry time
-  const expiryTime = Date.now() + expiresIn * 1000;
+  // Store expiry time - handle both epoch seconds and ISO timestamp from backend
+  let expiryTime;
+  if (typeof expiresIn === "string") {
+    // expiresIn is an ISO timestamp from backend (e.g., "2025-08-15T10:30:00")
+    expiryTime = new Date(expiresIn).getTime();
+  } else {
+    // expiresIn is in seconds (legacy)
+    expiryTime = Date.now() + expiresIn * 1000;
+  }
   localStorage.setItem(TOKEN_KEYS.TOKEN_EXPIRY, expiryTime.toString());
 };
 
@@ -263,7 +270,6 @@ const handleOAuthCallback = async () => {
   try {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
-    const state = params.get("state");
 
     if (!code) {
       throw new Error("No authorization code in callback");
@@ -337,6 +343,198 @@ const isSuspended = () => {
   return user?.suspended === true;
 };
 
+/**
+ * Login with email and password
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise} Response with accessToken, refreshToken, and user
+ */
+const loginWithEmailPassword = async (email, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Login failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Email/password login error:", error);
+    throw {
+      type: "LOGIN_FAILED",
+      message: error.message || "Failed to login",
+      ...error,
+    };
+  }
+};
+
+/**
+ * Register new user with email and password
+ * Creates a registration request awaiting admin approval
+ * @param {string} email - User email
+ * @param {string} displayName - User display name
+ * @param {string} password - User password
+ * @param {string} confirmPassword - Password confirmation
+ * @param {string} roleRequested - User role (USER, LECTURER, TECHNICIAN, FACILITY_MANAGER)
+ * @param {string} registrationNumber - Registration number (required if role=USER)
+ * @param {string} employeeNumber - Employee number (required if role!=USER)
+ * @returns {Promise} Response with registration status and ID
+ */
+const registerWithEmailPassword = async (
+  email,
+  displayName,
+  password,
+  confirmPassword,
+  roleRequested = "USER",
+  registrationNumber = "",
+  employeeNumber = "",
+) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        displayName,
+        password,
+        confirmPassword,
+        roleRequested,
+        registrationNumber,
+        employeeNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Registration failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw {
+      type: "REGISTRATION_FAILED",
+      message: error.message || "Failed to register",
+      ...error,
+    };
+  }
+};
+
+/**
+ * Send OTP to email address
+ * NEW OTP-based registration flow (no admin approval needed)
+ * Step 1: Request OTP
+ */
+const sendOtp = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/otp/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Failed to send OTP",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Send OTP error:", error);
+    throw {
+      type: "OTP_SEND_FAILED",
+      message: error.message || "Failed to send OTP",
+      ...error,
+    };
+  }
+};
+
+/**
+ * Verify OTP and complete registration
+ * NEW OTP-based registration flow (no admin approval needed)
+ * Step 2: Verify OTP and auto-register
+ */
+const verifyOtpAndRegister = async (
+  email,
+  otp,
+  displayName,
+  password,
+  confirmPassword,
+  roleRequested = "USER",
+  registrationNumber = "",
+  employeeNumber = "",
+) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v1/auth/otp/verify-and-register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp,
+          displayName,
+          password,
+          confirmPassword,
+          roleRequested,
+          registrationNumber,
+          employeeNumber,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "OTP verification failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    throw {
+      type: "OTP_VERIFICATION_FAILED",
+      message: error.message || "Failed to verify OTP and register",
+      ...error,
+    };
+  }
+};
+
 export const authService = {
   // Token management
   getAccessToken,
@@ -359,6 +557,14 @@ export const authService = {
   // OAuth
   exchangeGoogleToken,
   handleOAuthCallback,
+
+  // Email/Password authentication
+  loginWithEmailPassword,
+  registerWithEmailPassword,
+
+  // OTP-based registration (new flow)
+  sendOtp,
+  verifyOtpAndRegister,
 
   // Logout
   logout,

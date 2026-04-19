@@ -5,13 +5,17 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,6 +35,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Facility {
 
     @Id
@@ -54,7 +59,7 @@ public class Facility {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Column(length = 255)
+    @Column(name = "location", length = 255)
     private String location;
 
     @Column(length = 100)
@@ -66,15 +71,29 @@ public class Facility {
     @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
+    @Builder.Default
     private FacilityStatus status = FacilityStatus.ACTIVE;
 
     @NotNull(message = "Availability start time is required")
-    @Column(nullable = false)
+    @Column(name = "availability_start", nullable = false)
     private LocalTime availabilityStart;
 
     @NotNull(message = "Availability end time is required")
-    @Column(nullable = false)
+    @Column(name = "availability_end", nullable = false)
     private LocalTime availabilityEnd;
+
+    /**
+     * Multi-window availability schedule (Mon–Sun, multiple windows per day).
+     * Replaces the flat availabilityStart/End as the primary source of truth.
+     * Old flat fields are kept for backward compatibility with existing data.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "facility_availability_windows",
+        joinColumns = @JoinColumn(name = "facility_id")
+    )
+    @Builder.Default
+    private List<AvailabilityWindow> availabilityWindows = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -84,25 +103,40 @@ public class Facility {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    /**
+     * WiFi geofencing fields for location-based check-in verification (FR-020 + geofencing enhancement)
+     */
+    
+    @Column(name = "wifi_ssid", length = 64)
+    private String wifiSSID;
+
+    @Column(name = "wifi_mac_address", length = 17)
+    private String wifiMacAddress;
+
+    @Column(name = "facility_latitude")
+    private Double latitude;
+
+    @Column(name = "facility_longitude")
+    private Double longitude;
+
+    @Column(name = "geofence_radius_meters")
+    @Builder.Default
+    private Integer geofenceRadiusMeters = 100;
+
     @PrePersist
     protected void onCreate() {
         if (status == null) {
             status = FacilityStatus.ACTIVE;
         }
+        validateAvailabilityRange();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        // Additional validation can be added here
+        validateAvailabilityRange();
     }
 
-    /**
-     * Validates that availability start time is before end time.
-     * Called before persistence checks.
-     */
-    @PostLoad
-    @PostPersist
-    protected void validateAvailability() {
+    private void validateAvailabilityRange() {
         if (availabilityStart != null && availabilityEnd != null) {
             if (availabilityStart.isAfter(availabilityEnd) || availabilityStart.equals(availabilityEnd)) {
                 throw new IllegalArgumentException(
@@ -110,6 +144,51 @@ public class Facility {
                 );
             }
         }
+    }
+
+    /**
+     * Returns true if the facility has any availability window covering the given day and time.
+     * Falls back to the flat availabilityStart/End if no windows are configured.
+     */
+    public boolean isAvailableAt(DayOfWeek day, LocalTime time) {
+        if (availabilityWindows != null && !availabilityWindows.isEmpty()) {
+            return availabilityWindows.stream().anyMatch(w -> w.contains(day, time));
+        }
+        // Legacy fallback: use flat start/end fields (treats all days as available)
+        if (availabilityStart != null && availabilityEnd != null) {
+            return !time.isBefore(availabilityStart) && time.isBefore(availabilityEnd);
+        }
+        return true;
+    }
+
+    /**
+     * API alias for location field required by module contract.
+     */
+    public String getLocationDescription() {
+        return location;
+    }
+
+    public void setLocationDescription(String locationDescription) {
+        this.location = locationDescription;
+    }
+
+    /**
+     * API aliases for availability field names required by module contract.
+     */
+    public LocalTime getAvailabilityStartTime() {
+        return availabilityStart;
+    }
+
+    public void setAvailabilityStartTime(LocalTime availabilityStartTime) {
+        this.availabilityStart = availabilityStartTime;
+    }
+
+    public LocalTime getAvailabilityEndTime() {
+        return availabilityEnd;
+    }
+
+    public void setAvailabilityEndTime(LocalTime availabilityEndTime) {
+        this.availabilityEnd = availabilityEndTime;
     }
 
     /**
@@ -121,6 +200,7 @@ public class Facility {
         MEETING_ROOM,
         AUDITORIUM,
         EQUIPMENT,
+        SPORTS,
         SPORTS_FACILITY
     }
 
@@ -129,6 +209,7 @@ public class Facility {
      */
     public enum FacilityStatus {
         ACTIVE,
+        MAINTENANCE,
         OUT_OF_SERVICE
     }
 }

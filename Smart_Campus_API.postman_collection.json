@@ -1,0 +1,1007 @@
+{
+  "info": {
+    "_postman_id": "smart-campus-api-collection",
+    "name": "Smart Campus Operations Hub - API Testing",
+    "description": "Complete API collection for testing Smart Campus Operations Hub\n\nPhases: Auth → Master Data → RBAC → Tickets → Appeals → Notifications → Bookings → Analytics → Frontend → E2E\n\nBase URL: {{base_url}}\nDefault: http://localhost:8080",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "PHASE 1: Authorization",
+      "item": [
+        {
+          "name": "1.1 Health Check (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check if backend is running. No authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 OAuth Google Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"REPLACE_WITH_ACTUAL_GOOGLE_CODE\",\n  \"redirectUri\": \"http://localhost:5173/auth/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/oauth/google/callback",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "oauth", "google", "callback"]
+            },
+            "description": "Exchange Google auth code for JWT token. Save the returned token as {{admin_token}}, {{student_token}}, {{technician_token}}, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            },
+            "description": "Get currently authenticated user's profile with roles and suspension status."
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Logout current user and invalidate JWT token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PHASE 4: Tickets (Core Feature)",
+      "item": [
+        {
+          "name": "4.1 Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000001\",\n  \"title\": \"Broken projector in Lecture Hall\",\n  \"description\": \"The projector connection keeps disconnecting during lectures\",\n  \"category\": \"ELECTRICAL\",\n  \"priority\": \"MEDIUM\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets"]
+            },
+            "description": "Create a new maintenance ticket. Student submits, status=OPEN, SLA calculated based on priority."
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 List All Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets?status=OPEN&priority=MEDIUM",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                },
+                {
+                  "key": "priority",
+                  "value": "MEDIUM"
+                }
+              ]
+            },
+            "description": "List tickets with optional filtering by status and priority. Results filtered by user role."
+          },
+          "response": []
+        },
+        {
+          "name": "4.3 Get Ticket Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}"]
+            },
+            "description": "Get full details of a specific ticket including comments and attachments."
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 Add Public Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"I can confirm this happens during every class\",\n  \"visibility\": \"PUBLIC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "comments"]
+            },
+            "description": "Add a public comment visible to all users. Students can only add PUBLIC comments."
+          },
+          "response": []
+        },
+        {
+          "name": "4.5 Add Internal Comment (Technician)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{technician_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Need to check HDMI cable and replace if damaged. Cost estimate: $45\",\n  \"visibility\": \"INTERNAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "comments"]
+            },
+            "description": "Add internal comment visible only to technicians/managers. Only MAINTENANCE_STAFF can add INTERNAL comments."
+          },
+          "response": []
+        },
+        {
+          "name": "4.6 Get All Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "comments"]
+            },
+            "description": "Get comments. Filtered by visibility (students see PUBLIC only, technicians see both)."
+          },
+          "response": []
+        },
+        {
+          "name": "4.7 Upload Attachment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "path/to/image.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/attachments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "attachments"]
+            },
+            "description": "Upload attachment (jpg/png/gif/webp, max 5MB). Thumbnail auto-generated."
+          },
+          "response": []
+        },
+        {
+          "name": "4.8 Get All Attachments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/attachments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "attachments"]
+            },
+            "description": "Get all attachments for a ticket with download URLs."
+          },
+          "response": []
+        },
+        {
+          "name": "4.9 Delete Attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/attachments/{{attachment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "attachments", "{{attachment_id}}"]
+            },
+            "description": "Delete attachment. Only owner or admin can delete."
+          },
+          "response": []
+        },
+        {
+          "name": "4.10 Assign Ticket (Facility Manager)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{facility_manager_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignToUserId\": \"00000001-0000-0000-0000-000000000005\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "assign"]
+            },
+            "description": "Assign ticket to technician. Only FACILITY_MANAGER and ADMIN can assign."
+          },
+          "response": []
+        },
+        {
+          "name": "4.11 Update Ticket Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{technician_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "status"]
+            },
+            "description": "Update status. Valid transitions: OPEN→IN_PROGRESS→RESOLVED→CLOSED. Invalid transitions rejected."
+          },
+          "response": []
+        },
+        {
+          "name": "4.12 Get Escalation History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{technician_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/escalation-history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "escalation-history"]
+            },
+            "description": "Get escalation history (shows when SLA was breached and escalated)."
+          },
+          "response": []
+        },
+        {
+          "name": "4.13 Update Own Comment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment text\",\n  \"visibility\": \"PUBLIC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/comments/{{comment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "comments", "{{comment_id}}"]
+            },
+            "description": "Update own comment. Only owner or admin can update."
+          },
+          "response": []
+        },
+        {
+          "name": "4.14 Delete Own Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tickets/{{ticket_id}}/comments/{{comment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tickets", "{{ticket_id}}", "comments", "{{comment_id}}"]
+            },
+            "description": "Delete comment. Only owner or admin can delete."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5: Appeals",
+      "item": [
+        {
+          "name": "5.1 Submit Appeal (Suspended User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{suspended_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"I believe my three no-shows were due to medical emergency. I have doctor certificates to prove it.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals"]
+            },
+            "description": "Submit appeal. Only suspended users can submit. Status starts as SUBMITTED."
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 List Appeals (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals"]
+            },
+            "description": "List all pending appeals. Admin sees all, users see only their own."
+          },
+          "response": []
+        },
+        {
+          "name": "5.3 List Appeals (User - Own Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals"]
+            },
+            "description": "List own appeals only (non-admin users)."
+          },
+          "response": []
+        },
+        {
+          "name": "5.4 Get Appeal Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals/{{appeal_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals", "{{appeal_id}}"]
+            },
+            "description": "Get full appeal details including decision and reasoning."
+          },
+          "response": []
+        },
+        {
+          "name": "5.5 Approve Appeal (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"Appeal approved. Medical documentation verified. User reinstated effective immediately.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals/{{appeal_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals", "{{appeal_id}}", "approve"]
+            },
+            "description": "Approve appeal. Sets appeal status=APPROVED and lifts user suspension (suspended_until=NULL)."
+          },
+          "response": []
+        },
+        {
+          "name": "5.6 Reject Appeal (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"Insufficient evidence provided. Appeal rejected. Suspension continues for 7 days.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/appeals/{{appeal_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "appeals", "{{appeal_id}}", "reject"]
+            },
+            "description": "Reject appeal. Sets appeal status=REJECTED and maintains user suspension."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PHASE 6: Notifications",
+      "item": [
+        {
+          "name": "6.1 Get Notifications (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get notification feed with pagination. Sorted by newest first, filtered by user role."
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Get Single Notification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/{{notification_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "{{notification_id}}"]
+            },
+            "description": "Get details of a single notification."
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Mark as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "{{notification_id}}", "read"]
+            },
+            "description": "Mark single notification as read. Does not affect other notifications."
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Mark All as Read",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications"]
+            },
+            "description": "Mark all notifications as read for current user."
+          },
+          "response": []
+        },
+        {
+          "name": "6.5 Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/unread/count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "unread", "count"]
+            },
+            "description": "Get count of unread notifications."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PHASE 7: Bookings",
+      "item": [
+        {
+          "name": "7.1 Create Simple Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000003\",\n  \"bookingDate\": \"2026-04-15\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"15:00\",\n  \"purpose\": \"Project team meeting\",\n  \"attendees\": 8,\n  \"recurrenceRule\": null,\n  \"bookedForUserId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Create booking. Status starts as PENDING. Validates overlap, capacity, peak-hour restrictions."
+          },
+          "response": []
+        },
+        {
+          "name": "7.2 Create Admin Booking on Behalf",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000001\",\n  \"bookingDate\": \"2026-04-16\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"purpose\": \"Admin-booked lecture make-up session\",\n  \"attendees\": 120,\n  \"recurrenceRule\": null,\n  \"bookedForUserId\": \"00000001-0000-0000-0000-000000000003\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Create booking on behalf of another user (admin only). Records both requested_by and booked_for."
+          },
+          "response": []
+        },
+        {
+          "name": "7.3 Create Recurring Weekly Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{lecturer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000001\",\n  \"bookingDate\": \"2026-04-14\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"purpose\": \"Weekly Algorithms lecture\",\n  \"attendees\": 100,\n  \"recurrenceRule\": \"FREQ=WEEKLY;UNTIL=2026-05-16;BYDAY=MO\",\n  \"bookedForUserId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Create recurring booking using iCalendar RRULE. Creates booking_instance records for each occurrence (skips holidays)."
+          },
+          "response": []
+        },
+        {
+          "name": "7.4 Test Peak-Hour Rejection (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000003\",\n  \"bookingDate\": \"2026-04-15\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"purpose\": \"Testing peak hour restriction\",\n  \"attendees\": 5,\n  \"recurrenceRule\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Expected 403: Peak-hour (08:00-10:00) restriction applies to students. Lecturers/admins exempt."
+          },
+          "response": []
+        },
+        {
+          "name": "7.5 Test Capacity Validation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000003\",\n  \"bookingDate\": \"2026-04-15\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"15:00\",\n  \"purpose\": \"Way too many people\",\n  \"attendees\": 500,\n  \"recurrenceRule\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Expected 400: Attendees (500) exceed facility capacity (20 for Meeting Room)."
+          },
+          "response": []
+        },
+        {
+          "name": "7.6 Test Overlap Detection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facilityId\": \"10000001-0000-0000-0000-000000000003\",\n  \"bookingDate\": \"2026-04-15\",\n  \"startTime\": \"14:30\",\n  \"endTime\": \"15:30\",\n  \"purpose\": \"Overlapping with existing booking from 14:00-15:00\",\n  \"attendees\": 5,\n  \"recurrenceRule\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Expected 409 Conflict: Facility already booked for overlapping time."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PHASE 8: Analytics",
+      "item": [
+        {
+          "name": "8.1 Get Utilization Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/utilization?from=2026-03-12&to=2026-04-11",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "utilization"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-03-12"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-04-11"
+                }
+              ]
+            },
+            "description": "Get utilization heatmap, underutilized facilities, and recommendations. Admin-only endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "8.2 Test Non-Admin Access (Should Fail)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{student_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/utilization?from=2026-03-12&to=2026-04-11",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analytics", "utilization"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-03-12"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-04-11"
+                }
+              ]
+            },
+            "description": "Expected 403 Forbidden: ADMIN role required."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script: Verify required environment variables"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Base URL for Smart Campus API"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for admin@campus.edu (ADMIN role)"
+    },
+    {
+      "key": "student_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for student@campus.edu (STUDENT role)"
+    },
+    {
+      "key": "lecturer_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for lecturer@campus.edu (LECTURER role)"
+    },
+    {
+      "key": "technician_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for technician@campus.edu (MAINTENANCE_STAFF role)"
+    },
+    {
+      "key": "facility_manager_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for facmgr@campus.edu (FACILITY_MANAGER role)"
+    },
+    {
+      "key": "suspended_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token for suspended@campus.edu (STUDENT role, suspended)"
+    },
+    {
+      "key": "ticket_id",
+      "value": "",
+      "type": "string",
+      "description": "Ticket ID from created ticket"
+    },
+    {
+      "key": "comment_id",
+      "value": "",
+      "type": "string",
+      "description": "Comment ID from created comment"
+    },
+    {
+      "key": "attachment_id",
+      "value": "",
+      "type": "string",
+      "description": "Attachment ID from uploaded file"
+    },
+    {
+      "key": "appeal_id",
+      "value": "",
+      "type": "string",
+      "description": "Appeal ID from submitted appeal"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string",
+      "description": "Notification ID from notification feed"
+    }
+  ]
+}

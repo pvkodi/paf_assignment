@@ -28,17 +28,22 @@ export function ProtectedRoute({
     );
   }
 
-  // Not authenticated - redirect to login
+  // Not authenticated - redirect to login with return URL
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const returnUrl = `${location.pathname}${location.search}`;
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(returnUrl)}`}
+        replace
+      />
+    );
   }
 
   // Check suspension status
   if (isSuspended() && !allowSuspended) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-red-50">
-        <div className="max-w-md text-center">
-          <div className="text-red-600 text-6xl mb-4">⛔</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="max-w-md text-center rounded-lg border border-red-200 bg-white p-6">
           <h1 className="text-2xl font-bold text-red-900 mb-2">
             Account Suspended
           </h1>
@@ -65,9 +70,8 @@ export function ProtectedRoute({
 
     if (!hasRequiredRole) {
       return (
-        <div className="flex items-center justify-center min-h-screen bg-yellow-50">
-          <div className="max-w-md text-center">
-            <div className="text-yellow-600 text-6xl mb-4">⚠️</div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+          <div className="max-w-md text-center rounded-lg border border-yellow-200 bg-white p-6">
             <h1 className="text-2xl font-bold text-yellow-900 mb-2">
               Access Denied
             </h1>
