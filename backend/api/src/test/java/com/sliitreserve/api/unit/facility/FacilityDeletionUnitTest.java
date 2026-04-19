@@ -6,6 +6,7 @@ import com.sliitreserve.api.entities.booking.BookingStatus;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ConflictException;
 import com.sliitreserve.api.factories.FacilityFactory;
+import com.sliitreserve.api.observers.EventEnvelope;
 import com.sliitreserve.api.observers.EventPublisher;
 import com.sliitreserve.api.repositories.bookings.ApprovalStepRepository;
 import com.sliitreserve.api.repositories.bookings.BookingRepository;
@@ -21,10 +22,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -107,7 +110,8 @@ public class FacilityDeletionUnitTest {
         booking.setId(UUID.randomUUID());
         booking.setStatus(BookingStatus.APPROVED);
         booking.setRequestedBy(requester);
-        booking.setBookingDate(LocalDate.now());
+        booking.setBookingDate(LocalDate.now().plusDays(1));
+        booking.setStartTime(LocalTime.of(10, 0));
 
         when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
         when(bookingRepository.countByFacility_Id(id)).thenReturn(1L);
@@ -117,8 +121,75 @@ public class FacilityDeletionUnitTest {
 
         assertEquals(BookingStatus.CANCELLED, booking.getStatus());
         verify(bookingRepository).save(booking);
-        verify(notificationService).publish(any());
+        ArgumentCaptor<EventEnvelope> eventCaptor = ArgumentCaptor.forClass(EventEnvelope.class);
+        verify(notificationService).publish(eventCaptor.capture());
+        EventEnvelope capturedEvent = eventCaptor.getValue();
+        assertNotNull(capturedEvent.getMetadata());
+        assertEquals(requester.getId().toString(), capturedEvent.getMetadata().get("userId"));
         verify(facilityRepository).delete(any(Facility.class));
+    }
+
+    @Test
+    @DisplayName("markOutOfService cancels active bookings and notifies users")
+    void markOutOfService_CancelsBookingsAndNotifies() {
+        UUID id = UUID.randomUUID();
+        Facility facility = new Facility();
+        facility.setId(id);
+        facility.setName("Test Lab");
+
+        User requester = new User();
+        requester.setId(UUID.randomUUID());
+
+        Booking booking = new Booking();
+        booking.setId(UUID.randomUUID());
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setRequestedBy(requester);
+        booking.setBookingDate(LocalDate.now().plusDays(1));
+        booking.setStartTime(LocalTime.of(11, 0));
+
+        when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
+        when(bookingRepository.findByFacility_Id(id)).thenReturn(List.of(booking));
+
+        facilityService.markOutOfService(id);
+
+        assertEquals(Facility.FacilityStatus.OUT_OF_SERVICE, facility.getStatus());
+        assertEquals(BookingStatus.CANCELLED, booking.getStatus());
+        verify(bookingRepository).save(booking);
+
+        ArgumentCaptor<EventEnvelope> eventCaptor = ArgumentCaptor.forClass(EventEnvelope.class);
+        verify(notificationService).publish(eventCaptor.capture());
+        EventEnvelope capturedEvent = eventCaptor.getValue();
+        assertEquals("FACILITY_REMOVED_CANCELLED", capturedEvent.getEventType());
+        assertNotNull(capturedEvent.getMetadata());
+        assertEquals(requester.getId().toString(), capturedEvent.getMetadata().get("userId"));
+    }
+
+    @Test
+    @DisplayName("markOutOfService does not cancel bookings whose start time has already passed")
+    void markOutOfService_DoesNotCancelPastStartBookings() {
+        UUID id = UUID.randomUUID();
+        Facility facility = new Facility();
+        facility.setId(id);
+        facility.setName("Test Lab");
+
+        User requester = new User();
+        requester.setId(UUID.randomUUID());
+
+        Booking booking = new Booking();
+        booking.setId(UUID.randomUUID());
+        booking.setStatus(BookingStatus.APPROVED);
+        booking.setRequestedBy(requester);
+        booking.setBookingDate(LocalDate.now().minusDays(1));
+        booking.setStartTime(LocalTime.of(9, 0));
+
+        when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
+        when(bookingRepository.findByFacility_Id(id)).thenReturn(List.of(booking));
+
+        facilityService.markOutOfService(id);
+
+        assertEquals(BookingStatus.APPROVED, booking.getStatus());
+        verify(bookingRepository, never()).save(any(Booking.class));
+        verify(notificationService, never()).publish(any(EventEnvelope.class));
     }
 
     @Test

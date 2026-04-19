@@ -551,18 +551,10 @@ export default function FacilityManagementDashboard() {
     [filters]
   );
 
-  // ── Client-side search ────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
+  const searchActive = searchQuery.trim().length > 0;
 
-  const displayedFacilities = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return facilities;
-    return facilities.filter((f) =>
-      [f.name, f.type, f.building, f.floor, f.locationDescription]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(q))
-    );
-  }, [facilities, searchQuery]);
+  const displayedFacilities = facilities;
 
   // ── Data loading ──────────────────────────────────────────────────────────
 
@@ -570,9 +562,11 @@ export default function FacilityManagementDashboard() {
     try {
       setLoading(true);
       const params = { page: p, size: PAGE_SIZE };
-      const payload = filtersActive
+      const keyword = searchQuery.trim();
+      const payload = (filtersActive || keyword)
         ? await searchFacilities({
           ...params,
+          ...(keyword ? { query: keyword } : {}),
           ...(filters.type ? { type: filters.type } : {}),
           ...(filters.minCapacity ? { minCapacity: Number(filters.minCapacity) } : {}),
           ...(filters.building ? { building: filters.building } : {}),
@@ -590,7 +584,7 @@ export default function FacilityManagementDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [filtersActive, filters]);
+  }, [filtersActive, filters, searchQuery]);
 
   // Debounced filter reaction
   useEffect(() => {
@@ -965,7 +959,7 @@ export default function FacilityManagementDashboard() {
         {total > 0 && (
           <p className="mt-3 text-xs text-[#94a3b8]">
             {total} {total === 1 ? "result" : "results"} found
-            {filtersActive ? " matching current filters" : ""}
+            {filtersActive || searchActive ? " matching current search criteria" : ""}
           </p>
         )}
       </div>

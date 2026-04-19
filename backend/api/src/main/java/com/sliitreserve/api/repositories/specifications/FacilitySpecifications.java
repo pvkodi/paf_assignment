@@ -98,6 +98,27 @@ public class FacilitySpecifications {
     }
 
     /**
+     * Create a specification for free-text keyword matching used by search bars.
+     * Matches common discoverability fields while preserving other applied filters.
+     *
+     * @param keyword Search phrase
+     * @return Specification that OR-matches keyword across key fields
+     */
+    public static Specification<Facility> keywordContains(String keyword) {
+        return (root, query, cb) -> {
+            String pattern = "%" + keyword.toLowerCase() + "%";
+            return cb.or(
+                    cb.like(cb.lower(root.get("name")), pattern),
+                    cb.like(cb.lower(root.get("facilityCode")), pattern),
+                    cb.like(cb.lower(root.get("building")), pattern),
+                    cb.like(cb.lower(root.get("floor")), pattern),
+                    cb.like(cb.lower(root.get("location")), pattern),
+                    cb.like(cb.lower(root.get("type").as(String.class)), pattern)
+            );
+        };
+    }
+
+    /**
      * Create a specification with multiple criteria combined.
      *
      * @param active   Include only active facilities

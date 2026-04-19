@@ -13,6 +13,7 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
   const userRole = user?.roles?.[0] || "USER";
   const [type, setType] = useState("");
   const [minCapacity, setMinCapacity] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
   
@@ -50,6 +51,7 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
       const payload = (forceSearch || hasSearched)
         ? await searchFacilities({
             ...baseParams,
+            ...(keyword ? { query: keyword } : {}),
             ...(type ? { type } : {}),
             ...(minCapacity !== "" ? { minCapacity: Number(minCapacity) } : {}),
             ...(location ? { location } : {}),
@@ -195,6 +197,7 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
   const handleClear = () => {
     setType("");
     setMinCapacity("");
+    setKeyword("");
     setLocation("");
     setBuilding("");
     setSuggestionStart("");
@@ -250,6 +253,11 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
 
             <form onSubmit={search} className="space-y-4">
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#334155] mb-1">Search Keyword</label>
+                  <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g., lab, C203, auditorium" className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-[#334155] mb-1">Facility Type</label>
                   <select value={type} onChange={(e) => setType(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
@@ -457,6 +465,11 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
 
         <form onSubmit={search} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#334155] mb-1">Search Keyword</label>
+              <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g., lab, C203, auditorium" className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[#334155] mb-1">Facility Type</label>
               <select value={type} onChange={(e) => setType(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">

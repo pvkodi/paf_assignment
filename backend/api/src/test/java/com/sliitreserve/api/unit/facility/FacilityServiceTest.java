@@ -103,6 +103,7 @@ public class FacilityServiceTest {
                 100,
                 "A Block",
                 "North Wing",
+                "hall",
                 Facility.FacilityStatus.ACTIVE,
                 PageRequest.of(0, 10)
         );

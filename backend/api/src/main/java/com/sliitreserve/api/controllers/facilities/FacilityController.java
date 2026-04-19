@@ -27,7 +27,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import com.sliitreserve.api.services.facility.TimetableParserService;
 import com.sliitreserve.api.services.facility.FacilityRuleEngine;
@@ -69,13 +68,14 @@ public class FacilityController {
             @RequestParam(required = false) Integer minCapacity,
             @RequestParam(required = false) String building,
             @RequestParam(required = false) String location,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) Facility.FacilityStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(
-                facilityService.searchFacilities(type, minCapacity, building, location, status, pageable)
+                facilityService.searchFacilities(type, minCapacity, building, location, query, status, pageable)
         );
     }
 

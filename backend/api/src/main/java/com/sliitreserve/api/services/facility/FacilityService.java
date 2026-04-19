@@ -1,6 +1,5 @@
 package com.sliitreserve.api.services.facility;
 
-import com.sliitreserve.api.dto.facility.AvailabilityWindowDTO;
 import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
 import com.sliitreserve.api.entities.facility.AvailabilityWindow;
@@ -42,6 +41,7 @@ import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +74,7 @@ public class FacilityService {
             Integer minCapacity,
             String building,
             String location,
+            String searchQuery,
             Facility.FacilityStatus status,
             Pageable pageable
     ) {
@@ -90,6 +91,9 @@ public class FacilityService {
         }
         if (location != null && !location.isBlank()) {
             specification = specification.and(FacilitySpecifications.locationContains(location));
+        }
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            specification = specification.and(FacilitySpecifications.keywordContains(searchQuery));
         }
         if (status != null) {
             specification = specification.and(FacilitySpecifications.hasStatus(status));
@@ -163,6 +167,7 @@ public class FacilityService {
         Facility facility = getFacilityEntity(facilityId);
         facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
         facilityRepository.save(facility);
+        cancelAllBookings(facilityId, facility.getName());
     }
 
     @Transactional
@@ -185,8 +190,11 @@ public class FacilityService {
     @Transactional
     public void bulkDeactivate(List<UUID> ids) {
         List<Facility> facilities = facilityRepository.findAllById(ids);
-        facilities.forEach(f -> f.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE));
-        facilityRepository.saveAll(facilities);
+        for (Facility facility : facilities) {
+            facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
+            facilityRepository.save(facility);
+            cancelAllBookings(facility.getId(), facility.getName());
+        }
     }
 
     @Transactional
@@ -203,8 +211,18 @@ public class FacilityService {
 
     private void cancelAllBookings(UUID facilityId, String facilityName) {
         List<Booking> bookings = bookingRepository.findByFacility_Id(facilityId);
+        LocalDateTime now = LocalDateTime.now();
         for (Booking booking : bookings) {
             if (booking.getStatus() == BookingStatus.PENDING || booking.getStatus() == BookingStatus.APPROVED) {
+                if (booking.getBookingDate() == null || booking.getStartTime() == null) {
+                    continue;
+                }
+
+                LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+                if (bookingStart.isBefore(now)) {
+                    continue;
+                }
+
                 booking.setStatus(BookingStatus.CANCELLED);
                 bookingRepository.save(booking);
 
@@ -216,10 +234,11 @@ public class FacilityService {
                         .severity(EventSeverity.HIGH)
                         .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
                         .title("Booking Cancelled: Facility Unavailable")
-                        .description(String.format("Your booking for %s on %s has been cancelled because the facility has been removed from service.", 
+                        .description(String.format("We're sorry, your booking for %s on %s has been cancelled because the facility is currently unavailable.", 
                             facilityName, booking.getBookingDate()))
                         .source("FacilityService")
                         .entityReference("booking:" + booking.getId())
+                        .metadata(Map.of("userId", booking.getRequestedBy().getId().toString()))
                         .build());
                 } catch (Exception e) {
                     log.error("Failed to send cancellation notification for booking {}", booking.getId(), e);
