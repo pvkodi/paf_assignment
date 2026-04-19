@@ -35,7 +35,9 @@ export async function markFacilityOutOfService(id) {
 }
 
 export async function hardDeleteFacility(id, force = false) {
-  await apiClient.delete(`/v1/facilities/${id}/permanent`, { params: { force } });
+  await apiClient.delete(`/v1/facilities/${id}/permanent`, {
+    params: { force },
+  });
 }
 
 export async function bulkActionFacilities(ids, action, force = false) {
@@ -62,21 +64,28 @@ export async function fetchFacilitySuggestions(payload) {
 }
 
 export async function fetchFacilityTimetable(id, day) {
-  const response = await apiClient.get(`/v1/facilities/${id}/timetable-availability`, {
-    params: { day },
-  });
+  const response = await apiClient.get(
+    `/v1/facilities/${id}/timetable-availability`,
+    {
+      params: { day },
+    },
+  );
   return response.data;
 }
 
 export async function uploadFacilityTimetable(file) {
   const formData = new FormData();
   formData.append("file", file);
-  
-  const response = await apiClient.post("/v1/facilities/timetable/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
+
+  const response = await apiClient.post(
+    "/v1/facilities/timetable/upload",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
-  });
+  );
   return response.data;
 }
 
@@ -86,11 +95,17 @@ export async function batchCreateFacilities(requests) {
 }
 
 export async function fetchFacilityInsights(id) {
+  if (!id) {
+    throw new Error("Facility id is required for insights");
+  }
   const response = await apiClient.get(`/v1/facilities/${id}/insights`);
   return response.data;
 }
 
 export async function fetchFacilityHeatmap(id, startDate, endDate) {
+  if (!id) {
+    throw new Error("Facility id is required for heatmap");
+  }
   const response = await apiClient.get(`/v1/facilities/${id}/heatmap`, {
     params: { startDate, endDate },
   });

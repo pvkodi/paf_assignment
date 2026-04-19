@@ -436,6 +436,12 @@ export function UtilizationDashboard() {
   };
 
   const loadFacility = async () => {
+    if (!selectedFacility) {
+      setFacilityInsights(null);
+      setFacilityHeatmap(null);
+      return;
+    }
+
     setLoading(true);
     setFacilityInsights(null);
     setFacilityHeatmap(null);
@@ -741,12 +747,23 @@ export function UtilizationDashboard() {
           <span className="text-gray-300 font-black">→</span>
           <input type="date" value={dateRange.to} onChange={e => setDateRange(p => ({ ...p, to: e.target.value }))}
             className="bg-gray-50 rounded-lg px-3 py-2 text-xs font-bold text-gray-700 border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button onClick={scope === "campus" ? loadCampus : loadFacility} disabled={loading}
-            className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-black hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md">
+          <button
+            onClick={scope === "campus" ? loadCampus : loadFacility}
+            disabled={loading || (scope === "facility" && !selectedFacility)}
+            className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-black hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
+          >
             {loading ? "Loading..." : "Analyze"}
           </button>
         </div>
       </section>
+
+      {scope === "facility" && !selectedFacility && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">
+            Select a facility first to load insights and heatmap data.
+          </p>
+        </section>
+      )}
 
       {/* Content */}
       <div className="relative min-h-[400px]">

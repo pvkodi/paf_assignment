@@ -90,7 +90,7 @@ function DetailRow({ label, value }) {
 
 // ─── Weekly Schedule Grid ─────────────────────────────────────────────────────
 
-function WeeklyScheduleGrid({ windows, status }) {
+function WeeklyScheduleGrid({ windows, status, outOfServiceStart, outOfServiceEnd }) {
   const today = currentDayOfWeek();
 
   const windowsByDay = useMemo(() => {
@@ -107,10 +107,10 @@ function WeeklyScheduleGrid({ windows, status }) {
     
     // Check scheduled out-of-service
     const now = new Date();
-    if (facility?.outOfServiceStart) {
-      const oosStart = new Date(facility.outOfServiceStart);
+    if (outOfServiceStart) {
+      const oosStart = new Date(outOfServiceStart);
       if (now >= oosStart) {
-        if (!facility.outOfServiceEnd || now < new Date(facility.outOfServiceEnd)) {
+        if (!outOfServiceEnd || now < new Date(outOfServiceEnd)) {
           return false;
         }
       }
@@ -119,7 +119,7 @@ function WeeklyScheduleGrid({ windows, status }) {
     return (windowsByDay[today] ?? []).some((w) =>
       isTimeInWindow(w.startTime, w.endTime)
     );
-  }, [windowsByDay, today, status, facility?.outOfServiceStart, facility?.outOfServiceEnd]);
+  }, [windowsByDay, today, status, outOfServiceStart, outOfServiceEnd]);
 
   if (!windows || windows.length === 0) {
     return (
@@ -556,6 +556,8 @@ export default function FacilityDetailsPage() {
           <WeeklyScheduleGrid
             windows={facility.availabilityWindows}
             status={facility.status}
+            outOfServiceStart={facility.outOfServiceStart}
+            outOfServiceEnd={facility.outOfServiceEnd}
           />
         </section>
 
