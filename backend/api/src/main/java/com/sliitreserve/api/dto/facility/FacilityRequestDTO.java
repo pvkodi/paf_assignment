@@ -58,6 +58,15 @@ public class FacilityRequestDTO extends com.sliitreserve.api.dto.BaseRequestDTO 
     private List<AvailabilityWindowDTO> availabilityWindows;
 
     /**
+     * Geofencing fields for location-based check-in verification
+     */
+    private Double latitude;
+    private Double longitude;
+    private String wifiSSID;
+    private String wifiMacAddress;
+    private Integer geofenceRadiusMeters;
+
+    /**
      * Subtype-specific attributes (composition extension point).
      */
     private Map<String, Object> subtypeAttributes;
