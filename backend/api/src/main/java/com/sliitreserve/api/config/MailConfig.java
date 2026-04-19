@@ -624,7 +624,7 @@ class MailtrapEmailTemplateFactory implements EmailTemplateFactory {
                         + "<div class=\"footer\">"
                         + "<p>This is an automated message from Campus Operations Hub.</p>"
                         + "<p>Please do not reply to this email.</p>"
-                        + "<p>&copy; 2026 Smart Campus. All rights reserved.</p>"
+                        + "<p>&copy; 2026 VenueLink. All rights reserved.</p>"
                         + "</div>\n"
                         + "</div>\n"
                         + "</body>\n"

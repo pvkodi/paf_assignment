@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Smart Campus Operations Hub API
+  title: VenueLink Operations Hub API
   version: 1.0.0
   description: Contract-first API for auth, facilities, bookings, maintenance, notifications, and analytics.
 servers:

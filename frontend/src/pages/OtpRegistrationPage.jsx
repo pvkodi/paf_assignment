@@ -206,7 +206,7 @@ export function OtpRegistrationPage() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>Smart Campus Registration</h1>
+        <h1>VenueLink Registration</h1>
 
         {/* Step 1: Email Entry */}
         {step === "email" && (

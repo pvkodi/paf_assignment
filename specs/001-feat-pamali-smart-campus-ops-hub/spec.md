@@ -1,9 +1,9 @@
-# Feature Specification: Smart Campus Operations Hub
+# Feature Specification: VenueLink Operations Hub
 
 **Feature Branch**: `001-feat-pamali-smart-campus-ops-hub`  
 **Created**: 2026-03-23  
 **Status**: Draft  
-**Input**: User description: "A university Smart Campus Operations Hub with modules for authentication, facilities, bookings, approvals, quotas, maintenance tickets, SLA escalation, notifications, analytics, and local uploads."
+**Input**: User description: "A university VenueLink Operations Hub with modules for authentication, facilities, bookings, approvals, quotas, maintenance tickets, SLA escalation, notifications, analytics, and local uploads."
 
 ## Clarifications
 

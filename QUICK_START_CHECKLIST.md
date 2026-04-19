@@ -34,7 +34,7 @@
   ```
 
 - [ ] **Postman Imported** (Optional but recommended)
-  - Create collection "Smart Campus API"
+  - Create collection "VenueLink API"
   - Create folders: Auth, Tickets, Bookings, Appeals, Notifications, Analytics
   - Add environment variables: `base_url`, `admin_token`, `student_token`, `technician_token`
 

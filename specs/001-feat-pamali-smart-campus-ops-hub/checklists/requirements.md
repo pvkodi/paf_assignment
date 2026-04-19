@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Smart Campus Operations Hub
+# Specification Quality Checklist: VenueLink Operations Hub
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-23  

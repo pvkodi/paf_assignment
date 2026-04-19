@@ -9,19 +9,32 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
   const [quotaStatus, setQuotaStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Normalize userRole to ensure it's a valid string
+  const normalizedRole = React.useMemo(() => {
+    if (!userRole) return "USER";
+    // Handle case where userRole might be an object or unexpected type
+    const roleStr = String(userRole).toUpperCase();
+    if (["ADMIN", "LECTURER", "USER", "FACILITY_MANAGER"].includes(roleStr)) {
+      return roleStr;
+    }
+    return "USER";
+  }, [userRole]);
+
   useEffect(() => {
     fetchQuotaStatus();
-  }, [userRole]);
+  }, [normalizedRole]);
 
   const fetchQuotaStatus = async () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/v1/bookings/quota-status");
+      console.log("Quota API Response:", response.data);
       setQuotaStatus(response.data);
     } catch (error) {
       console.error("Failed to fetch quota status:", error);
+      console.warn("Using default quota for role:", normalizedRole);
       // Set default quota based on role
-      setQuotaStatus(getDefaultQuota(userRole));
+      setQuotaStatus(getDefaultQuota(normalizedRole));
     } finally {
       setLoading(false);
     }
@@ -30,25 +43,43 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
   const getDefaultQuota = (role) => {
     const quotas = {
       USER: {
-        maxConcurrentBookings: 3,
-        maxPeakHoursPerWeek: 2,
-        maxAdvanceDays: 14,
-        currentConcurrent: 1,
-        currentPeakHours: 0,
+        effectiveRole: "USER",
+        weeklyBookings: 0,
+        weeklyQuota: 3,
+        weeklyRemaining: 3,
+        monthlyBookings: 0,
+        monthlyQuota: 8,
+        monthlyRemaining: 8,
+        canBookDuringPeakHours: false,
+        peakHourWindow: "08:00-10:00",
+        advanceBookingDays: 14,
+        advanceBookingUntil: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       },
       LECTURER: {
-        maxConcurrentBookings: 5,
-        maxPeakHoursPerWeek: 3,
-        maxAdvanceDays: 30,
-        currentConcurrent: 2,
-        currentPeakHours: 1,
+        effectiveRole: "LECTURER",
+        weeklyBookings: 0,
+        weeklyQuota: 5,
+        weeklyRemaining: 5,
+        monthlyBookings: 0,
+        monthlyQuota: 12,
+        monthlyRemaining: 12,
+        canBookDuringPeakHours: true,
+        peakHourWindow: "08:00-10:00",
+        advanceBookingDays: 30,
+        advanceBookingUntil: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       },
       ADMIN: {
-        maxConcurrentBookings: null, // Unlimited
-        maxPeakHoursPerWeek: null,
-        maxAdvanceDays: null,
-        currentConcurrent: 0,
-        currentPeakHours: 0,
+        effectiveRole: "ADMIN",
+        weeklyBookings: 0,
+        weeklyQuota: null, // Unlimited
+        weeklyRemaining: 0,
+        monthlyBookings: 0,
+        monthlyQuota: null,
+        monthlyRemaining: 0,
+        canBookDuringPeakHours: true,
+        peakHourWindow: "08:00-10:00",
+        advanceBookingDays: null,
+        advanceBookingUntil: null,
       },
     };
     return quotas[role] || quotas.USER;
@@ -76,14 +107,14 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
     );
   }
 
-  const quota = quotaStatus || getDefaultQuota(userRole);
-  const isAdmin = quota.effectiveRole === "ADMIN" || userRole === "ADMIN";
+  const quota = quotaStatus || getDefaultQuota(normalizedRole);
+  const isAdmin = quota.effectiveRole === "ADMIN" || normalizedRole === "ADMIN";
 
   if (compact) {
     return (
       <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 shadow-sm">
         <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-2">
-          Quota Status <span className="text-[#64748b]">({quota.effectiveRole || userRole})</span>
+          Quota Status <span className="text-[#64748b]">({quota.effectiveRole || normalizedRole})</span>
         </p>
         <div className="space-y-2 text-xs text-[#0f172a] font-medium">
           <div className="flex justify-between">
@@ -115,7 +146,7 @@ export default function QuotaPolicySummary({ userRole, compact = false }) {
         <div>
           <h3 className="text-lg font-bold text-[#0f172a] tracking-tight mb-1">Quota Policy</h3>
           <p className="text-sm text-[#64748b] font-medium flex items-center gap-2">
-            Active Role: <span className="bg-[#f1f5f9] px-2 py-0.5 rounded-md text-[#0f172a] text-xs uppercase tracking-wider">{quota.effectiveRole || userRole}</span>
+            Active Role: <span className="bg-[#f1f5f9] px-2 py-0.5 rounded-md text-[#0f172a] text-xs uppercase tracking-wider">{quota.effectiveRole || normalizedRole}</span>
           </p>
         </div>
         <div className="w-10 h-10 bg-[#f8fafc] rounded-full border border-[#e2e8f0] flex items-center justify-center">

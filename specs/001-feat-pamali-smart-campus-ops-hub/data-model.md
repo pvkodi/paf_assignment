@@ -1,4 +1,4 @@
-# Data Model: Smart Campus Operations Hub
+# Data Model: VenueLink Operations Hub
 
 ## Modeling Notes
 - Persistence: PostgreSQL 15 via Spring Data JPA/Hibernate.

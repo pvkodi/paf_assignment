@@ -1,4 +1,4 @@
-# Research: Smart Campus Operations Hub
+# Research: VenueLink Operations Hub
 
 ## Decision 1: Backend architecture and layering
 - Decision: Use Spring Boot 3.x monolith with strict Controller -> Service -> Repository layering.

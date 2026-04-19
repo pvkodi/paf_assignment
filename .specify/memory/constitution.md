@@ -22,7 +22,7 @@ Sync Impact Report
 	- None
 -->
 
-# Smart Campus Operations Hub Constitution
+# VenueLink Operations Hub Constitution
 
 ## Core Principles
 
@@ -88,7 +88,7 @@ from affected owners before merge.
 
 ## Governance
 
-This constitution is the highest engineering authority for the Smart Campus Operations Hub.
+This constitution is the highest engineering authority for the VenueLink Operations Hub.
 All plans, specs, tasks, and code reviews MUST include an explicit constitutional compliance
 check against each core principle.
 

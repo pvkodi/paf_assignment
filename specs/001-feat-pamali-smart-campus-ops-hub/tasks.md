@@ -1,4 +1,4 @@
-# Tasks: Smart Campus Operations Hub
+# Tasks: VenueLink Operations Hub
 
 **Input**: Design documents from `/specs/001-feat-pamali-smart-campus-ops-hub/`  
 **Prerequisites**: `plan.md` (required), `spec.md` (required), `research.md`, `data-model.md`, `contracts/openapi.yaml`, `quickstart.md`

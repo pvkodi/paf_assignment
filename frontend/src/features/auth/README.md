@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the frontend authentication implementation for the Smart Campus Operations Hub, fulfilling User Story 1 (Secure Access and Role Governance).
+This directory contains the frontend authentication implementation for the VenueLink Operations Hub, fulfilling User Story 1 (Secure Access and Role Governance).
 
 **Status**: ✅ Complete  
 **Requirements Met**: FR-001 (OAuth), FR-002 (Role Assignment), FR-003 (Suspension Enforcement)
@@ -157,7 +157,7 @@ VITE_API_URL=http://localhost:8080/api
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
 
 # Optional
-VITE_APP_NAME=Smart Campus Hub
+VITE_APP_NAME=VenueLink Hub
 VITE_APP_DEBUG=false
 ```
 
