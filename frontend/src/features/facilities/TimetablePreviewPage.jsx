@@ -57,18 +57,38 @@ const TimetablePreviewPage = () => {
     try {
       setIsSubmitting(true);
       setError(null);
-      const itemsToCreate = result.unmatchedRooms.map((r) => ({
-        facilityCode: r.facilityCode,
-        name: drafts[r.facilityCode]?.name || r.facilityCode,
-        building: drafts[r.facilityCode].location,
-        locationDescription: drafts[r.facilityCode].location,
-        floor: drafts[r.facilityCode].floor,
-        capacity: drafts[r.facilityCode].capacity,
-        type: drafts[r.facilityCode].type,
-        // Assume default availability
-        availabilityStartTime: "08:00:00",
-        availabilityEndTime: "18:00:00",
-      }));
+      const itemsToCreate = result.unmatchedRooms.map((r) => {
+        const scheduleObj = result.roomSchedules ? result.roomSchedules[r.facilityCode] : null;
+        const windows = [];
+        
+        if (scheduleObj) {
+          Object.entries(scheduleObj).forEach(([day, blocks]) => {
+            blocks.forEach((block) => {
+              const parts = block.split(" - ");
+              if (parts.length === 2) {
+                windows.push({
+                  dayOfWeek: day,
+                  startTime: parts[0].length === 5 ? `${parts[0]}:00` : parts[0],
+                  endTime: parts[1].length === 5 ? `${parts[1]}:00` : parts[1]
+                });
+              }
+            });
+          });
+        }
+
+        return {
+          facilityCode: r.facilityCode,
+          name: drafts[r.facilityCode]?.name || r.facilityCode,
+          building: drafts[r.facilityCode].location,
+          locationDescription: drafts[r.facilityCode].location,
+          floor: drafts[r.facilityCode].floor,
+          capacity: drafts[r.facilityCode].capacity,
+          type: drafts[r.facilityCode].type,
+          availabilityStartTime: "08:00:00",
+          availabilityEndTime: "18:00:00",
+          availabilityWindows: windows
+        };
+      });
 
       await batchCreateFacilities(itemsToCreate);
       alert("Successfully imported " + itemsToCreate.length + " missing facilities!");

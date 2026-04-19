@@ -337,7 +337,7 @@ export default function FacilityDetailsPage() {
           capacity: facility.capacity,
           building: facility.building && facility.building.trim() ? facility.building : "TBD",
           floor: facility.floor && facility.floor.trim() ? facility.floor : "N/A",
-          locationDescription: facility.locationDescription && facility.locationDescription.trim() ? facility.locationDescription : "Facility",
+          locationDescription: facility.locationDescription,
           availabilityStartTime: facility.availabilityStartTime,
           availabilityEndTime: facility.availabilityEndTime,
           status: "ACTIVE",

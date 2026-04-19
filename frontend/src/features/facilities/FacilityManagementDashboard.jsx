@@ -324,7 +324,6 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
     const cap = Number(formData.capacity);
     if (!formData.capacity || isNaN(cap) || cap < 1) e.capacity = "Capacity must be greater than 0.";
     if (!formData.building.trim()) e.building = "Building is required.";
-    if (!formData.locationDescription.trim()) e.locationDescription = "Location description is required.";
     return e;
   }, [formData]);
 
@@ -459,7 +458,7 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
                 )}
 
                 <div className="sm:col-span-2">
-                  {field("fac-location", "Location Description *",
+                  {field("fac-location", "Location Description",
                     <input
                       id="fac-location"
                       type="text"
@@ -672,7 +671,7 @@ export default function FacilityManagementDashboard() {
           capacity: facility.capacity,
           building: facility.building && facility.building.trim() ? facility.building : "TBD",
           floor: facility.floor && facility.floor.trim() ? facility.floor : "N/A",
-          locationDescription: facility.locationDescription && facility.locationDescription.trim() ? facility.locationDescription : "Facility",
+          locationDescription: facility.locationDescription,
           availabilityStartTime: facility.availabilityStartTime,
           availabilityEndTime: facility.availabilityEndTime,
           status: "ACTIVE",

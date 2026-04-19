@@ -39,7 +39,6 @@ public class FacilityRequestDTO extends com.sliitreserve.api.dto.BaseRequestDTO 
 
     private String floor;
 
-    @NotBlank(message = "Location description is required")
     private String locationDescription;
 
     @NotNull(message = "Availability start time is required")
