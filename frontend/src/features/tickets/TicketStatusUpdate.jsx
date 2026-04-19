@@ -5,8 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 /**
  * Ticket Status Update Component
  * Allows technicians to update ticket status with state machine validation
- * Workflow: OPEN → IN_PROGRESS → RESOLVED → CLOSED
- * Admin can also reject with reason at any state
  */
 
 export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated }) {
@@ -22,9 +20,6 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
 
   const isAdmin = user?.roles?.includes("ADMIN");
 
-  // Define allowed state transitions based on state machine
-  // Technicians: strict workflow (OPEN → IN_PROGRESS → RESOLVED → CLOSED)
-  // Admins: can skip steps and transition to any forward state
   const getNextStatuses = (status) => {
     const strictTransitions = {
       OPEN: ["IN_PROGRESS"],
@@ -34,7 +29,6 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       REJECTED: [],
     };
 
-    // Admin override: can move to any later status in the workflow
     const allForwardStates = {
       OPEN: ["IN_PROGRESS", "RESOLVED", "CLOSED"],
       IN_PROGRESS: ["RESOLVED", "CLOSED"],
@@ -64,32 +58,15 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       return;
     }
 
-    // Validate rejection
     if (showRejectOption) {
-      if (!rejectReason.trim()) {
-        setError("Please provide a reason for rejection");
-        return;
-      }
-      if (rejectReason.length < 10) {
-        setError("Rejection reason must be at least 10 characters");
-        return;
-      }
+      if (!rejectReason.trim()) { setError("Please provide a reason for rejection"); return; }
+      if (rejectReason.length < 10) { setError("Rejection reason must be at least 10 characters"); return; }
     }
 
-    // Validate solution summary for RESOLVED status
     if (newStatus === "RESOLVED" && !showRejectOption) {
-      if (!solutionSummary.trim()) {
-        setError("Please provide a solution summary for the student");
-        return;
-      }
-      if (solutionSummary.length < 20) {
-        setError("Solution summary must be at least 20 characters");
-        return;
-      }
-      if (solutionSummary.length > 2000) {
-        setError("Solution summary must not exceed 2000 characters");
-        return;
-      }
+      if (!solutionSummary.trim()) { setError("Please provide a solution summary for the student"); return; }
+      if (solutionSummary.length < 20) { setError("Solution summary must be at least 20 characters"); return; }
+      if (solutionSummary.length > 2000) { setError("Solution summary must not exceed 2000 characters"); return; }
     }
 
     try {
@@ -101,9 +78,7 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       
       await apiClient.put(`/tickets/${ticketId}/status`, payload);
 
-      // Create comments based on status change
       try {
-        // For RESOLVED status, create PUBLIC solution summary comment (student-facing)
         if (newStatus === "RESOLVED" && !showRejectOption) {
           await apiClient.post(`/tickets/${ticketId}/comments`, {
             content: `**SOLUTION:** ${solutionSummary}`,
@@ -111,7 +86,6 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
           });
         }
 
-        // Create PUBLIC work note comment for all status changes (visible to everyone)
         if (workNote.trim() && !showRejectOption) {
           await apiClient.post(`/tickets/${ticketId}/comments`, {
             content: `Status updated to ${newStatus}: ${workNote}`,
@@ -120,7 +94,6 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
         }
       } catch (commentErr) {
         console.error("Failed to create status change comment:", commentErr);
-        // Don't fail the whole operation if comment creation fails
       }
 
       setSuccess(true);
@@ -134,10 +107,7 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
       }, 2000);
     } catch (err) {
       console.error("Failed to update status:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to update status. Please try again.",
-      );
+      setError(err.response?.data?.message || "Failed to update status. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -145,66 +115,56 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
 
   const getStatusColor = (status) => {
     const colors = {
-      OPEN: "bg-blue-100 text-blue-800",
-      IN_PROGRESS: "bg-purple-100 text-purple-800",
-      RESOLVED: "bg-green-100 text-green-800",
-      CLOSED: "bg-gray-100 text-gray-800",
-      REJECTED: "bg-red-100 text-red-800",
+      OPEN: "bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]",
+      IN_PROGRESS: "bg-[#e0e7ff] text-[#4338ca] border-[#c7d2fe]",
+      RESOLVED: "bg-[#dcfce7] text-[#15803d] border-[#bbf7d0]",
+      CLOSED: "bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]",
+      REJECTED: "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-[#f8fafc] text-[#64748b] border-[#e2e8f0]";
   };
 
   return (
     <div className="space-y-4">
-      <h4 className="font-semibold text-gray-900">Update Status</h4>
+      <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3">Update Status</h4>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          {error}
         </div>
       )}
 
       {success && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700">Status updated successfully!</p>
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+          Status updated successfully!
         </div>
       )}
 
-      <div className="space-y-3">
-        {/* Current Status */}
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current Status
-          </label>
-          <div
-            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-              currentStatus,
-            )}`}
-          >
+          <label className="block text-xs font-medium text-[#64748b] mb-1">Current Status</label>
+          <div className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold border ${getStatusColor(currentStatus)}`}>
             {currentStatus}
           </div>
         </div>
 
-        {/* Status Progression */}
         {allowedNextStatuses.length > 0 || canReject ? (
-          <form onSubmit={handleStatusChange} className="space-y-3">
+          <form onSubmit={handleStatusChange} className="space-y-4">
             {!showRejectOption ? (
               <>
                 {allowedNextStatuses.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Change To
-                    </label>
+                    <label className="block text-xs font-medium text-[#64748b] mb-1">Change To</label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                     >
                       <option value={currentStatus}>{currentStatus} (current)</option>
                       {allowedNextStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
+                        <option key={status} value={status}>{status}</option>
                       ))}
                     </select>
                   </div>
@@ -212,38 +172,30 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
 
                 {allowedNextStatuses.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Work Note (Optional)
-                    </label>
+                    <label className="block text-xs font-medium text-[#64748b] mb-1">Work Note <span className="font-normal text-[#94a3b8]">(Optional)</span></label>
                     <textarea
                       value={workNote}
                       onChange={(e) => setWorkNote(e.target.value)}
-                      placeholder="Add a note about this status change (visible to everyone)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder="Add a note (visible to everyone)"
+                      className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       rows="2"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      💬 This will be visible to the student | {workNote.length}/500 characters
-                    </p>
+                    <p className="text-[10px] text-[#94a3b8] mt-1 text-right">{workNote.length}/500 chars</p>
                   </div>
                 )}
 
                 {newStatus === "RESOLVED" && allowedNextStatuses.length > 0 && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                  <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-blue-900 mb-2">
-                        Solution Summary for Student <span className="text-red-500">*</span>
-                      </label>
+                      <label className="block text-sm font-semibold text-[#0f172a] mb-2">Solution Summary <span className="text-red-500">*</span></label>
                       <textarea
                         value={solutionSummary}
                         onChange={(e) => setSolutionSummary(e.target.value)}
-                        placeholder="Explain the solution to the student (e.g., 'Replaced faulty power supply. Tested and confirmed working.')"
-                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Explain the solution to the student..."
+                        className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                         rows="3"
                       />
-                      <p className="text-xs text-blue-700 mt-2">
-                        ✓ Student will see this explanation | Min 20 chars | {solutionSummary.length}/2000
-                      </p>
+                      <p className="text-xs text-[#64748b] mt-2">Will be visible to the student | Min 20 chars</p>
                     </div>
                   </div>
                 )}
@@ -252,8 +204,9 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
                   <button
                     type="submit"
                     disabled={loading || newStatus === currentStatus}
-                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="w-full px-4 py-2 text-sm font-medium bg-[#0f172a] text-white rounded-lg hover:bg-[#1e293b] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
+                    {loading && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                     {loading ? "Updating..." : "Update Status"}
                   </button>
                 )}
@@ -261,60 +214,49 @@ export function TicketStatusUpdate({ ticketId, currentStatus, onStatusUpdated })
                 {canReject && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowRejectOption(true);
-                      setNewStatus("REJECTED");
-                    }}
-                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                    onClick={() => { setShowRejectOption(true); setNewStatus("REJECTED"); }}
+                    className="w-full px-4 py-2 text-sm font-medium text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                   >
                     Reject Ticket
                   </button>
                 )}
               </>
             ) : (
-              <>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rejection Reason <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-sm font-semibold text-red-900 mb-2">Rejection Reason <span className="text-red-500">*</span></label>
                   <textarea
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Explain why this ticket is being rejected (minimum 10 characters)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    placeholder="Explain why this ticket is being rejected..."
+                    className="w-full px-3 py-2 text-sm border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
                     rows="3"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {rejectReason.length}/10 minimum characters
-                  </p>
+                  <p className="text-xs text-red-600 mt-2">Min 10 characters required</p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     type="submit"
                     disabled={loading || rejectReason.length < 10}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="flex-1 px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
                     {loading ? "Rejecting..." : "Confirm Rejection"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowRejectOption(false);
-                      setNewStatus(currentStatus);
-                      setRejectReason("");
-                    }}
-                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium"
+                    onClick={() => { setShowRejectOption(false); setNewStatus(currentStatus); setRejectReason(""); }}
+                    className="flex-1 px-4 py-2 text-sm font-medium border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
-              </>
+              </div>
             )}
           </form>
         ) : (
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500">
-            <p className="text-sm">No status transitions available</p>
+          <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] border-dashed rounded-xl text-center text-[#64748b]">
+            <p className="text-sm font-medium">No status transitions available</p>
             <p className="text-xs mt-1">This ticket is in a final state</p>
           </div>
         )}

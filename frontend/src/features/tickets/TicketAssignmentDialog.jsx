@@ -20,10 +20,7 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
   const fetchTechnicians = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch technicians for the facility
-      const response = await apiClient.get(
-        `/facilities/${facilityId}/technicians`,
-      );
+      const response = await apiClient.get(`/facilities/${facilityId}/technicians`);
       setTechnicians(response.data || []);
     } catch (err) {
       console.error("Failed to fetch technicians:", err);
@@ -68,105 +65,106 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
 
     try {
       setSubmitting(true);
-      console.log("Assigning ticket to technician:", selectedTechnicianId);
       const response = await apiClient.post(`/tickets/${ticketId}/assign`, {
         technicianId: selectedTechnicianId,
       });
 
-      console.log("Assignment response:", response.data);
       const technicianName = response.data?.assignedTechnicianName || "Technician";
       const successMsg = `✓ ${technicianName} assigned successfully!`;
-      console.log("Setting success message:", successMsg);
       setSuccess(successMsg);
       
-      // Keep dialog open for 2 seconds to show success, then close
       setTimeout(() => {
-        console.log("Closing dialog after success");
         onAssigned();
         onClose();
       }, 2000);
     } catch (err) {
       console.error("Failed to assign technician:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to assign technician. Please try again.",
-      );
+      setError(err.response?.data?.message || "Failed to assign technician. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Assign Technician
-        </h2>
+    <div className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-[#e2e8f0] flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-[#0f172a]">Assign Technician</h2>
+            <p className="text-sm text-[#64748b]">Select staff member for ticket</p>
+          </div>
+          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              {error}
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-700 font-medium">{success}</p>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700 font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+              {success}
             </div>
           )}
 
-          {/* Search Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Technician
-            </label>
+          <div className="relative">
+            <svg className="w-4 h-4 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
-          {/* Technician Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#0f172a] mb-2">
               Select Technician
             </label>
 
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                <svg className="animate-spin h-6 w-6 text-indigo-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
             ) : filteredTechnicians.length === 0 ? (
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-500">
+              <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] border-dashed rounded-lg text-center text-[#64748b] text-sm">
                 {technicians.length === 0
                   ? "No technicians available"
                   : "No technicians match your search"}
               </div>
             ) : (
-              <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
+              <div className="border border-[#e2e8f0] rounded-lg max-h-56 overflow-y-auto divide-y divide-[#e2e8f0]">
                 {filteredTechnicians.map((technician) => (
                   <label
                     key={technician.id}
-                    className="flex items-center p-3 hover:bg-indigo-50 transition cursor-pointer border-b border-gray-200 last:border-b-0"
+                    className="flex items-center p-3 hover:bg-[#f8fafc] transition cursor-pointer"
                   >
                     <input
                       type="radio"
                       name="technician"
                       value={technician.id}
                       checked={selectedTechnicianId === technician.id}
-                      onChange={(e) =>
-                        setSelectedTechnicianId(e.target.value)}
-                      className="mr-3"
+                      onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                      className="mr-3 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {technician.name}
-                      </p>
-                      <p className="text-xs text-gray-600">{technician.email}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                        {technician.name ? technician.name.charAt(0) : "?"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-[#0f172a] text-sm">{technician.name}</p>
+                        <p className="text-xs text-[#64748b]">{technician.email}</p>
+                      </div>
                     </div>
                   </label>
                 ))}
@@ -174,20 +172,20 @@ export function TicketAssignmentDialog({ ticketId, facilityId, onAssigned, onClo
             )}
           </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#e2e8f0]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              className="px-4 py-2 text-sm font-medium border border-[#e2e8f0] rounded-lg text-[#475569] hover:bg-[#f8fafc] transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting || !selectedTechnicianId}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium bg-[#0f172a] text-white rounded-lg hover:bg-[#1e293b] transition-colors disabled:opacity-50 flex items-center gap-2"
             >
+              {submitting && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
               {submitting ? "Assigning..." : "Assign"}
             </button>
           </div>
