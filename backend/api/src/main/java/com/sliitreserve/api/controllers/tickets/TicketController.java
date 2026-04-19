@@ -17,6 +17,7 @@ import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketComment;
 import com.sliitreserve.api.entities.ticket.TicketCommentVisibility;
 import com.sliitreserve.api.entities.ticket.TicketAttachment;
+import com.sliitreserve.api.entities.ticket.TicketEscalation;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.repositories.auth.UserRepository;
@@ -459,6 +460,45 @@ public class TicketController {
     return ResponseEntity.ok(response);
   }
 
+  @PostMapping("/{ticketId}/escalate")
+  @PreAuthorize("hasAnyRole('TECHNICIAN', 'FACILITY_MANAGER', 'ADMIN')")
+  public ResponseEntity<TicketEscalationHistoryDTO> manuallyEscalateTicket(
+      @PathVariable UUID ticketId,
+      @RequestBody com.sliitreserve.api.dto.ticket.ManualEscalationRequest request,
+      Authentication auth) {
+    log.info("Manual escalation request for ticket {} with reason: {} and assignee: {}", 
+        ticketId, request.getReason(), request.getAssigneeId());
+
+    if (request.getReason() == null || request.getReason().isBlank()) {
+      throw new IllegalArgumentException("Escalation reason is required");
+    }
+
+    if (request.getAssigneeId() == null) {
+      throw new IllegalArgumentException("Assignee is required for escalation");
+    }
+
+    MaintenanceTicket ticket = ticketRepository.findById(ticketId)
+        .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
+
+    User currentUser = getCurrentUser(auth);
+
+    try {
+      TicketEscalation escalation = escalationService.manuallyEscalateTicket(
+          ticket,
+          request.getReason(),
+          currentUser,
+          request.getAssigneeId());
+
+      log.info("Ticket {} escalated manually by user {} and assigned to {}", 
+          ticketId, currentUser.getDisplayName(), request.getAssigneeId());
+
+      return ResponseEntity.ok(mapEscalationToResponseDTO(escalation));
+    } catch (IllegalStateException e) {
+      log.warn("Cannot escalate ticket {}: {}", ticketId, e.getMessage());
+      throw new IllegalArgumentException(e.getMessage());
+    }
+  }
+
   private User getCurrentUser(Authentication auth) {
     if (auth == null || auth.getPrincipal() == null) {
       throw new IllegalStateException("User must be authenticated");
@@ -474,10 +514,10 @@ public class TicketController {
       return null;
     }
     return switch(levelInt) {
-      case 0, 1 -> EscalationLevel.LEVEL_1;
-      case 2 -> EscalationLevel.LEVEL_2;
-      case 3 -> EscalationLevel.LEVEL_3;
-      case 4 -> EscalationLevel.LEVEL_4;
+      case 0 -> EscalationLevel.LEVEL_1;
+      case 1 -> EscalationLevel.LEVEL_2;
+      case 2 -> EscalationLevel.LEVEL_3;
+      case 3 -> EscalationLevel.LEVEL_4;
       default -> null;
     };
   }

@@ -5,6 +5,8 @@ import com.sliitreserve.api.entities.ticket.TicketEscalation;
 import com.sliitreserve.api.workflow.escalation.EscalationResult;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service interface for ticket SLA escalation management.
@@ -94,4 +96,57 @@ public interface EscalationService {
       Integer toLevel,
       Object escalatedBy,
       String reason);
+
+  /**
+   * Manually escalate a ticket to the next level by staff member.
+   *
+   * <p>Allows TECHNICIAN, FACILITY_MANAGER, or ADMIN users to manually escalate
+   * a ticket to the next severity level with a documented reason. This is useful when
+   * a staff member identifies a more complex issue earlier than the SLA timer would
+   * trigger, or when a safety concern is detected.
+   *
+   * @param ticket the ticket to escalate
+   * @param reason the reason for manual escalation (required, e.g., "Safety hazard detected")
+   * @param escalatingUser the user performing the escalation
+   * @return the created TicketEscalation record for the manual escalation
+   * @throws IllegalArgumentException if ticket is null, reason is blank, or user is null
+   * @throws IllegalStateException if ticket is already at maximum escalation level (LEVEL_4)
+   */
+  TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser);
+
+  /**
+   * Manually escalate a ticket and assign it to a staff member.
+   *
+   * <p>Escalates the ticket to the next severity level with a documented reason
+   * and automatically assigns the escalated ticket to the specified staff member.
+   * This ensures that escalated tickets are immediately assigned for action.
+   *
+   * @param ticket the ticket to escalate
+   * @param reason the reason for manual escalation (required)
+   * @param escalatingUser the user performing the escalation
+   * @param assigneeId the ID of the staff member to assign the ticket to (required)
+   * @return the created TicketEscalation record for the manual escalation
+   * @throws IllegalArgumentException if required fields are null or blank
+   * @throws IllegalStateException if ticket is already at maximum escalation level
+   */
+  TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser,
+      UUID assigneeId);
+
+  /**
+   * Find the technician with the fewest active tickets in a facility.
+   *
+   * <p>Used for load-based assignment during automatic escalation.
+   * Active tickets are those NOT in terminal states (CLOSED, REJECTED).
+   * Returns an empty Optional if no technicians available.
+   *
+   * @param facilityId the facility to find technicians for
+   * @return the least busy technician, or empty if none available
+   */
+  Optional<com.sliitreserve.api.entities.auth.User> findLeastBusyTechnician(UUID facilityId);
 }

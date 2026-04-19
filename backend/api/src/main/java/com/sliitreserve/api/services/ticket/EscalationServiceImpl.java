@@ -4,6 +4,10 @@ import com.sliitreserve.api.entities.auth.User;
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketEscalation;
 import com.sliitreserve.api.entities.ticket.TicketStatus;
+import com.sliitreserve.api.observers.EventEnvelope;
+import com.sliitreserve.api.observers.EventPublisher;
+import com.sliitreserve.api.observers.EventSeverity;
+import com.sliitreserve.api.repositories.auth.UserRepository;
 import com.sliitreserve.api.repositories.ticket.MaintenanceTicketRepository;
 import com.sliitreserve.api.repositories.ticket.TicketEscalationRepository;
 import com.sliitreserve.api.workflow.escalation.*;
@@ -14,8 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -55,25 +62,31 @@ public class EscalationServiceImpl implements EscalationService {
 
   private final MaintenanceTicketRepository ticketRepository;
   private final TicketEscalationRepository escalationRepository;
+  private final UserRepository userRepository;
   private final CriticalEscalationHandler criticalHandler;
   private final HighEscalationHandler highHandler;
   private final MediumEscalationHandler mediumHandler;
   private final LowEscalationHandler lowHandler;
+  private final EventPublisher eventPublisher;
 
   @Autowired
   public EscalationServiceImpl(
       MaintenanceTicketRepository ticketRepository,
       TicketEscalationRepository escalationRepository,
+      UserRepository userRepository,
       CriticalEscalationHandler criticalHandler,
       HighEscalationHandler highHandler,
       MediumEscalationHandler mediumHandler,
-      LowEscalationHandler lowHandler) {
+      LowEscalationHandler lowHandler,
+      EventPublisher eventPublisher) {
     this.ticketRepository = ticketRepository;
     this.escalationRepository = escalationRepository;
+    this.userRepository = userRepository;
     this.criticalHandler = criticalHandler;
     this.highHandler = highHandler;
     this.mediumHandler = mediumHandler;
     this.lowHandler = lowHandler;
+    this.eventPublisher = eventPublisher;
   }
 
   @Override
@@ -169,6 +182,26 @@ public class EscalationServiceImpl implements EscalationService {
           ticket.getId(),
           oldLevel,
           newLevel);
+
+      // Assign to least busy technician and send notification
+      try {
+        Optional<User> leastBusy = findLeastBusyTechnician(updatedTicket.getFacility().getId());
+        if (leastBusy.isPresent()) {
+          User assignee = leastBusy.get();
+          updatedTicket.setAssignedTechnician(assignee);
+          ticketRepository.save(updatedTicket);
+          log.info("Ticket {} auto-assigned to {} after escalation", 
+              updatedTicket.getId(), assignee.getDisplayName());
+
+          // Send notification to assigned technician
+          sendEscalationNotification(updatedTicket, assignee, newLevel, result.getMessage());
+        } else {
+          log.warn("No technicians available to assign escalated ticket: {}", updatedTicket.getId());
+        }
+      } catch (Exception e) {
+        log.warn("Failed to auto-assign escalated ticket {}: {}", updatedTicket.getId(), e.getMessage());
+        // Don't throw - assignment failure shouldn't block escalation
+      }
     }
 
     return result;
@@ -202,7 +235,11 @@ public class EscalationServiceImpl implements EscalationService {
 
     User escalatedByUser = null;
     if (escalatedBy instanceof User) {
-      escalatedByUser = (User) escalatedBy;
+      User user = (User) escalatedBy;
+      // Reload user from database to ensure it's managed by Hibernate
+      // The user from Spring Security is detached and will cause issues when saving
+      escalatedByUser = userRepository.findById(user.getId())
+          .orElseThrow(() -> new IllegalArgumentException("Escalating user not found: " + user.getId()));
     } else {
       // If no user provided, use a system user placeholder (would be admin user in real app)
       escalatedByUser = getSystemUser();
@@ -241,6 +278,121 @@ public class EscalationServiceImpl implements EscalationService {
                 .setNext(lowHandler)));
   }
 
+  @Override
+  @Transactional
+  public TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser) {
+    if (ticket == null) {
+      throw new IllegalArgumentException("Ticket cannot be null");
+    }
+    if (reason == null || reason.isBlank()) {
+      throw new IllegalArgumentException("Escalation reason is required");
+    }
+    if (escalatingUser == null) {
+      throw new IllegalArgumentException("Escalating user cannot be null");
+    }
+
+    // Check if already at max level
+    Integer currentLevel = ticket.getEscalationLevel();
+    if (currentLevel != null && currentLevel >= 3) {
+      throw new IllegalStateException(
+          "Ticket is already at maximum escalation level (LEVEL_4)");
+    }
+
+    // Calculate next level
+    Integer nextLevel = (currentLevel == null || currentLevel < 0) ? 1 : currentLevel + 1;
+
+    // Ensure nextLevel doesn't exceed max
+    if (nextLevel > 3) {
+      nextLevel = 3;
+    }
+
+    // Update ticket escalation level
+    ticket.setEscalationLevel(nextLevel);
+    ticketRepository.save(ticket);
+
+    // Record the escalation with the actual user
+    User escalatedByUser = null;
+    if (escalatingUser instanceof User) {
+      escalatedByUser = (User) escalatingUser;
+    } else {
+      throw new IllegalArgumentException(
+          "Escalating user must be a User entity");
+    }
+
+    return recordEscalation(
+        ticket,
+        currentLevel != null ? currentLevel : 0,
+        nextLevel,
+        escalatedByUser,
+        reason);
+  }
+
+  @Override
+  @Transactional
+  public TicketEscalation manuallyEscalateTicket(
+      MaintenanceTicket ticket,
+      String reason,
+      Object escalatingUser,
+      UUID assigneeId) {
+    // First, escalate the ticket to the next level
+    TicketEscalation escalation = manuallyEscalateTicket(ticket, reason, escalatingUser);
+
+    // Then assign it to the specified staff member
+    if (assigneeId != null) {
+      User assignee = userRepository.findById(assigneeId)
+          .orElseThrow(() -> new IllegalArgumentException("Assignee not found: " + assigneeId));
+      
+      ticket.setAssignedTechnician(assignee);
+      ticketRepository.save(ticket);
+      
+      log.info("Ticket {} assigned to {} after escalation", ticket.getId(), assignee.getDisplayName());
+
+      // Send notification to assigned staff member about escalation
+      try {
+        String levelDisplay = formatEscalationLevel(ticket.getEscalationLevel());
+        eventPublisher.publish(EventEnvelope.builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType("TICKET_ESCALATED_AND_ASSIGNED")
+            .severity(EventSeverity.HIGH)
+            .affectedUserId(assignee.getId().getMostSignificantBits())
+            .title("Ticket Escalated & Assigned to You")
+            .description("Ticket #" + ticket.getId() + " has been escalated to " + levelDisplay + " and assigned to you for immediate action.")
+            .source("EscalationService")
+            .occurrenceTime(ZonedDateTime.now(ZoneId.systemDefault()))
+            .entityReference("ticket:" + ticket.getId())
+            .actionUrl("/tickets/" + ticket.getId())
+            .actionLabel("View Ticket")
+            .metadata(Map.of(
+                "userId", assignee.getId().toString(),
+                "ticketId", ticket.getId().toString(),
+                "escalationLevel", ticket.getEscalationLevel().toString(),
+                "escalationReason", reason,
+                "assignedTo", assignee.getEmail()
+            ))
+            .build());
+        log.info("Escalation notification sent to {}", assignee.getEmail());
+      } catch (Exception e) {
+        log.warn("Failed to send escalation notification to {}: {}", assignee.getEmail(), e.getMessage());
+        // Don't throw - notification failure shouldn't block escalation
+      }
+    }
+
+    return escalation;
+  }
+
+  private String formatEscalationLevel(Integer level) {
+    return switch(level) {
+      case 1 -> "Level 1";
+      case 2 -> "Level 2";
+      case 3 -> "Level 3";
+      case 4 -> "Level 4 (Critical)";
+      default -> "Unknown Level";
+    };
+  }
+
   /**
    * Get or create a system user for recording escalations triggered by the scheduler.
    *
@@ -256,5 +408,71 @@ public class EscalationServiceImpl implements EscalationService {
         .email("admin@smartcampus.edu")
         .displayName("System Admin")
         .build();
+  }
+
+  @Override
+  public Optional<User> findLeastBusyTechnician(UUID facilityId) {
+    // Get all active technicians (all technicians can be assigned tickets in any facility)
+    var technicians = userRepository.findByRoleAndActiveTrue(com.sliitreserve.api.entities.auth.Role.TECHNICIAN);
+    
+    if (technicians.isEmpty()) {
+      log.warn("No active technicians available for assignment");
+      return Optional.empty();
+    }
+
+    // Find technician with fewest active tickets
+    User leastBusy = null;
+    long minActiveTickets = Long.MAX_VALUE;
+
+    for (User tech : technicians) {
+      long activeCount = ticketRepository.countActiveTicketsByTechnician(tech.getId());
+      if (activeCount < minActiveTickets) {
+        minActiveTickets = activeCount;
+        leastBusy = tech;
+      }
+    }
+
+    if (leastBusy != null) {
+      log.info("Selected least busy technician {} with {} active tickets",
+          leastBusy.getEmail(), minActiveTickets);
+    }
+
+    return Optional.ofNullable(leastBusy);
+  }
+
+  private void sendEscalationNotification(
+      MaintenanceTicket ticket,
+      User assignee,
+      Integer escalationLevel,
+      String escalationReason) {
+    try {
+      String levelDisplay = formatEscalationLevel(escalationLevel);
+      eventPublisher.publish(EventEnvelope.builder()
+          .eventId(UUID.randomUUID().toString())
+          .eventType("TICKET_ESCALATED_AND_ASSIGNED")
+          .severity(EventSeverity.HIGH)
+          .affectedUserId(assignee.getId().getMostSignificantBits())
+          .title("Ticket Escalated & Assigned to You")
+          .description("Ticket #" + ticket.getId() + " has been escalated to " + levelDisplay + 
+              " and automatically assigned to you due to: " + escalationReason)
+          .source("EscalationService")
+          .occurrenceTime(ZonedDateTime.now(ZoneId.systemDefault()))
+          .entityReference("ticket:" + ticket.getId())
+          .actionUrl("/tickets/" + ticket.getId())
+          .actionLabel("View Ticket")
+          .metadata(Map.of(
+              "userId", assignee.getId().toString(),
+              "ticketId", ticket.getId().toString(),
+              "escalationLevel", escalationLevel.toString(),
+              "escalationReason", escalationReason,
+              "assignedTo", assignee.getEmail()
+          ))
+          .build());
+      log.info("Auto-escalation notification sent to {}", assignee.getEmail());
+    } catch (Exception e) {
+      log.warn("Failed to send auto-escalation notification to {}: {}", 
+          assignee.getEmail(), e.getMessage());
+      // Don't throw - notification failure shouldn't block escalation
+    }
   }
 }

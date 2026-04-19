@@ -3,10 +3,12 @@ package com.sliitreserve.api.repositories.ticket;
 import com.sliitreserve.api.entities.ticket.MaintenanceTicket;
 import com.sliitreserve.api.entities.ticket.TicketStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -86,4 +88,18 @@ public interface MaintenanceTicketRepository extends JpaRepository<MaintenanceTi
    */
   List<MaintenanceTicket> findByStatusAndEscalationLevel(
       TicketStatus status, Integer escalationLevel);
+
+  /**
+   * Count active tickets assigned to a specific technician.
+   *
+   * Active tickets are those NOT in terminal states (CLOSED, REJECTED).
+   * Used for load-based assignment during automatic escalation.
+   *
+   * @param technicianId the technician's user ID
+   * @return number of active tickets assigned to this technician
+   */
+  @Query("SELECT COUNT(t) FROM MaintenanceTicket t " +
+      "WHERE t.assignedTechnician.id = :technicianId " +
+      "AND t.status NOT IN ('CLOSED', 'REJECTED')")
+  long countActiveTicketsByTechnician(UUID technicianId);
 }

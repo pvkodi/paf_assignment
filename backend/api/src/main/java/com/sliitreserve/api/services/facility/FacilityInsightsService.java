@@ -11,11 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Service for generating facility insights and availability information
@@ -54,17 +54,19 @@ public class FacilityInsightsService {
         
         // Calculate minutes until free
         long minutesUntilFree = calculateMinutesUntilFree(facilityIdStr, now);
+
+        LocalDate today = now.toLocalDate();
         
         // Get utilization averages
-        Integer avg30day = utilizationSnapshotRepository.getAverageUtilization(facilityIdStr, 30);
-        Integer avg7day = utilizationSnapshotRepository.getAverageUtilization(facilityIdStr, 7);
+        Integer avg30day = calculateAverageUtilization(facilityId, 30, today);
+        Integer avg7day = calculateAverageUtilization(facilityId, 7, today);
         
         // Calculate trend
         String trendDirection = calculateTrendDirection(avg7day, avg30day);
         Double trendPercentChange = calculatePercentChange(avg30day, avg7day);
         
         // Get best booking slots
-        List<BookingSlotDTO> bestSlots = getBestBookingSlots(facilityIdStr, 3);
+        List<BookingSlotDTO> bestSlots = getBestBookingSlots(facility, 3, today);
         
         String nextBookingTime = getNextBookingTime(facilityIdStr, now);
         
@@ -154,34 +156,100 @@ public class FacilityInsightsService {
         
         return ((double) (newValue - oldValue) / oldValue) * 100;
     }
+
+    /**
+     * Calculate average utilization from snapshot records for the trailing period.
+     */
+    private Integer calculateAverageUtilization(UUID facilityId, int days, LocalDate endDate) {
+        LocalDate startDate = endDate.minusDays(Math.max(days - 1L, 0L));
+        var snapshots = utilizationSnapshotRepository
+            .findByFacility_IdAndSnapshotDateBetweenOrderBySnapshotDateAsc(facilityId, startDate, endDate);
+
+        if (snapshots.isEmpty()) {
+            return 0;
+        }
+
+        double avg = snapshots.stream()
+            .mapToDouble(snapshot -> snapshot.getUtilizationPercent() != null
+                ? snapshot.getUtilizationPercent().doubleValue()
+                : 0.0)
+            .average()
+            .orElse(0.0);
+
+        return (int) Math.round(avg);
+    }
     
     /**
      * Get best booking slots (historically least booked times)
      */
-    private List<BookingSlotDTO> getBestBookingSlots(String facilityId, int count) {
-        // Get hourly utilization data grouped by day of week
-        var weeklyHeatmap = utilizationSnapshotRepository.getWeeklyHeatmapData(facilityId);
-        
+    private List<BookingSlotDTO> getBestBookingSlots(Facility facility, int count, LocalDate endDate) {
+        LocalDate startDate = endDate.minusDays(29);
+        var snapshots = utilizationSnapshotRepository
+            .findByFacility_IdAndSnapshotDateBetweenOrderBySnapshotDateAsc(facility.getId(), startDate, endDate);
+
+        if (snapshots.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<String, SlotAggregate> slotAggregates = new HashMap<>();
+
+        for (var snapshot : snapshots) {
+            if (snapshot.getSnapshotDate() == null) {
+                continue;
+            }
+
+            int dayOfWeek = snapshot.getSnapshotDate().getDayOfWeek().getValue() - 1;
+            int utilization = snapshot.getUtilizationPercent() != null
+                ? (int) Math.round(snapshot.getUtilizationPercent().doubleValue())
+                : 0;
+            int addedHours = 0;
+
+            for (int hour = 0; hour < 24; hour++) {
+                LocalTime slot = LocalTime.of(hour, 0);
+                if (!facility.isAvailableAt(snapshot.getSnapshotDate().getDayOfWeek(), slot)) {
+                    continue;
+                }
+
+                String key = dayOfWeek + "_" + hour;
+                slotAggregates.computeIfAbsent(key, k -> new SlotAggregate()).add(utilization);
+                addedHours++;
+            }
+
+            if (addedHours == 0) {
+                int fallbackHour = resolveFallbackHour(facility);
+                String key = dayOfWeek + "_" + fallbackHour;
+                slotAggregates.computeIfAbsent(key, k -> new SlotAggregate()).add(utilization);
+            }
+        }
+
         List<BookingSlotDTO> slots = new ArrayList<>();
-        
+
         // Sort by lowest utilization and take top N
-        weeklyHeatmap.entrySet().stream()
-            .sorted((a, b) -> a.getValue().compareTo(b.getValue()))
+        slotAggregates.entrySet().stream()
+            .sorted(Comparator.comparingInt(entry -> entry.getValue().average()))
             .limit(count)
             .forEach(entry -> {
                 String[] parts = entry.getKey().split("_");
                 int dayOfWeek = Integer.parseInt(parts[0]);
                 int hour = Integer.parseInt(parts[1]);
+                int avgUtilization = entry.getValue().average();
                 
                 slots.add(BookingSlotDTO.builder()
                     .dayOfWeek(getDayName(dayOfWeek))
                     .timeSlot(String.format("%02d:00-%02d:00", hour, Math.min(hour + 1, 23)))
-                    .availabilityPercent(100 - entry.getValue())
+                    .availabilityPercent(Math.max(0, 100 - avgUtilization))
                     .reason("Typically free at this time")
                     .build());
             });
-        
+
         return slots;
+    }
+
+    private int resolveFallbackHour(Facility facility) {
+        if (facility.getAvailabilityStart() != null) {
+            return facility.getAvailabilityStart().getHour();
+        }
+        return 12;
     }
     
     /**
@@ -189,15 +257,32 @@ public class FacilityInsightsService {
      */
     private String getDayName(int dayOfWeek) {
         return switch (dayOfWeek) {
-            case 0 -> "Sunday";
-            case 1 -> "Monday";
-            case 2 -> "Tuesday";
-            case 3 -> "Wednesday";
-            case 4 -> "Thursday";
-            case 5 -> "Friday";
-            case 6 -> "Saturday";
+            case 0 -> "Monday";
+            case 1 -> "Tuesday";
+            case 2 -> "Wednesday";
+            case 3 -> "Thursday";
+            case 4 -> "Friday";
+            case 5 -> "Saturday";
+            case 6 -> "Sunday";
             default -> "Unknown";
         };
+    }
+
+    private static final class SlotAggregate {
+        private int total;
+        private int count;
+
+        void add(int utilization) {
+            total += utilization;
+            count++;
+        }
+
+        int average() {
+            if (count == 0) {
+                return 0;
+            }
+            return Math.round((float) total / count);
+        }
     }
 
     /**

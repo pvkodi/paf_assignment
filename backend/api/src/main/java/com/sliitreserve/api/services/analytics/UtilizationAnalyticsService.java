@@ -2,6 +2,7 @@ package com.sliitreserve.api.services.analytics;
 
 import com.sliitreserve.api.dto.analytics.UtilizationResponse;
 import com.sliitreserve.api.entities.analytics.UtilizationSnapshot;
+import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.entities.facility.Facility.FacilityStatus;
 import com.sliitreserve.api.repositories.facility.UtilizationSnapshotRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,9 +40,6 @@ public class UtilizationAnalyticsService {
 
     @Autowired
     private UtilizationSnapshotRepository snapshotRepository;
-
-    @Autowired
-    private com.sliitreserve.api.services.integration.BookingIntegrationService bookingIntegrationService;
 
     @Autowired(required = false)
     private RecommendationService recommendationService;
@@ -128,69 +127,68 @@ public class UtilizationAnalyticsService {
     }
 
     /**
-     * Build heatmap from snapshots + real hourly booking data.
+     * Build heatmap directly from utilization snapshots.
+     *
+     * Snapshots are daily aggregates, so we project each day's utilization
+     * across the facility's operating hours to create dashboard-friendly
+     * day/hour cells even when booking-level integration data is unavailable.
      */
     private List<UtilizationResponse.HeatmapEntry> buildHeatmap(List<UtilizationSnapshot> snapshots) {
-        if (snapshots.isEmpty()) return new ArrayList<>();
-        
-        // Find date range
-        LocalDate start = snapshots.stream().map(UtilizationSnapshot::getSnapshotDate).min(LocalDate::compareTo).get();
-        LocalDate end = snapshots.stream().map(UtilizationSnapshot::getSnapshotDate).max(LocalDate::compareTo).get();
-        
-        List<UtilizationResponse.HeatmapEntry> heatmap = new ArrayList<>();
-        
-        // Group snapshots by facility
-        Map<UUID, List<UtilizationSnapshot>> byFacility = snapshots.stream()
-            .collect(Collectors.groupingBy(s -> s.getFacility().getId()));
-            
-        for (Map.Entry<UUID, List<UtilizationSnapshot>> entry : byFacility.entrySet()) {
-            UUID facilityId = entry.getKey();
-            String facilityName = entry.getValue().get(0).getFacility().getName();
-            
-            // Fetch ALL bookings for this facility in the range
-            List<com.sliitreserve.api.dto.integration.BookingDTO> bookings = 
-                bookingIntegrationService.getBookingsForFacility(facilityId, start.atStartOfDay(), end.atTime(23, 59, 59));
-                
-            // Map DayOfWeek (0-6) -> Hour (0-23) -> Booking Count
-            int[][] hourlyGrid = new int[7][24];
-            int[] dayCounts = new int[7];
-            
-            for (com.sliitreserve.api.dto.integration.BookingDTO b : bookings) {
-                java.time.LocalDateTime cur = b.getStartDateTime();
-                while (cur.isBefore(b.getEndDateTime())) {
-                    int day = cur.getDayOfWeek().getValue() - 1;
-                    int hour = cur.getHour();
-                    if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
-                        hourlyGrid[day][hour]++;
-                    }
-                    cur = cur.plusHours(1);
-                }
+        if (snapshots.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<HeatmapKey, HeatmapAggregate> aggregates = new HashMap<>();
+
+        for (UtilizationSnapshot snapshot : snapshots) {
+            Facility facility = snapshot.getFacility();
+            if (facility == null || snapshot.getSnapshotDate() == null) {
+                continue;
             }
-            
-            // Calculate actual days present in the range for averaging
-            for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-                dayCounts[d.getDayOfWeek().getValue() - 1]++;
-            }
-            
-            // Generate HeatmapEntries (Capacity based % is simplified as 100% busy if any booking exists in that hour for this room)
-            for (int d = 0; d < 7; d++) {
-                if (dayCounts[d] == 0) continue;
-                for (int h = 0; h < 24; h++) {
-                    if (hourlyGrid[d][h] > 0) {
-                        double avgUtilization = (double) hourlyGrid[d][h] / dayCounts[d] * 100.0;
-                        heatmap.add(UtilizationResponse.HeatmapEntry.builder()
-                            .facilityId(facilityId)
-                            .facilityName(facilityName)
-                            .dayOfWeek(d)
-                            .hourOfDay(h)
-                            .utilizationPercent(BigDecimal.valueOf(Math.min(100.0, avgUtilization)).setScale(2, java.math.RoundingMode.HALF_UP))
-                            .build());
-                    }
+
+            int dayOfWeek = snapshot.getSnapshotDate().getDayOfWeek().getValue() - 1;
+            BigDecimal utilizationPercent = zeroIfNull(snapshot.getUtilizationPercent());
+            int addedHours = 0;
+
+            for (int hour = 0; hour < 24; hour++) {
+                LocalTime slot = LocalTime.of(hour, 0);
+                if (!facility.isAvailableAt(snapshot.getSnapshotDate().getDayOfWeek(), slot)) {
+                    continue;
                 }
+
+                HeatmapKey key = new HeatmapKey(facility.getId(), facility.getName(), dayOfWeek, hour);
+                aggregates.computeIfAbsent(key, k -> new HeatmapAggregate()).add(utilizationPercent);
+                addedHours++;
+            }
+
+            // Defensive fallback when availability windows are malformed or missing.
+            if (addedHours == 0) {
+                int fallbackHour = resolveFallbackHour(facility);
+                HeatmapKey key = new HeatmapKey(facility.getId(), facility.getName(), dayOfWeek, fallbackHour);
+                aggregates.computeIfAbsent(key, k -> new HeatmapAggregate()).add(utilizationPercent);
             }
         }
 
-        return heatmap;
+        return aggregates.entrySet().stream()
+            .map(entry -> UtilizationResponse.HeatmapEntry.builder()
+                .facilityId(entry.getKey().facilityId())
+                .facilityName(entry.getKey().facilityName())
+                .dayOfWeek(entry.getKey().dayOfWeek())
+                .hourOfDay(entry.getKey().hourOfDay())
+                .utilizationPercent(entry.getValue().average())
+                .build())
+            .sorted(Comparator
+                .comparing(UtilizationResponse.HeatmapEntry::getFacilityName, Comparator.nullsLast(String::compareTo))
+                .thenComparing(UtilizationResponse.HeatmapEntry::getDayOfWeek)
+                .thenComparing(UtilizationResponse.HeatmapEntry::getHourOfDay))
+            .collect(Collectors.toList());
+    }
+
+    private int resolveFallbackHour(Facility facility) {
+        if (facility.getAvailabilityStart() != null) {
+            return facility.getAvailabilityStart().getHour();
+        }
+        return 12;
     }
 
     /**
@@ -310,5 +308,25 @@ public class UtilizationAnalyticsService {
 
     private BigDecimal zeroIfNull(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private record HeatmapKey(UUID facilityId, String facilityName, int dayOfWeek, int hourOfDay) {
+    }
+
+    private static class HeatmapAggregate {
+        private BigDecimal total = BigDecimal.ZERO;
+        private int count = 0;
+
+        void add(BigDecimal value) {
+            total = total.add(value == null ? BigDecimal.ZERO : value);
+            count++;
+        }
+
+        BigDecimal average() {
+            if (count == 0) {
+                return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+            }
+            return total.divide(BigDecimal.valueOf(count), 2, java.math.RoundingMode.HALF_UP);
+        }
     }
 }

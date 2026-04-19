@@ -652,8 +652,22 @@ export default function FacilityManagementDashboard() {
       const isOOS = facility?.status === "OUT_OF_SERVICE";
       
       if (isOOS) {
-        // Reactivate
-        await updateFacility(id, { ...facility, status: "ACTIVE" });
+        // Reactivate: send PUT with full proper payload including all required fields
+        const reactivationPayload = {
+          facilityCode: facility.facilityCode,
+          name: facility.name,
+          type: facility.type,
+          capacity: facility.capacity,
+          building: facility.building && facility.building.trim() ? facility.building : "TBD",
+          floor: facility.floor && facility.floor.trim() ? facility.floor : "N/A",
+          locationDescription: facility.locationDescription && facility.locationDescription.trim() ? facility.locationDescription : "Facility",
+          availabilityStartTime: facility.availabilityStartTime,
+          availabilityEndTime: facility.availabilityEndTime,
+          status: "ACTIVE",
+          availabilityWindows: facility.availabilityWindows || [],
+          subtypeAttributes: facility.subtypeAttributes || {},
+        };
+        await updateFacility(id, reactivationPayload);
         toast.success("Facility reactivated successfully.");
       } else {
         // Deactivate (soft delete)
