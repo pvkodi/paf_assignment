@@ -70,6 +70,7 @@ public class FacilityService {
     }
 
     public Page<FacilityResponseDTO> searchFacilities(
+            String name,
             Facility.FacilityType type,
             Integer minCapacity,
             String building,
@@ -79,6 +80,9 @@ public class FacilityService {
     ) {
         Specification<Facility> specification = (root, query, cb) -> cb.conjunction();
 
+        if (name != null && !name.isBlank()) {
+            specification = specification.and(FacilitySpecifications.nameContains(name));
+        }
         if (type != null) {
             specification = specification.and(FacilitySpecifications.ofType(normalizeType(type)));
         }
@@ -132,6 +136,12 @@ public class FacilityService {
         Facility existingFacility = getFacilityEntity(facilityId);
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
 
+        // Log geofencing data
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(this.getClass());
+        logger.info("📤 Updating facility {}: latitude={}, longitude={}, geofenceRadius={}", 
+            facilityId, normalizedRequest.getLatitude(), normalizedRequest.getLongitude(), 
+            normalizedRequest.getGeofenceRadiusMeters());
+
         // Relaxed validation: only check if times are provided
         if (normalizedRequest.getAvailabilityStartTime() != null && normalizedRequest.getAvailabilityEndTime() != null) {
             validateTimeRange(normalizedRequest.getAvailabilityStartTime(), normalizedRequest.getAvailabilityEndTime());
@@ -155,6 +165,8 @@ public class FacilityService {
         }
 
         Facility updatedFacility = facilityRepository.save(existingFacility);
+        logger.info("✅ Facility {} updated. New latitude={}, longitude={}", 
+            facilityId, updatedFacility.getLatitude(), updatedFacility.getLongitude());
         return facilityMapper.toResponseDTO(updatedFacility);
     }
 
