@@ -65,6 +65,7 @@ public class FacilityController {
     @GetMapping("/search")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<FacilityResponseDTO>> searchFacilities(
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) Facility.FacilityType type,
             @RequestParam(required = false) Integer minCapacity,
             @RequestParam(required = false) String building,
@@ -75,7 +76,7 @@ public class FacilityController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(
-                facilityService.searchFacilities(type, minCapacity, building, location, status, pageable)
+                facilityService.searchFacilities(name, type, minCapacity, building, location, status, pageable)
         );
     }
 

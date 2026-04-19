@@ -99,7 +99,7 @@ public class FacilityServiceTest {
         when(facilityMapper.toResponseDTO(facility)).thenReturn(dto);
 
         Page<FacilityResponseDTO> response = facilityService.searchFacilities(
-                Facility.FacilityType.LECTURE_HALL,
+                null, Facility.FacilityType.LECTURE_HALL,
                 100,
                 "A Block",
                 "North Wing",
