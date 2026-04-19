@@ -1,4 +1,4 @@
-# Smart Campus Operations Hub - Infrastructure Services
+# VenueLink Operations Hub - Infrastructure Services
 # This Docker Compose file manages core infrastructure services:
 # - PostgreSQL 15: Primary data persistence layer
 # - MailDev: Email testing and debugging service
@@ -145,7 +145,7 @@ volumes:
   postgres_data:
     # Label for identification in backups
     labels:
-      description: "PostgreSQL 15 data persistence for Smart Campus application"
+      description: "PostgreSQL 15 data persistence for VenueLink application"
   uploads_data:
     # Reserved for future use - uploaded files/thumbnails
     labels:

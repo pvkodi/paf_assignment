@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Smart Campus Operations Hub - Startup Script
+# VenueLink Operations Hub - Startup Script
 # ============================================
 # This script starts all required services:
 # - PostgreSQL (Docker)
@@ -49,7 +49,7 @@ log_warning() {
 clear
 
 echo "============================================"
-echo "Smart Campus Hub - Full Stack Startup"
+echo "VenueLink Hub - Full Stack Startup"
 echo "============================================"
 echo ""
 

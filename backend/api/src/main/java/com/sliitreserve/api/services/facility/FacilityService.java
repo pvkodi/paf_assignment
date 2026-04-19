@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -70,6 +69,7 @@ public class FacilityService {
     }
 
     public Page<FacilityResponseDTO> searchFacilities(
+            String name,
             Facility.FacilityType type,
             Integer minCapacity,
             String building,
@@ -80,6 +80,9 @@ public class FacilityService {
     ) {
         Specification<Facility> specification = (root, query, cb) -> cb.conjunction();
 
+        if (name != null && !name.isBlank()) {
+            specification = specification.and(FacilitySpecifications.nameContains(name));
+        }
         if (type != null) {
             specification = specification.and(FacilitySpecifications.ofType(normalizeType(type)));
         }
@@ -136,6 +139,11 @@ public class FacilityService {
         Facility existingFacility = getFacilityEntity(facilityId);
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
 
+        // Log geofencing data
+        log.info("Updating facility {}: latitude={}, longitude={}, geofenceRadius={}",
+            facilityId, normalizedRequest.getLatitude(), normalizedRequest.getLongitude(), 
+            normalizedRequest.getGeofenceRadiusMeters());
+
         // Relaxed validation: only check if times are provided
         if (normalizedRequest.getAvailabilityStartTime() != null && normalizedRequest.getAvailabilityEndTime() != null) {
             validateTimeRange(normalizedRequest.getAvailabilityStartTime(), normalizedRequest.getAvailabilityEndTime());
@@ -178,6 +186,8 @@ public class FacilityService {
             }
         }
 
+        log.info("Facility {} updated. New latitude={}, longitude={}",
+            facilityId, updatedFacility.getLatitude(), updatedFacility.getLongitude());
         return facilityMapper.toResponseDTO(updatedFacility);
     }
 
@@ -229,10 +239,6 @@ public class FacilityService {
                 log.warn("Skipping facility {} due to active bookings in bulk delete", id);
             }
         }
-    }
-
-    private void cancelAllBookings(UUID facilityId, String facilityName) {
-        cancelBookingsInRange(facilityId, facilityName, LocalDateTime.now(), null);
     }
 
     private void cancelBookingsInRange(UUID facilityId, String facilityName, LocalDateTime start, LocalDateTime end) {
@@ -333,7 +339,10 @@ public class FacilityService {
             }
 
             // Check timetable occupancy
-            if (facilityTimetableService.isOccupied(facility.getFacilityCode(), day, time)) {
+            if (facilityTimetableService.isOccupied(
+                    facility.getFacilityCode(),
+                    current.getDayOfWeek(),
+                    current.toLocalTime())) {
                 return false;
             }
 

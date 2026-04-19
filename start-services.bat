@@ -1,6 +1,6 @@
 @echo off
 REM ============================================
-REM Smart Campus Operations Hub - Startup Script
+REM VenueLink Operations Hub - Startup Script
 REM ============================================
 REM This script starts all required services:
 REM - PostgreSQL (Docker)
@@ -20,7 +20,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================
-echo Smart Campus Hub - Full Stack Startup
+echo VenueLink Hub - Full Stack Startup
 echo ============================================
 echo.
 
@@ -109,14 +109,14 @@ echo.
 
 REM Start Backend
 echo [4/5] Starting Backend API (Spring Boot)...
-start "Smart Campus - Backend" cmd /k "cd backend\api && echo Starting Spring Boot Backend... && echo. && %~dp0\..\mvnw.cmd spring-boot:run"
+start "VenueLink - Backend" cmd /k "cd backend\api && echo Starting Spring Boot Backend... && echo. && %~dp0\..\mvnw.cmd spring-boot:run"
 echo ✓ Backend starting in new window (http://localhost:8080)
 timeout /t 3
 echo.
 
 REM Start Frontend
 echo [5/5] Starting Frontend (Vite Dev Server)...
-start "Smart Campus - Frontend" cmd /k "cd frontend && npm run dev"
+start "VenueLink - Frontend" cmd /k "cd frontend && npm run dev"
 echo ✓ Frontend starting in new window (http://localhost:5173)
 echo.
 

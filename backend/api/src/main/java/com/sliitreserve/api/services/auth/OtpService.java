@@ -99,7 +99,7 @@ public class OtpService {
             .eventId(UUID.randomUUID().toString())
             .eventType("OTP_SENT")
             .severity(EventSeverity.HIGH)
-            .title("Your OTP Code for Smart Campus Registration")
+            .title("Your OTP Code for VenueLink Registration")
             .description("Use this OTP to complete your registration")
             .source("OtpService")
             .occurrenceTime(ZonedDateTime.now())

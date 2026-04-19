@@ -64,6 +64,13 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
                     .collect(Collectors.toList())
             );
         }
+        // Map geofencing fields
+        dto.setLatitude(facility.getLatitude());
+        dto.setLongitude(facility.getLongitude());
+        dto.setWifiSSID(facility.getWifiSSID());
+        dto.setWifiMacAddress(facility.getWifiMacAddress());
+        dto.setGeofenceRadiusMeters(facility.getGeofenceRadiusMeters());
+        
         dto.setSubtypeAttributes(extractSubtypeAttributes(facility));
         dto.setCreatedAt(facility.getCreatedAt());
         dto.setUpdatedAt(facility.getUpdatedAt());
@@ -98,6 +105,13 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         facility.setOutOfServiceStart(requestDTO.getOutOfServiceStart());
         facility.setOutOfServiceEnd(requestDTO.getOutOfServiceEnd());
 
+        // Set geofencing fields
+        facility.setLatitude(requestDTO.getLatitude());
+        facility.setLongitude(requestDTO.getLongitude());
+        facility.setWifiSSID(requestDTO.getWifiSSID());
+        facility.setWifiMacAddress(requestDTO.getWifiMacAddress());
+        facility.setGeofenceRadiusMeters(requestDTO.getGeofenceRadiusMeters());
+
         return facility;
     }
 
@@ -115,12 +129,15 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
             return existingFacility;
         }
 
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(this.getClass());
+        
         // Update fields (do not update ID or createdAt)
         if (requestDTO.getFacilityCode() != null) {
             existingFacility.setFacilityCode(requestDTO.getFacilityCode());
         }
         existingFacility.setName(requestDTO.getName());
-        existingFacility.setType(requestDTO.getType());
+        // DO NOT update type during update operations - type changes are not allowed
+        // existingFacility.setType(requestDTO.getType());
         existingFacility.setCapacity(requestDTO.getCapacity());
         existingFacility.setLocationDescription(requestDTO.getLocationDescription());
         existingFacility.setBuilding(requestDTO.getBuilding());
@@ -141,6 +158,26 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
                 .collect(Collectors.toList());
             existingFacility.getAvailabilityWindows().clear();
             existingFacility.getAvailabilityWindows().addAll(windows);
+        }
+        
+        // Update geofencing fields
+        if (requestDTO.getLatitude() != null) {
+            logger.debug("🔄 Updating latitude from {} to {}", existingFacility.getLatitude(), requestDTO.getLatitude());
+            existingFacility.setLatitude(requestDTO.getLatitude());
+        }
+        if (requestDTO.getLongitude() != null) {
+            logger.debug("🔄 Updating longitude from {} to {}", existingFacility.getLongitude(), requestDTO.getLongitude());
+            existingFacility.setLongitude(requestDTO.getLongitude());
+        }
+        if (requestDTO.getWifiSSID() != null) {
+            existingFacility.setWifiSSID(requestDTO.getWifiSSID());
+        }
+        if (requestDTO.getWifiMacAddress() != null) {
+            existingFacility.setWifiMacAddress(requestDTO.getWifiMacAddress());
+        }
+        if (requestDTO.getGeofenceRadiusMeters() != null) {
+            logger.debug("🔄 Updating geofence radius from {} to {}", existingFacility.getGeofenceRadiusMeters(), requestDTO.getGeofenceRadiusMeters());
+            existingFacility.setGeofenceRadiusMeters(requestDTO.getGeofenceRadiusMeters());
         }
 
         return existingFacility;

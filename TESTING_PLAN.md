@@ -1,4 +1,4 @@
-# Comprehensive Testing & Integration Plan for Smart Campus Operations Hub
+# Comprehensive Testing & Integration Plan for VenueLink Operations Hub
 
 ## PHASE 0: PREREQUISITES & ENVIRONMENT SETUP
 

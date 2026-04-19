@@ -113,7 +113,7 @@ Already configured by default. No setup needed!
    - Sign up (free tier available)
 
 2. **Create Inbox**
-   - Name: "Smart Campus OTP Testing"
+   - Name: "VenueLink OTP Testing"
 
 3. **Get Credentials**
    - Go to: Demo Inbox → Integrations → JavaMail
@@ -209,7 +209,7 @@ VITE_API_BASE_URL=http://localhost:8080
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 
 # App Configuration
-VITE_APP_NAME=Smart Campus
+VITE_APP_NAME=VenueLink
 VITE_ENV=development
 ```
 
@@ -235,7 +235,7 @@ npm run dev -- --port 3000
 ```
 Open in browser: http://localhost:5173/register-otp
 # Should display:
-# - "Smart Campus Registration" heading
+# - "VenueLink Registration" heading
 # - Email input field
 # - "Send OTP" button
 # - Login link

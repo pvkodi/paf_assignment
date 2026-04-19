@@ -61,7 +61,7 @@ npm run dev
 
 ### Step 3: Verify Google Cloud Console Setup
 1. Go to https://console.cloud.google.com
-2. Select project: **Smart Campus Hub** (or your GCP project)
+2. Select project: **VenueLink Hub** (or your GCP project)
 3. Navigate to: APIs & Services → Credentials
 4. Find OAuth 2.0 Client ID: **954142944464-qroe8pd2cpv00lt158p4o7dj2a1sc6vd.apps.googleusercontent.com**
 

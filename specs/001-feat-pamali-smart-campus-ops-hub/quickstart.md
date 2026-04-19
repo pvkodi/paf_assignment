@@ -1,4 +1,4 @@
-# Quickstart: Smart Campus Operations Hub
+# Quickstart: VenueLink Operations Hub
 
 **Last Updated**: 2026-04-11  
 **Status**: ✓ Production Ready  
@@ -71,7 +71,7 @@ git --version
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Smart Campus Hub                         │
+│                     VenueLink Hub                         │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  Frontend (React 18 + Vite)          Backend (Spring Boot)  │

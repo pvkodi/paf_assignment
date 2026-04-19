@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "smart-campus-api-collection",
-    "name": "Smart Campus Operations Hub - API Testing",
-    "description": "Complete API collection for testing Smart Campus Operations Hub\n\nPhases: Auth → Master Data → RBAC → Tickets → Appeals → Notifications → Bookings → Analytics → Frontend → E2E\n\nBase URL: {{base_url}}\nDefault: http://localhost:8080",
+    "name": "VenueLink Operations Hub - API Testing",
+    "description": "Complete API collection for testing VenueLink Operations Hub\n\nPhases: Auth → Master Data → RBAC → Tickets → Appeals → Notifications → Bookings → Analytics → Frontend → E2E\n\nBase URL: {{base_url}}\nDefault: http://localhost:8080",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -935,7 +935,7 @@
       "key": "base_url",
       "value": "http://localhost:8080",
       "type": "string",
-      "description": "Base URL for Smart Campus API"
+      "description": "Base URL for VenueLink API"
     },
     {
       "key": "admin_token",

@@ -36,5 +36,15 @@ public class FacilityResponseDTO extends com.sliitreserve.api.dto.BaseResponseDT
      * Multi-window availability schedule (Mon–Sun, multiple windows per day).
      */
     private List<AvailabilityWindowDTO> availabilityWindows;
+    
+    /**
+     * Geofencing fields for location-based check-in verification
+     */
+    private Double latitude;
+    private Double longitude;
+    private String wifiSSID;
+    private String wifiMacAddress;
+    private Integer geofenceRadiusMeters;
+    
     private Map<String, Object> subtypeAttributes;
 }

@@ -1,8 +1,8 @@
-# Smart Campus Operations Hub - Architecture Documentation
+# VenueLink Operations Hub - Architecture Documentation
 
 ## Overview
 
-This directory contains architecture diagrams and design documentation for the Smart Campus Operations Hub system. The system implements a comprehensive university facilities management platform with authentication, facility booking, maintenance ticketing, and analytics capabilities.
+This directory contains architecture diagrams and design documentation for the VenueLink Operations Hub system. The system implements a comprehensive university facilities management platform with authentication, facility booking, maintenance ticketing, and analytics capabilities.
 
 ## Architecture Diagrams
 
