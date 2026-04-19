@@ -152,6 +152,10 @@ public class FacilityService {
             throw new ConflictException("Facility code already exists");
         }
 
+        Facility.FacilityStatus oldStatus = existingFacility.getStatus();
+        LocalDateTime oldStart = existingFacility.getOutOfServiceStart();
+        LocalDateTime oldEnd = existingFacility.getOutOfServiceEnd();
+
         facilityMapper.updateEntity(normalizedRequest, existingFacility);
         facilityFactory.applySubtypeAttributes(existingFacility, normalizedRequest.getSubtypeAttributes());
         if (normalizedRequest.getStatus() == null) {
@@ -159,6 +163,21 @@ public class FacilityService {
         }
 
         Facility updatedFacility = facilityRepository.save(existingFacility);
+
+        // Check for state changes that require booking cancellations
+        boolean statusChangedToOffline = (oldStatus != Facility.FacilityStatus.OUT_OF_SERVICE && updatedFacility.getStatus() == Facility.FacilityStatus.OUT_OF_SERVICE);
+        boolean scheduleChanged = (updatedFacility.getOutOfServiceStart() != null && 
+                                  (!updatedFacility.getOutOfServiceStart().equals(oldStart) || 
+                                   (updatedFacility.getOutOfServiceEnd() != null && !updatedFacility.getOutOfServiceEnd().equals(oldEnd))));
+
+        if (statusChangedToOffline) {
+            cancelBookingsInRange(facilityId, updatedFacility.getName(), LocalDateTime.now(), null);
+        } else if (updatedFacility.getStatus() == Facility.FacilityStatus.OUT_OF_SERVICE || scheduleChanged) {
+            if (updatedFacility.getOutOfServiceStart() != null) {
+                cancelBookingsInRange(facilityId, updatedFacility.getName(), updatedFacility.getOutOfServiceStart(), updatedFacility.getOutOfServiceEnd());
+            }
+        }
+
         return facilityMapper.toResponseDTO(updatedFacility);
     }
 
@@ -166,8 +185,10 @@ public class FacilityService {
     public void markOutOfService(UUID facilityId) {
         Facility facility = getFacilityEntity(facilityId);
         facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
+        facility.setOutOfServiceStart(LocalDateTime.now());
+        facility.setOutOfServiceEnd(null);
         facilityRepository.save(facility);
-        cancelAllBookings(facilityId, facility.getName());
+        cancelBookingsInRange(facilityId, facility.getName(), LocalDateTime.now(), null);
     }
 
     @Transactional
@@ -180,7 +201,7 @@ public class FacilityService {
         }
 
         if (force && bookingCount > 0) {
-            cancelAllBookings(facilityId, facility.getName());
+            cancelBookingsInRange(facilityId, facility.getName(), LocalDateTime.now(), null);
         }
 
         nukeAssociatedData(facilityId);
@@ -192,8 +213,9 @@ public class FacilityService {
         List<Facility> facilities = facilityRepository.findAllById(ids);
         for (Facility facility : facilities) {
             facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
+            facility.setOutOfServiceStart(LocalDateTime.now());
             facilityRepository.save(facility);
-            cancelAllBookings(facility.getId(), facility.getName());
+            cancelBookingsInRange(facility.getId(), facility.getName(), LocalDateTime.now(), null);
         }
     }
 
@@ -210,38 +232,56 @@ public class FacilityService {
     }
 
     private void cancelAllBookings(UUID facilityId, String facilityName) {
+        cancelBookingsInRange(facilityId, facilityName, LocalDateTime.now(), null);
+    }
+
+    private void cancelBookingsInRange(UUID facilityId, String facilityName, LocalDateTime start, LocalDateTime end) {
         List<Booking> bookings = bookingRepository.findByFacility_Id(facilityId);
         LocalDateTime now = LocalDateTime.now();
+        
+        // Use the effective start (cannot cancel past bookings anyway)
+        LocalDateTime effectiveStart = start.isBefore(now) ? now : start;
+
         for (Booking booking : bookings) {
             if (booking.getStatus() == BookingStatus.PENDING || booking.getStatus() == BookingStatus.APPROVED) {
-                if (booking.getBookingDate() == null || booking.getStartTime() == null) {
+                if (booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
                     continue;
                 }
 
                 LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
-                if (bookingStart.isBefore(now)) {
-                    continue;
+                LocalDateTime bookingEnd = LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
+
+                // Check if booking overlaps with the unavailable range
+                boolean overlaps = false;
+                if (end == null) {
+                    // Indefinite out of service starting from 'start'
+                    overlaps = !bookingEnd.isBefore(effectiveStart);
+                } else {
+                    // Discrete range [start, end]
+                    overlaps = !bookingEnd.isBefore(effectiveStart) && !bookingStart.isAfter(end);
                 }
 
-                booking.setStatus(BookingStatus.CANCELLED);
-                bookingRepository.save(booking);
+                if (overlaps) {
+                    booking.setStatus(BookingStatus.CANCELLED);
+                    bookingRepository.save(booking);
 
-                // Notify user
-                try {
-                    notificationService.publish(EventEnvelope.builder()
-                        .eventId(UUID.randomUUID().toString())
-                        .eventType("FACILITY_REMOVED_CANCELLED")
-                        .severity(EventSeverity.HIGH)
-                        .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
-                        .title("Booking Cancelled: Facility Unavailable")
-                        .description(String.format("We're sorry, your booking for %s on %s has been cancelled because the facility is currently unavailable.", 
-                            facilityName, booking.getBookingDate()))
-                        .source("FacilityService")
-                        .entityReference("booking:" + booking.getId())
-                        .metadata(Map.of("userId", booking.getRequestedBy().getId().toString()))
-                        .build());
-                } catch (Exception e) {
-                    log.error("Failed to send cancellation notification for booking {}", booking.getId(), e);
+                    // Notify user
+                    try {
+                        notificationService.publish(EventEnvelope.builder()
+                            .eventId(UUID.randomUUID().toString())
+                            .eventType("FACILITY_UNAVAILABLE_CANCELLED")
+                            .severity(EventSeverity.HIGH)
+                            .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                            .title("Booking Cancelled: Facility Unavailable")
+                            .description(String.format("We're sorry, your booking for %s on %s (%s - %s) has been cancelled because the facility has been marked as out of service or unavailable during this period.", 
+                                facilityName, booking.getBookingDate(), booking.getStartTime(), booking.getEndTime()))
+                            .source("FacilityService")
+                            .entityReference("booking:" + booking.getId())
+                            .metadata(Map.of("userId", booking.getRequestedBy().getId().toString()))
+                            .build());
+                    } catch (Exception e) {
+                        log.error("Failed to send cancellation notification for booking {}", booking.getId(), e);
+                    }
                 }
             }
         }
@@ -287,11 +327,8 @@ public class FacilityService {
         // Check each hour in the requested range against the availability schedule
         LocalDateTime current = start;
         while (current.isBefore(end)) {
-            DayOfWeek day = current.getDayOfWeek();
-            LocalTime time = current.toLocalTime();
-
-            // Check availability windows (multi-window schedule)
-            if (!facility.isAvailableAt(day, time)) {
+            // Check availability and scheduled out-of-service range
+            if (!facility.isOperationalAt(current)) {
                 return false;
             }
 

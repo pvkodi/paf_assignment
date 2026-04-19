@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,8 @@ public class FacilityResponseDTO extends com.sliitreserve.api.dto.BaseResponseDT
     private String floor;
     private String locationDescription;
     private Facility.FacilityStatus status;
+    private LocalDateTime outOfServiceStart;
+    private LocalDateTime outOfServiceEnd;
     private LocalTime availabilityStartTime;
     private LocalTime availabilityEndTime;
     /**

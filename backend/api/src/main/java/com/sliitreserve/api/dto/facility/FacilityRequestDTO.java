@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,10 @@ public class FacilityRequestDTO extends com.sliitreserve.api.dto.BaseRequestDTO 
     private LocalTime availabilityEndTime;
 
     private Facility.FacilityStatus status;
+
+    private LocalDateTime outOfServiceStart;
+
+    private LocalDateTime outOfServiceEnd;
 
     /**
      * Multi-window availability schedule (Mon–Sun, multiple windows per day).

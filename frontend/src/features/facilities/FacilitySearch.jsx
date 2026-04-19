@@ -33,7 +33,11 @@ export default function FacilitySearch({ onFacilitySelect, onResultsChange, init
 
   // Pagination helpers
   const handlePayload = (payload, requestedPage = 0, requestedSize = size) => {
-    const data = Array.isArray(payload?.content) ? payload.content : Array.isArray(payload) ? payload : [];
+    let data = Array.isArray(payload?.content) ? payload.content : Array.isArray(payload) ? payload : [];
+    
+    // Filter out facilities without configured availability windows
+    data = data.filter(f => f.availabilityWindows && f.availabilityWindows.length > 0);
+    
     setResults(data);
     setTotal(Number(payload?.totalElements ?? data.length));
     setPage(Number(payload?.number ?? requestedPage));

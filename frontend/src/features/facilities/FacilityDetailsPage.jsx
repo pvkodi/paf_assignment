@@ -104,10 +104,22 @@ function WeeklyScheduleGrid({ windows, status }) {
 
   const isCurrentlyAvailable = useMemo(() => {
     if (status !== "ACTIVE") return false;
+    
+    // Check scheduled out-of-service
+    const now = new Date();
+    if (facility?.outOfServiceStart) {
+      const oosStart = new Date(facility.outOfServiceStart);
+      if (now >= oosStart) {
+        if (!facility.outOfServiceEnd || now < new Date(facility.outOfServiceEnd)) {
+          return false;
+        }
+      }
+    }
+
     return (windowsByDay[today] ?? []).some((w) =>
       isTimeInWindow(w.startTime, w.endTime)
     );
-  }, [windowsByDay, today, status]);
+  }, [windowsByDay, today, status, facility?.outOfServiceStart, facility?.outOfServiceEnd]);
 
   if (!windows || windows.length === 0) {
     return (
@@ -518,6 +530,18 @@ export default function FacilityDetailsPage() {
             <DetailRow label="Building" value={facility.building} />
             <DetailRow label="Floor" value={facility.floor} />
             <DetailRow label="Location" value={facility.locationDescription} />
+            {facility.outOfServiceStart && (
+              <DetailRow 
+                label="Scheduled OOS Start" 
+                value={new Date(facility.outOfServiceStart).toLocaleString()} 
+              />
+            )}
+            {facility.outOfServiceEnd && (
+              <DetailRow 
+                label="Scheduled OOS End" 
+                value={new Date(facility.outOfServiceEnd).toLocaleString()} 
+              />
+            )}
           </dl>
         </section>
 

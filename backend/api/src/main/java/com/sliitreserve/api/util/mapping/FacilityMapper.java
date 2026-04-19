@@ -50,6 +50,8 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         dto.setStatus(facility.getStatus());
         dto.setAvailabilityStartTime(facility.getAvailabilityStartTime());
         dto.setAvailabilityEndTime(facility.getAvailabilityEndTime());
+        dto.setOutOfServiceStart(facility.getOutOfServiceStart());
+        dto.setOutOfServiceEnd(facility.getOutOfServiceEnd());
         // Map multi-window schedule
         if (facility.getAvailabilityWindows() != null) {
             dto.setAvailabilityWindows(
@@ -93,6 +95,8 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         facility.setStatus(requestDTO.getStatus());
         facility.setAvailabilityStartTime(requestDTO.getAvailabilityStartTime());
         facility.setAvailabilityEndTime(requestDTO.getAvailabilityEndTime());
+        facility.setOutOfServiceStart(requestDTO.getOutOfServiceStart());
+        facility.setOutOfServiceEnd(requestDTO.getOutOfServiceEnd());
 
         return facility;
     }
@@ -124,6 +128,8 @@ public class FacilityMapper implements BaseMapper<Facility, FacilityRequestDTO, 
         existingFacility.setStatus(requestDTO.getStatus());
         existingFacility.setAvailabilityStartTime(requestDTO.getAvailabilityStartTime());
         existingFacility.setAvailabilityEndTime(requestDTO.getAvailabilityEndTime());
+        existingFacility.setOutOfServiceStart(requestDTO.getOutOfServiceStart());
+        existingFacility.setOutOfServiceEnd(requestDTO.getOutOfServiceEnd());
         // Replace availability windows if provided
         if (requestDTO.getAvailabilityWindows() != null) {
             List<AvailabilityWindow> windows = requestDTO.getAvailabilityWindows().stream()

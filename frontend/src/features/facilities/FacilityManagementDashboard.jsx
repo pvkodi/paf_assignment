@@ -62,6 +62,8 @@ const BLANK_FORM = {
   availabilityEndTime: "17:00:00",
   status: "ACTIVE",
   availabilityWindows: [],
+  outOfServiceStart: "",
+  outOfServiceEnd: "",
 };
 
 const BLANK_WINDOW = { dayOfWeek: "MONDAY", startTime: "08:00", endTime: "17:00" };
@@ -486,6 +488,37 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
                 onChange={(ws) => setFormData((p) => ({ ...p, availabilityWindows: ws }))}
               />
             </fieldset>
+
+            {/* Scheduled Maintenance / Out of Service */}
+            <fieldset>
+              <legend className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-1">
+                Out of Service Schedule
+              </legend>
+              <p className="text-xs text-[#64748b] mb-3">
+                Schedule a period where the facility will be marked as out of service.
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {field("fac-oos-start", "Scheduled Start",
+                  <input
+                    id="fac-oos-start"
+                    type="datetime-local"
+                    value={formData.outOfServiceStart ? formData.outOfServiceStart.slice(0, 16) : ""}
+                    onChange={(e) => setFormData((p) => ({ ...p, outOfServiceStart: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+
+                {field("fac-oos-end", "Scheduled End (Optional)",
+                  <input
+                    id="fac-oos-end"
+                    type="datetime-local"
+                    value={formData.outOfServiceEnd ? formData.outOfServiceEnd.slice(0, 16) : ""}
+                    onChange={(e) => setFormData((p) => ({ ...p, outOfServiceEnd: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+              </div>
+            </fieldset>
           </div>
 
           <div className="border-t border-[#f1f5f9] px-6 py-4 flex items-center justify-end gap-3">
@@ -612,12 +645,14 @@ export default function FacilityManagementDashboard() {
       availabilityStartTime: facility.availabilityStartTime ?? "08:00:00",
       availabilityEndTime: facility.availabilityEndTime ?? "17:00:00",
       status: facility.status ?? "ACTIVE",
-      availabilityWindows: (facility.availabilityWindows ?? []).map((w) => ({
-        dayOfWeek: w.dayOfWeek,
-        startTime: w.startTime ? String(w.startTime).slice(0, 5) : "08:00",
-        endTime: w.endTime ? String(w.endTime).slice(0, 5) : "17:00",
-      })),
-    });
+        availabilityWindows: (facility.availabilityWindows ?? []).map((w) => ({
+          dayOfWeek: w.dayOfWeek,
+          startTime: w.startTime ? String(w.startTime).slice(0, 5) : "08:00",
+          endTime: w.endTime ? String(w.endTime).slice(0, 5) : "17:00",
+        })),
+        outOfServiceStart: facility.outOfServiceStart ?? "",
+        outOfServiceEnd: facility.outOfServiceEnd ?? "",
+      });
     setModalOpen(true);
   };
 
@@ -634,6 +669,8 @@ export default function FacilityManagementDashboard() {
           startTime: w.startTime.length === 5 ? `${w.startTime}:00` : w.startTime,
           endTime: w.endTime.length === 5 ? `${w.endTime}:00` : w.endTime,
         })),
+        outOfServiceStart: formData.outOfServiceStart || null,
+        outOfServiceEnd: formData.outOfServiceEnd || null,
       };
       if (editingFacility) {
         const updatedFacility = await updateFacility(editingFacility.id, payload);
