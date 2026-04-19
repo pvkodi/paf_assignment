@@ -90,7 +90,7 @@ function DetailRow({ label, value }) {
 
 // ─── Weekly Schedule Grid ─────────────────────────────────────────────────────
 
-function WeeklyScheduleGrid({ windows, status }) {
+function WeeklyScheduleGrid({ windows, status, outOfServiceStart, outOfServiceEnd }) {
   const today = currentDayOfWeek();
 
   const windowsByDay = useMemo(() => {
@@ -104,10 +104,22 @@ function WeeklyScheduleGrid({ windows, status }) {
 
   const isCurrentlyAvailable = useMemo(() => {
     if (status !== "ACTIVE") return false;
+    
+    // Check scheduled out-of-service
+    const now = new Date();
+    if (outOfServiceStart) {
+      const oosStart = new Date(outOfServiceStart);
+      if (now >= oosStart) {
+        if (!outOfServiceEnd || now < new Date(outOfServiceEnd)) {
+          return false;
+        }
+      }
+    }
+
     return (windowsByDay[today] ?? []).some((w) =>
       isTimeInWindow(w.startTime, w.endTime)
     );
-  }, [windowsByDay, today, status]);
+  }, [windowsByDay, today, status, outOfServiceStart, outOfServiceEnd]);
 
   if (!windows || windows.length === 0) {
     return (
@@ -337,7 +349,7 @@ export default function FacilityDetailsPage() {
           capacity: facility.capacity,
           building: facility.building && facility.building.trim() ? facility.building : "TBD",
           floor: facility.floor && facility.floor.trim() ? facility.floor : "N/A",
-          locationDescription: facility.locationDescription && facility.locationDescription.trim() ? facility.locationDescription : "Facility",
+          locationDescription: facility.locationDescription,
           availabilityStartTime: facility.availabilityStartTime,
           availabilityEndTime: facility.availabilityEndTime,
           status: "ACTIVE",
@@ -518,6 +530,18 @@ export default function FacilityDetailsPage() {
             <DetailRow label="Building" value={facility.building} />
             <DetailRow label="Floor" value={facility.floor} />
             <DetailRow label="Location" value={facility.locationDescription} />
+            {facility.outOfServiceStart && (
+              <DetailRow 
+                label="Scheduled OOS Start" 
+                value={new Date(facility.outOfServiceStart).toLocaleString()} 
+              />
+            )}
+            {facility.outOfServiceEnd && (
+              <DetailRow 
+                label="Scheduled OOS End" 
+                value={new Date(facility.outOfServiceEnd).toLocaleString()} 
+              />
+            )}
           </dl>
         </section>
 
@@ -532,6 +556,8 @@ export default function FacilityDetailsPage() {
           <WeeklyScheduleGrid
             windows={facility.availabilityWindows}
             status={facility.status}
+            outOfServiceStart={facility.outOfServiceStart}
+            outOfServiceEnd={facility.outOfServiceEnd}
           />
         </section>
 

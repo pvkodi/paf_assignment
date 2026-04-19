@@ -23,6 +23,7 @@ export default function FacilitySearch({
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [minCapacity, setMinCapacity] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [building, setBuilding] = useState("");
 
@@ -42,11 +43,11 @@ export default function FacilitySearch({
 
   // Pagination helpers
   const handlePayload = (payload, requestedPage = 0, requestedSize = size) => {
-    const data = Array.isArray(payload?.content)
-      ? payload.content
-      : Array.isArray(payload)
-        ? payload
-        : [];
+    let data = Array.isArray(payload?.content) ? payload.content : Array.isArray(payload) ? payload : [];
+    
+    // Filter out facilities without configured availability windows
+    data = data.filter(f => f.availabilityWindows && f.availabilityWindows.length > 0);
+    
     setResults(data);
     setTotal(Number(payload?.totalElements ?? data.length));
     setPage(Number(payload?.number ?? requestedPage));
@@ -65,19 +66,17 @@ export default function FacilitySearch({
 
       const baseParams = { page: nextPage, size: nextSize };
 
-      const payload =
-        forceSearch || hasSearched
-          ? await searchFacilities({
-              ...baseParams,
-              ...(name ? { name } : {}),
-              ...(type ? { type } : {}),
-              ...(minCapacity !== ""
-                ? { minCapacity: Number(minCapacity) }
-                : {}),
-              ...(location ? { location } : {}),
-              ...(building ? { building } : {}),
-            })
-          : await fetchFacilities(baseParams);
+      const payload = (forceSearch || hasSearched)
+        ? await searchFacilities({
+            ...baseParams,
+            ...(name ? { name } : {}),
+            ...(keyword ? { query: keyword } : {}),
+            ...(type ? { type } : {}),
+            ...(minCapacity !== "" ? { minCapacity: Number(minCapacity) } : {}),
+            ...(location ? { location } : {}),
+            ...(building ? { building } : {}),
+          })
+        : await fetchFacilities(baseParams);
 
       handlePayload(payload, nextPage, nextSize);
     } catch (e) {
@@ -171,6 +170,27 @@ export default function FacilitySearch({
       setError("Please select both Start and End times for smart suggestions.");
       return;
     }
+
+    const parsedCapacity = minCapacity === "" ? 1 : Number(minCapacity);
+    if (Number.isNaN(parsedCapacity) || parsedCapacity < 1) {
+      setError("Minimum capacity must be a positive number.");
+      return;
+    }
+
+    const startDate = new Date(suggestionStart);
+    const endDate = new Date(suggestionEnd);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      setError("Please provide valid start and end date-times.");
+      return;
+    }
+    if (endDate <= startDate) {
+      setError("End time must be after start time.");
+      return;
+    }
+
+    // datetime-local values are in local time; keep them as local ISO-like strings for LocalDateTime.
+    const toLocalDateTime = (value) => (value && value.length === 16 ? `${value}:00` : value);
+
     setError(null);
 
     try {
@@ -179,9 +199,9 @@ export default function FacilitySearch({
 
       const payload = {
         type: type || "LECTURE_HALL",
-        capacity: minCapacity === "" ? 1 : Number(minCapacity),
-        start: new Date(suggestionStart).toISOString().slice(0, 19),
-        end: new Date(suggestionEnd).toISOString().slice(0, 19),
+        capacity: parsedCapacity,
+        start: toLocalDateTime(suggestionStart),
+        end: toLocalDateTime(suggestionEnd),
         preferredBuilding: building || null,
       };
 
@@ -213,8 +233,11 @@ export default function FacilitySearch({
       if (onResultsChange) onResultsChange(mappedResults);
     } catch (err) {
       console.error("Suggestion error:", err);
+      const details = err?.response?.data?.details;
+      const detailMessage = Array.isArray(details) && details.length > 0 ? details[0] : null;
       setError(
-        err?.response?.data?.message ||
+        detailMessage ||
+          err?.response?.data?.message ||
           "The optimization engine failed to find suggestions.",
       );
       setResults([]);
@@ -228,6 +251,7 @@ export default function FacilitySearch({
     setName("");
     setType("");
     setMinCapacity("");
+    setKeyword("");
     setLocation("");
     setBuilding("");
     setSuggestionStart("");
@@ -286,27 +310,13 @@ export default function FacilitySearch({
             <form onSubmit={search} className="space-y-4">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#334155] mb-1">
-                    Facility Name
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Search facility by name..."
-                    className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-[#334155] mb-1">Search Keyword</label>
+                  <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g., lab, C203, auditorium" className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#334155] mb-1">
-                    Facility Type
-                  </label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
+                  <label className="block text-sm font-medium text-[#334155] mb-1">Facility Type</label>
+                  <select value={type} onChange={(e) => setType(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     <option value="">All Types</option>
                     {facilityTypes.map((t) => (
                       <option key={t} value={t}>
@@ -674,14 +684,13 @@ export default function FacilitySearch({
         <form onSubmit={search} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#334155] mb-1">
-                Facility Type
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
+              <label className="block text-sm font-medium text-[#334155] mb-1">Search Keyword</label>
+              <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g., lab, C203, auditorium" className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#334155] mb-1">Facility Type</label>
+              <select value={type} onChange={(e) => setType(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                 <option value="">All Types</option>
                 {facilityTypes.map((t) => (
                   <option key={t} value={t}>

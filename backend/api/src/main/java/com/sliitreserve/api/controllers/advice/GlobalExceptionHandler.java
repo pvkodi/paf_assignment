@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -196,6 +197,34 @@ public class GlobalExceptionHandler {
         errorResponse.setTimestamp(LocalDateTime.now());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles DataIntegrityViolationException from DB unique/FK constraint violations.
+     * Returns HTTP 409 Conflict instead of 500.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            WebRequest request) {
+
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+
+        String message = ex.getMostSpecificCause().getMessage();
+        // Provide a cleaner message for common unique constraint violations
+        if (message != null && message.toLowerCase().contains("facility_code")) {
+            message = "A facility with this code already exists. Use a different facility code.";
+        } else if (message != null && (message.toLowerCase().contains("unique") || message.toLowerCase().contains("duplicate"))) {
+            message = "A record with these details already exists.";
+        }
+
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+            "CONFLICT",
+            message
+        );
+        errorResponse.setTimestamp(LocalDateTime.now());
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     /**

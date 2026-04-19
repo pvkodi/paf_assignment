@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,5 +85,33 @@ public class FacilityContractTest {
 
         mockMvc.perform(get("/api/facilities/" + missingId).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void searchFacilities_endpoint_returns_filtered_paged_json() throws Exception {
+        FacilityResponseDTO dto = new FacilityResponseDTO();
+        dto.setId(UUID.randomUUID());
+        dto.setName("C-LAB-01");
+        dto.setType(Facility.FacilityType.LAB);
+        dto.setBuilding("C");
+        dto.setStatus(Facility.FacilityStatus.ACTIVE);
+        dto.setAvailabilityStartTime(LocalTime.of(8, 0));
+        dto.setAvailabilityEndTime(LocalTime.of(18, 0));
+
+        when(facilityService.searchFacilities(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 5), 1));
+
+        mockMvc.perform(get("/api/v1/facilities/search")
+                        .param("query", "lab c")
+                        .param("type", "LAB")
+                        .param("building", "C")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content[0].name").value("C-LAB-01"))
+                .andExpect(jsonPath("$.content[0].type").value("LAB"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 }

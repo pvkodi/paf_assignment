@@ -74,6 +74,12 @@ public class Facility {
     @Builder.Default
     private FacilityStatus status = FacilityStatus.ACTIVE;
 
+    @Column(name = "out_of_service_start")
+    private LocalDateTime outOfServiceStart;
+
+    @Column(name = "out_of_service_end")
+    private LocalDateTime outOfServiceEnd;
+
     @NotNull(message = "Availability start time is required")
     @Column(name = "availability_start", nullable = false)
     private LocalTime availabilityStart;
@@ -151,6 +157,16 @@ public class Facility {
      * Falls back to the flat availabilityStart/End if no windows are configured.
      */
     public boolean isAvailableAt(DayOfWeek day, LocalTime time) {
+        // First check if literally explicitly out of service via status
+        if (status == FacilityStatus.OUT_OF_SERVICE) {
+            return false;
+        }
+
+        // Then check if within a scheduled out-of-service range
+        LocalDateTime now = LocalDateTime.now();
+        // Here we assume if they check for "now", but usually this method is for checking theoretical availability.
+        // It's better to have a method that takes LocalDateTime.
+
         if (availabilityWindows != null && !availabilityWindows.isEmpty()) {
             return availabilityWindows.stream().anyMatch(w -> w.contains(day, time));
         }
@@ -159,6 +175,27 @@ public class Facility {
             return !time.isBefore(availabilityStart) && time.isBefore(availabilityEnd);
         }
         return true;
+    }
+
+    /**
+     * Comprehensive check if facility is operational at a specific date and time.
+     * Incorporates status, scheduled out-of-service range, and availability windows.
+     */
+    public boolean isOperationalAt(LocalDateTime dateTime) {
+        if (status == FacilityStatus.OUT_OF_SERVICE) {
+            return false;
+        }
+
+        // Check scheduled out-of-service range
+        if (outOfServiceStart != null) {
+            if (!dateTime.isBefore(outOfServiceStart)) {
+                if (outOfServiceEnd == null || dateTime.isBefore(outOfServiceEnd)) {
+                    return false;
+                }
+            }
+        }
+
+        return isAvailableAt(dateTime.getDayOfWeek(), dateTime.toLocalTime());
     }
 
     /**

@@ -68,6 +68,8 @@ const BLANK_FORM = {
   availabilityEndTime: "17:00:00",
   status: "ACTIVE",
   availabilityWindows: [],
+  outOfServiceStart: "",
+  outOfServiceEnd: "",
   latitude: "",
   longitude: "",
   geofenceRadiusMeters: 100,
@@ -633,9 +635,7 @@ function FacilityFormModal({
                 )}
 
                 <div className="sm:col-span-2">
-                  {field(
-                    "fac-location",
-                    "Location Description *",
+                  {field("fac-location", "Location Description *",
                     <input
                       id="fac-location"
                       type="text"
@@ -804,6 +804,37 @@ function FacilityFormModal({
                 }
               />
             </fieldset>
+
+            {/* Scheduled Maintenance / Out of Service */}
+            <fieldset>
+              <legend className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-1">
+                Out of Service Schedule
+              </legend>
+              <p className="text-xs text-[#64748b] mb-3">
+                Schedule a period where the facility will be marked as out of service.
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {field("fac-oos-start", "Scheduled Start",
+                  <input
+                    id="fac-oos-start"
+                    type="datetime-local"
+                    value={formData.outOfServiceStart ? formData.outOfServiceStart.slice(0, 16) : ""}
+                    onChange={(e) => setFormData((p) => ({ ...p, outOfServiceStart: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+
+                {field("fac-oos-end", "Scheduled End (Optional)",
+                  <input
+                    id="fac-oos-end"
+                    type="datetime-local"
+                    value={formData.outOfServiceEnd ? formData.outOfServiceEnd.slice(0, 16) : ""}
+                    onChange={(e) => setFormData((p) => ({ ...p, outOfServiceEnd: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+              </div>
+            </fieldset>
           </div>
 
           <div className="border-t border-[#f1f5f9] px-6 py-4 flex items-center justify-end gap-3">
@@ -878,6 +909,11 @@ export default function FacilityManagementDashboard() {
     [filters],
   );
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchActive = searchQuery.trim().length > 0;
+
+  const displayedFacilities = facilities;
+
   // ── Data loading ──────────────────────────────────────────────────────────
 
   const load = useCallback(
@@ -885,10 +921,12 @@ export default function FacilityManagementDashboard() {
       try {
         setLoading(true);
         const params = { page: p, size: PAGE_SIZE };
-        const payload = filtersActive
+        const keyword = searchQuery.trim();
+        const payload = (filtersActive || keyword)
           ? await searchFacilities({
               ...params,
               ...(filters.name ? { name: filters.name } : {}),
+              ...(keyword ? { query: keyword } : {}),
               ...(filters.type ? { type: filters.type } : {}),
               ...(filters.minCapacity
                 ? { minCapacity: Number(filters.minCapacity) }
@@ -909,7 +947,7 @@ export default function FacilityManagementDashboard() {
         setLoading(false);
       }
     },
-    [filtersActive, filters],
+    [filtersActive, filters, searchQuery],
   );
 
   // Debounced filter reaction
@@ -944,6 +982,8 @@ export default function FacilityManagementDashboard() {
         startTime: w.startTime ? String(w.startTime).slice(0, 5) : "08:00",
         endTime: w.endTime ? String(w.endTime).slice(0, 5) : "17:00",
       })),
+      outOfServiceStart: facility.outOfServiceStart ?? "",
+      outOfServiceEnd: facility.outOfServiceEnd ?? "",
       latitude: facility.latitude ?? "",
       longitude: facility.longitude ?? "",
       geofenceRadiusMeters: facility.geofenceRadiusMeters ?? 100,
@@ -973,16 +1013,35 @@ export default function FacilityManagementDashboard() {
             w.startTime.length === 5 ? `${w.startTime}:00` : w.startTime,
           endTime: w.endTime.length === 5 ? `${w.endTime}:00` : w.endTime,
         })),
+        outOfServiceStart: formData.outOfServiceStart || null,
+        outOfServiceEnd: formData.outOfServiceEnd || null,
       };
       console.log("📤 Sending facility payload:", payload);
       if (editingFacility) {
-        await updateFacility(editingFacility.id, payload);
+        const updatedFacility = await updateFacility(editingFacility.id, payload);
+        // Immediately patch the updated facility into local state so the card
+        // reflects changes without waiting for the async refetch to resolve.
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === editingFacility.id ? { ...f, ...updatedFacility } : f))
+        );
         toast.success("Facility updated successfully.");
         console.log("✅ Facility updated successfully");
+
+        const detailId = updatedFacility?.id ?? editingFacility.id;
+        setModalOpen(false);
+        navigate(`/facilities/${detailId}`);
+        return;
       } else {
-        await createFacility(payload);
+        const createdFacility = await createFacility(payload);
         toast.success("Facility created successfully.");
         console.log("✅ Facility created successfully");
+
+        const detailId = createdFacility?.id;
+        setModalOpen(false);
+        if (detailId) {
+          navigate(`/facilities/${detailId}`);
+          return;
+        }
       }
       setModalOpen(false);
       await load(page);
@@ -1027,10 +1086,16 @@ export default function FacilityManagementDashboard() {
           subtypeAttributes: facility.subtypeAttributes || {},
         };
         await updateFacility(id, reactivationPayload);
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, status: "ACTIVE" } : f))
+        );
         toast.success("Facility reactivated successfully.");
       } else {
         // Deactivate (soft delete)
         await markFacilityOutOfService(id);
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, status: "OUT_OF_SERVICE" } : f))
+        );
         toast.success("Facility deactivated.");
       }
       await load(page);
@@ -1223,6 +1288,38 @@ export default function FacilityManagementDashboard() {
           </p>
         </div>
 
+        {/* Inline search */}
+        <div className="flex-1 max-w-sm">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              id="facility-search"
+              type="search"
+              placeholder="Search by name, type, building…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           {/* View Toggle */}
           <div className="flex items-center p-1 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0]">
@@ -1419,7 +1516,7 @@ export default function FacilityManagementDashboard() {
         {total > 0 && (
           <p className="mt-3 text-xs text-[#94a3b8]">
             {total} {total === 1 ? "result" : "results"} found
-            {filtersActive ? " matching current filters" : ""}
+            {filtersActive || searchActive ? " matching current search criteria" : ""}
           </p>
         )}
       </div>
@@ -1431,20 +1528,22 @@ export default function FacilityManagementDashboard() {
             <SkeletonCard key={i} />
           ))}
         </div>
-      ) : facilities.length === 0 ? (
+      ) : displayedFacilities.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#e2e8f0] bg-white py-16 text-center">
           <p className="text-sm font-medium text-[#0f172a]">
             No facilities found
           </p>
           <p className="mt-1 text-xs text-[#64748b]">
-            {filtersActive
+            {searchQuery
+              ? `No results for "${searchQuery}". Try a different search term.`
+              : filtersActive
               ? "Try adjusting or clearing your filters."
               : "Add a facility to get started."}
           </p>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {facilities.map((f) => (
+          {displayedFacilities.map((f) => (
             <FacilityCard
               key={f.id}
               facility={f}
@@ -1459,8 +1558,8 @@ export default function FacilityManagementDashboard() {
           ))}
         </div>
       ) : (
-        <FacilityTable
-          facilities={facilities}
+  <FacilityTable
+          facilities={displayedFacilities}
           selectedIds={selectedIds}
           onSelect={toggleSelection}
           onSelectAll={toggleAll}

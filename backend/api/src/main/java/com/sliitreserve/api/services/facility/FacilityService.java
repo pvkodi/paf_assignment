@@ -1,6 +1,5 @@
 package com.sliitreserve.api.services.facility;
 
-import com.sliitreserve.api.dto.facility.AvailabilityWindowDTO;
 import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
 import com.sliitreserve.api.entities.facility.AvailabilityWindow;
@@ -38,10 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.DayOfWeek;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -75,6 +74,7 @@ public class FacilityService {
             Integer minCapacity,
             String building,
             String location,
+            String searchQuery,
             Facility.FacilityStatus status,
             Pageable pageable
     ) {
@@ -95,6 +95,9 @@ public class FacilityService {
         if (location != null && !location.isBlank()) {
             specification = specification.and(FacilitySpecifications.locationContains(location));
         }
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            specification = specification.and(FacilitySpecifications.keywordContains(searchQuery));
+        }
         if (status != null) {
             specification = specification.and(FacilitySpecifications.hasStatus(status));
         }
@@ -106,6 +109,7 @@ public class FacilityService {
     public FacilityResponseDTO createFacility(FacilityRequestDTO request) {
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
         validateTimeRange(normalizedRequest.getAvailabilityStartTime(), normalizedRequest.getAvailabilityEndTime());
+        validateOutOfServiceWindow(normalizedRequest.getOutOfServiceStart(), normalizedRequest.getOutOfServiceEnd());
 
         if (normalizedRequest.getFacilityCode() != null
                 && !normalizedRequest.getFacilityCode().isBlank()
@@ -135,10 +139,10 @@ public class FacilityService {
     public FacilityResponseDTO updateFacility(UUID facilityId, FacilityRequestDTO request) {
         Facility existingFacility = getFacilityEntity(facilityId);
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
+        validateOutOfServiceWindow(normalizedRequest.getOutOfServiceStart(), normalizedRequest.getOutOfServiceEnd());
 
         // Log geofencing data
-        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(this.getClass());
-        logger.info("📤 Updating facility {}: latitude={}, longitude={}, geofenceRadius={}", 
+        log.info("Updating facility {}: latitude={}, longitude={}, geofenceRadius={}",
             facilityId, normalizedRequest.getLatitude(), normalizedRequest.getLongitude(), 
             normalizedRequest.getGeofenceRadiusMeters());
 
@@ -158,6 +162,10 @@ public class FacilityService {
             throw new ConflictException("Facility code already exists");
         }
 
+        Facility.FacilityStatus oldStatus = existingFacility.getStatus();
+        LocalDateTime oldStart = existingFacility.getOutOfServiceStart();
+        LocalDateTime oldEnd = existingFacility.getOutOfServiceEnd();
+
         facilityMapper.updateEntity(normalizedRequest, existingFacility);
         facilityFactory.applySubtypeAttributes(existingFacility, normalizedRequest.getSubtypeAttributes());
         if (normalizedRequest.getStatus() == null) {
@@ -165,7 +173,22 @@ public class FacilityService {
         }
 
         Facility updatedFacility = facilityRepository.save(existingFacility);
-        logger.info("✅ Facility {} updated. New latitude={}, longitude={}", 
+
+        // Check for state changes that require booking cancellations
+        boolean statusChangedToOffline = (oldStatus != Facility.FacilityStatus.OUT_OF_SERVICE && updatedFacility.getStatus() == Facility.FacilityStatus.OUT_OF_SERVICE);
+        boolean scheduleChanged = (updatedFacility.getOutOfServiceStart() != null && 
+                                  (!updatedFacility.getOutOfServiceStart().equals(oldStart) || 
+                                   (updatedFacility.getOutOfServiceEnd() != null && !updatedFacility.getOutOfServiceEnd().equals(oldEnd))));
+
+        if (statusChangedToOffline) {
+            cancelBookingsInRange(facilityId, updatedFacility.getName(), LocalDateTime.now(), null);
+        } else if (updatedFacility.getStatus() == Facility.FacilityStatus.OUT_OF_SERVICE || scheduleChanged) {
+            if (updatedFacility.getOutOfServiceStart() != null) {
+                cancelBookingsInRange(facilityId, updatedFacility.getName(), updatedFacility.getOutOfServiceStart(), updatedFacility.getOutOfServiceEnd());
+            }
+        }
+
+        log.info("Facility {} updated. New latitude={}, longitude={}",
             facilityId, updatedFacility.getLatitude(), updatedFacility.getLongitude());
         return facilityMapper.toResponseDTO(updatedFacility);
     }
@@ -174,7 +197,10 @@ public class FacilityService {
     public void markOutOfService(UUID facilityId) {
         Facility facility = getFacilityEntity(facilityId);
         facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
+        facility.setOutOfServiceStart(LocalDateTime.now());
+        facility.setOutOfServiceEnd(null);
         facilityRepository.save(facility);
+        cancelBookingsInRange(facilityId, facility.getName(), LocalDateTime.now(), null);
     }
 
     @Transactional
@@ -187,7 +213,7 @@ public class FacilityService {
         }
 
         if (force && bookingCount > 0) {
-            cancelAllBookings(facilityId, facility.getName());
+            cancelBookingsInRange(facilityId, facility.getName(), LocalDateTime.now(), null);
         }
 
         nukeAssociatedData(facilityId);
@@ -197,8 +223,12 @@ public class FacilityService {
     @Transactional
     public void bulkDeactivate(List<UUID> ids) {
         List<Facility> facilities = facilityRepository.findAllById(ids);
-        facilities.forEach(f -> f.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE));
-        facilityRepository.saveAll(facilities);
+        for (Facility facility : facilities) {
+            facility.setStatus(Facility.FacilityStatus.OUT_OF_SERVICE);
+            facility.setOutOfServiceStart(LocalDateTime.now());
+            facilityRepository.save(facility);
+            cancelBookingsInRange(facility.getId(), facility.getName(), LocalDateTime.now(), null);
+        }
     }
 
     @Transactional
@@ -213,28 +243,52 @@ public class FacilityService {
         }
     }
 
-    private void cancelAllBookings(UUID facilityId, String facilityName) {
+    private void cancelBookingsInRange(UUID facilityId, String facilityName, LocalDateTime start, LocalDateTime end) {
         List<Booking> bookings = bookingRepository.findByFacility_Id(facilityId);
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Use the effective start so we only evaluate upcoming booking starts.
+        LocalDateTime effectiveStart = start.isBefore(now) ? now : start;
+
         for (Booking booking : bookings) {
             if (booking.getStatus() == BookingStatus.PENDING || booking.getStatus() == BookingStatus.APPROVED) {
-                booking.setStatus(BookingStatus.CANCELLED);
-                bookingRepository.save(booking);
+                if (booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
+                    continue;
+                }
 
-                // Notify user
-                try {
-                    notificationService.publish(EventEnvelope.builder()
-                        .eventId(UUID.randomUUID().toString())
-                        .eventType("FACILITY_REMOVED_CANCELLED")
-                        .severity(EventSeverity.HIGH)
-                        .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
-                        .title("Booking Cancelled: Facility Unavailable")
-                        .description(String.format("Your booking for %s on %s has been cancelled because the facility has been removed from service.", 
-                            facilityName, booking.getBookingDate()))
-                        .source("FacilityService")
-                        .entityReference("booking:" + booking.getId())
-                        .build());
-                } catch (Exception e) {
-                    log.error("Failed to send cancellation notification for booking {}", booking.getId(), e);
+                LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+
+                // Cancel only when the booking start is within the unavailable window.
+                boolean overlaps = false;
+                if (end == null) {
+                    // Open-ended out of service starting from effectiveStart
+                    overlaps = !bookingStart.isBefore(effectiveStart);
+                } else {
+                    // Discrete range [effectiveStart, end]
+                    overlaps = !bookingStart.isBefore(effectiveStart) && !bookingStart.isAfter(end);
+                }
+
+                if (overlaps) {
+                    booking.setStatus(BookingStatus.CANCELLED);
+                    bookingRepository.save(booking);
+
+                    // Notify user
+                    try {
+                        notificationService.publish(EventEnvelope.builder()
+                            .eventId(UUID.randomUUID().toString())
+                            .eventType("FACILITY_UNAVAILABLE_CANCELLED")
+                            .severity(EventSeverity.HIGH)
+                            .affectedUserId(booking.getRequestedBy().getId().getMostSignificantBits())
+                            .title("Booking Cancelled: Facility Unavailable")
+                            .description(String.format("We're sorry, your booking for %s on %s (%s - %s) has been cancelled because the facility has been marked as out of service or unavailable during this period.", 
+                                facilityName, booking.getBookingDate(), booking.getStartTime(), booking.getEndTime()))
+                            .source("FacilityService")
+                            .entityReference("booking:" + booking.getId())
+                            .metadata(Map.of("userId", booking.getRequestedBy().getId().toString()))
+                            .build());
+                    } catch (Exception e) {
+                        log.error("Failed to send cancellation notification for booking {}", booking.getId(), e);
+                    }
                 }
             }
         }
@@ -280,16 +334,16 @@ public class FacilityService {
         // Check each hour in the requested range against the availability schedule
         LocalDateTime current = start;
         while (current.isBefore(end)) {
-            DayOfWeek day = current.getDayOfWeek();
-            LocalTime time = current.toLocalTime();
-
-            // Check availability windows (multi-window schedule)
-            if (!facility.isAvailableAt(day, time)) {
+            // Check availability and scheduled out-of-service range
+            if (!facility.isOperationalAt(current)) {
                 return false;
             }
 
             // Check timetable occupancy
-            if (facilityTimetableService.isOccupied(facility.getFacilityCode(), day, time)) {
+            if (facilityTimetableService.isOccupied(
+                    facility.getFacilityCode(),
+                    current.getDayOfWeek(),
+                    current.toLocalTime())) {
                 return false;
             }
 
@@ -322,6 +376,15 @@ public class FacilityService {
     private void validateDateTimeRange(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null || !start.isBefore(end)) {
             throw new ValidationException("Invalid date-time range");
+        }
+    }
+
+    private void validateOutOfServiceWindow(LocalDateTime start, LocalDateTime end) {
+        if (end != null && start == null) {
+            throw new ValidationException("Out-of-service start is required when end is provided");
+        }
+        if (start != null && end != null && !start.isBefore(end)) {
+            throw new ValidationException("Out-of-service end must be after start");
         }
     }
 
