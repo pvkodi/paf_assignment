@@ -2,6 +2,7 @@ package com.sliitreserve.api.services.auth;
 
 import com.sliitreserve.api.dto.auth.CreateRegistrationRequestDTO;
 import com.sliitreserve.api.dto.auth.RegistrationRequestDTO;
+import com.sliitreserve.api.dto.auth.VerifyOtpAndRegisterDTO;
 import com.sliitreserve.api.entities.auth.RegistrationRequest;
 import com.sliitreserve.api.entities.auth.Role;
 import com.sliitreserve.api.entities.auth.User;
@@ -343,5 +344,51 @@ public class RegistrationRequestService {
             .build());
 
     return RegistrationRequestDTO.fromEntity(regRequest);
+  }
+
+  /**
+   * Register user directly from OTP verification (no admin approval needed).
+   *
+   * <p>Flow:
+   * <ol>
+   *   <li>OTP has already been verified by OtpService</li>
+   *   <li>Validate email is not already registered</li>
+   *   <li>Create User entity directly with ACTIVE status</li>
+   *   <li>BCrypt hash password</li>
+   *   <li>Return created User</li>
+   * </ol>
+   *
+   * @param request OTP registration request with user details and password
+   * @return Created User entity
+   * @throws IllegalArgumentException if email already registered
+   */
+  @Transactional
+  public User registerUserFromOtp(VerifyOtpAndRegisterDTO request) {
+    log.info("Registering user from OTP verification for email: {}", request.getEmail());
+
+    // Check if email already registered
+    if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+      log.warn("Registration from OTP failed: email already registered: {}", request.getEmail());
+      throw new IllegalArgumentException("Email already registered");
+    }
+
+    // Hash password
+    String passwordHash = passwordEncoder.encode(request.getPassword());
+
+    // Create User entity (active immediately, no admin approval needed)
+    User newUser = User.builder()
+        .email(request.getEmail())
+        .displayName(request.getDisplayName())
+        .passwordHash(passwordHash)
+        .roles(Collections.singleton(request.getRoleRequested()))
+        .active(true)
+        .noShowCount(0)
+        .suspendedUntil(null)
+        .build();
+
+    newUser = userRepository.save(newUser);
+    log.info("User registered from OTP: {} ({})", newUser.getId(), newUser.getEmail());
+
+    return newUser;
   }
 }

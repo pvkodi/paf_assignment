@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import authService from "../../services/authService";
 
 /**
  * Login Page Component
@@ -36,10 +37,17 @@ export function LoginPage() {
   const [displayName, setDisplayName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Registration form state (new)
+  // Registration form state
   const [roleRequested, setRoleRequested] = useState("USER");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [employeeNumber, setEmployeeNumber] = useState("");
+
+  // OTP Modal state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [otpTimeRemaining, setOtpTimeRemaining] = useState(null);
+  const [registrationData, setRegistrationData] = useState(null); // Store form data while waiting for OTP
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const REDIRECT_URI = `${window.location.origin}/auth/callback`;
@@ -142,7 +150,8 @@ export function LoginPage() {
   };
 
   /**
-   * Handle user registration
+   * Step 1: Handle user registration form submission
+   * Validates input and sends OTP to email
    */
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -175,9 +184,18 @@ export function LoginPage() {
       return;
     }
 
+    if (!email.includes("@smartcampus.edu")) {
+      setError("Only @smartcampus.edu email addresses are accepted");
+      return;
+    }
+
+    // Store registration data and send OTP
     try {
       setIsProcessing(true);
-      await registerWithEmailPassword(
+      const response = await authService.sendOtp(email);
+
+      // Store registration data for later use
+      setRegistrationData({
         email,
         displayName,
         password,
@@ -185,18 +203,118 @@ export function LoginPage() {
         roleRequested,
         registrationNumber,
         employeeNumber,
-      );
-      navigate("/registration-pending", { state: { email } });
+      });
+
+      // Show OTP modal
+      setOtpExpiresAt(new Date(response.expiresAt));
+      setOtpTimeRemaining(response.expirationMinutes * 60);
+      setShowOtpModal(true);
+      setOtpCode("");
+      setError(null);
     } catch (err) {
-      setError(
-        err.message ||
-          (err.code === "VALIDATION_ERROR"
-            ? "Email already registered or invalid input"
-            : "Registration failed. Please try again."),
-      );
+      setError(err.message || "Failed to send OTP. Please try again.");
+      console.error("Send OTP error:", err);
+    } finally {
       setIsProcessing(false);
     }
   };
+
+  /**
+   * Step 2: Verify OTP and complete registration
+   */
+  const handleVerifyOtpAndRegister = async () => {
+    setError(null);
+
+    if (!otpCode || otpCode.trim() === "") {
+      setError("Please enter the OTP code");
+      return;
+    }
+
+    if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) {
+      setError("OTP must be 6 digits");
+      return;
+    }
+
+    if (!registrationData) {
+      setError("Registration data not found");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const response = await authService.verifyOtpAndRegister(
+        registrationData.email,
+        otpCode,
+        registrationData.displayName,
+        registrationData.password,
+        registrationData.confirmPassword,
+        registrationData.roleRequested,
+        registrationData.registrationNumber,
+        registrationData.employeeNumber,
+      );
+
+      // Store tokens and user
+      authService.setAuthTokens(
+        response.token,
+        response.refreshToken,
+        response.user,
+        response.expiresAt,
+      );
+
+      // Close modal and redirect
+      setShowOtpModal(false);
+      navigate(redirectUrl);
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+      console.error("Registration error:", err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  /**
+   * Handle resend OTP
+   */
+  const handleResendOtp = async () => {
+    setError(null);
+
+    if (!registrationData?.email) {
+      setError("Email not found");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const response = await authService.sendOtp(registrationData.email);
+      setOtpExpiresAt(new Date(response.expiresAt));
+      setOtpTimeRemaining(response.expirationMinutes * 60);
+      setOtpCode("");
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to resend OTP");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // OTP timer countdown
+  useEffect(() => {
+    if (!otpExpiresAt || !showOtpModal) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const remaining = Math.max(0, Math.floor((otpExpiresAt - now) / 1000));
+      setOtpTimeRemaining(remaining);
+
+      if (remaining === 0) {
+        clearInterval(interval);
+        setError("OTP has expired. Please request a new one.");
+        setShowOtpModal(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [otpExpiresAt, showOtpModal]);
 
   /**
    * Reset form state when switching modes
@@ -362,7 +480,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@institution.edu"
+                    placeholder="your@smartcampus.edu"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                     disabled={isProcessing || loading}
                   />
@@ -470,10 +588,10 @@ export function LoginPage() {
                   {isProcessing || loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Creating account...
+                      Sending OTP...
                     </>
                   ) : (
-                    "Submit Registration"
+                    "Register with OTP"
                   )}
                 </button>
               </form>
@@ -485,6 +603,79 @@ export function LoginPage() {
               >
                 Back
               </button>
+            </div>
+          )}
+
+          {/* OTP Modal */}
+          {showOtpModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-4 z-50">
+              <div className="bg-white rounded-lg p-8 max-w-md w-full">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Verify Your Email
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Enter the 6-digit code sent to
+                  <br />
+                  <span className="font-semibold">
+                    {registrationData?.email}
+                  </span>
+                </p>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setOtpCode(val);
+                    }}
+                    maxLength="6"
+                    placeholder="000000"
+                    className="w-full px-4 py-3 text-center text-2xl tracking-widest border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition"
+                    disabled={isProcessing}
+                  />
+                </div>
+
+                {otpTimeRemaining !== null && (
+                  <p className="text-center text-sm text-gray-600 mb-4">
+                    Code expires in {Math.floor(otpTimeRemaining / 60)}:
+                    {String(otpTimeRemaining % 60).padStart(2, "0")}
+                  </p>
+                )}
+
+                <button
+                  onClick={handleVerifyOtpAndRegister}
+                  disabled={isProcessing || otpCode.length !== 6}
+                  className="w-full py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isProcessing ? "Verifying..." : "Complete Registration"}
+                </button>
+
+                <button
+                  onClick={handleResendOtp}
+                  disabled={isProcessing}
+                  className="w-full mt-3 py-2 px-4 text-center text-indigo-600 font-medium hover:bg-indigo-50 rounded-lg transition disabled:opacity-50"
+                >
+                  Resend Code
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowOtpModal(false);
+                    setOtpCode("");
+                    setError(null);
+                  }}
+                  className="w-full mt-2 py-2 px-4 text-center text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition"
+                >
+                  Back to Registration
+                </button>
+              </div>
             </div>
           )}
 

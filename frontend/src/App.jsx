@@ -3,6 +3,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import { RegistrationPendingPage } from "./pages/RegistrationPendingPage";
+import OtpRegistrationPage from "./pages/OtpRegistrationPage";
 import AppShell from "./app/AppShell";
 import AdminUserManagementPanel from "./features/admin/AdminUserManagementPanel";
 import {
@@ -44,6 +45,7 @@ function App() {
             path="/registration-pending"
             element={<RegistrationPendingPage />}
           />
+          <Route path="/register-otp" element={<OtpRegistrationPage />} />
 
           {/* Protected Routes */}
           <Route

@@ -14,6 +14,7 @@ import com.sliitreserve.api.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -146,8 +147,7 @@ public class OAuthAuthService {
             log.debug("Successfully verified Google ID token for user: {}", email);
 
             // Step 4: Look up or create user in database
-            User user = userRepository.findByGoogleSubject(googleSubject)
-                    .orElseGet(() -> createNewUser(googleSubject, email, displayName));
+            User user = getOrCreateOAuthUser(googleSubject, email, displayName);
 
             // Step 5: Update user profile if needed (name/picture may change)
             user.setEmail(email);
@@ -210,7 +210,25 @@ public class OAuthAuthService {
                 .suspendedUntil(null) // Not suspended
                 .build();
 
-        return userRepository.save(user);
+        // Flush here so uniqueness violations are raised inside this call.
+        return userRepository.saveAndFlush(user);
+    }
+
+    /**
+     * Resolve or create OAuth user while tolerating duplicate callback races.
+     */
+    private User getOrCreateOAuthUser(String googleSubject, String email, String displayName) {
+        return userRepository.findByGoogleSubject(googleSubject)
+                .orElseGet(() -> {
+                    try {
+                        return createNewUser(googleSubject, email, displayName);
+                    } catch (DataIntegrityViolationException ex) {
+                        log.warn("Concurrent OAuth user creation detected for {}. Reloading existing user.", email);
+                        return userRepository.findByGoogleSubject(googleSubject)
+                                .or(() -> userRepository.findByEmail(email))
+                                .orElseThrow(() -> ex);
+                    }
+                });
     }
 
     /**

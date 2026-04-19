@@ -79,8 +79,9 @@ public class SecurityConfig {
                 
                 // Configure URL-based authorization rules
                 .authorizeHttpRequests(auth -> auth
-                    // Public OAuth endpoints
+                    // Public OAuth endpoints (both versioned and non-versioned)
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/v1/auth/**").permitAll()
 
                     // Public file download endpoint (for uploaded attachments)
                     .requestMatchers("/api/uploads/**").permitAll()
