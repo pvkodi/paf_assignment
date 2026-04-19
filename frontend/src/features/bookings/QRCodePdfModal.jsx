@@ -153,52 +153,60 @@ export default function QRCodePdfModal({ booking, isOpen, onClose }) {
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
+        className="fixed inset-0 bg-[#0f172a]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
       >
         {/* Modal */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 space-y-6"
+          className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-auto p-8 space-y-6 animate-in zoom-in-95 duration-200"
         >
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              Generate QR Code PDF?
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-[#f8fafc] border border-[#e2e8f0] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <svg className="w-8 h-8 text-[#0f172a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">
+              Generate QR PDF?
             </h2>
-            <p className="text-slate-600 mt-1">
-              Create a printable PDF with a QR code for quick check-in
+            <p className="text-[#64748b] mt-2 text-sm leading-relaxed">
+              Create a printable PDF with a custom QR code for quick facility check-in.
             </p>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-semibold text-blue-900">Facility:</p>
-            <p className="text-sm text-blue-700 font-mono">
-              {booking.facility?.name || "N/A"}
-            </p>
-            <p className="text-sm font-semibold text-blue-900 mt-3">
-              Booking ID:
-            </p>
-            <p className="text-sm text-blue-700 font-mono">{booking.id}</p>
+          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-5 space-y-3">
+            <div>
+              <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1">Facility</p>
+              <p className="text-sm text-[#0f172a] font-semibold">
+                {booking.facility?.name || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1">Booking ID</p>
+              <p className="text-sm text-[#475569] font-mono font-medium">
+                {booking.id}
+              </p>
+            </div>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-xs text-green-700">
-              ✓ PDF will include QR code, facility details, and check-in
-              instructions
+          <div className="bg-[#f0fdf4] border border-[#dcfce3] rounded-xl p-4 flex gap-3 items-start">
+            <svg className="w-5 h-5 text-[#16a34a] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p className="text-xs text-[#166534] font-medium leading-relaxed">
+              PDF includes the QR code, facility details, and simple step-by-step check-in instructions.
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
+              className="flex-1 px-4 py-3 bg-[#f1f5f9] text-[#0f172a] font-semibold rounded-xl hover:bg-[#e2e8f0] transition-colors shadow-sm"
             >
               Skip
             </button>
             <button
               onClick={handleGeneratePdf}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-[2] px-4 py-3 bg-[#0f172a] text-white font-semibold rounded-xl hover:bg-[#1e293b] transition-all shadow-sm flex items-center justify-center gap-2"
             >
-              📄 Generate PDF
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Generate PDF
             </button>
           </div>
         </div>

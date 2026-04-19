@@ -53,8 +53,6 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
       const response = await apiClient.get("/v1/users/search", {
         params: { query: query.trim() }
       });
-      console.log("Search response:", response.data);
-      console.log("First user:", response.data?.[0]);
       setFilteredUsers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Failed to search users:", err);
@@ -90,12 +88,12 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-2">
-        <label className="block text-sm font-medium text-slate-700">
-          Book on behalf of (Optional - Admin & Facility Manager only)
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 mb-1">
+        <label className="block text-sm font-semibold text-[#0f172a]">
+          Book on behalf of <span className="text-[#64748b] font-normal">(Optional)</span>
         </label>
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+        <span className="text-[10px] uppercase tracking-wider bg-[#eff6ff] text-[#1e40af] px-2 py-0.5 rounded font-bold">
           {userRole}
         </span>
       </div>
@@ -122,36 +120,39 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
                 setTimeout(() => setShowDropdown(false), 200);
               }}
               placeholder="Search by name or email..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent transition-all shadow-sm placeholder:text-[#94a3b8]"
             />
 
             {/* Dropdown */}
             {showDropdown && searchTerm.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#e2e8f0] rounded-xl shadow-lg z-50 max-h-64 overflow-y-auto">
                 {loading ? (
-                  <div className="p-3 text-sm text-slate-600">Searching users...</div>
+                  <div className="p-4 text-sm text-[#64748b] flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    Searching users...
+                  </div>
                 ) : error ? (
-                  <div className="p-3 text-sm text-red-600">{error}</div>
+                  <div className="p-4 text-sm text-[#ef4444]">{error}</div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="p-3 text-sm text-slate-600">
+                  <div className="p-4 text-sm text-[#64748b]">
                     No users found matching "{searchTerm}"
                   </div>
                 ) : (
-                  <div>
+                  <div className="py-2">
                     {filteredUsers.map((user) => (
                       <button
                         key={user.id}
                         type="button"
                         onClick={() => handleSelectUser(user)}
-                        className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center justify-between border-b border-slate-100 last:border-b-0 transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-[#f8fafc] flex items-center justify-between transition-colors"
                       >
                         <div>
-                          <p className="text-sm font-medium text-slate-900">
+                          <p className="text-sm font-semibold text-[#0f172a]">
                             {(user.displayName && user.displayName.trim()) ? user.displayName : (user.email || "Unknown")}
                           </p>
-                          <p className="text-xs text-slate-600">{user.email}</p>
+                          <p className="text-xs text-[#64748b] mt-0.5">{user.email}</p>
                         </div>
-                        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#f1f5f9] text-[#475569] px-2 py-1 rounded">
                           {user.roles?.[0] || "USER"}
                         </span>
                       </button>
@@ -166,7 +167,7 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 transition-colors text-sm font-medium"
+              className="px-4 py-3 bg-[#f1f5f9] text-[#475569] rounded-xl hover:bg-[#e2e8f0] hover:text-[#0f172a] transition-colors text-sm font-semibold"
             >
               Clear
             </button>
@@ -175,10 +176,11 @@ export default function AdminBookForUserSelector({ onUserSelect, userRole }) {
       </div>
 
       {selectedUserId && (
-        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-xs text-blue-800">
-            <span className="font-semibold">ℹ️ Note:</span> This booking will be created for the
-            selected user. They will receive a notification and can view it in their bookings.
+        <div className="mt-2 p-3 bg-[#f0fdf4] border border-[#dcfce3] rounded-xl flex items-start gap-3">
+          <svg className="w-5 h-5 text-[#166534] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p className="text-xs text-[#166534] leading-relaxed">
+            <span className="font-bold block mb-0.5">Booking Override Active</span>
+            This booking will be created for the selected user. They will receive a notification and can view it in their bookings.
           </p>
         </div>
       )}
