@@ -112,6 +112,7 @@ public class FacilityDeletionUnitTest {
         booking.setRequestedBy(requester);
         booking.setBookingDate(LocalDate.now().plusDays(1));
         booking.setStartTime(LocalTime.of(10, 0));
+        booking.setEndTime(LocalTime.of(11, 0));
 
         when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
         when(bookingRepository.countByFacility_Id(id)).thenReturn(1L);
@@ -146,6 +147,7 @@ public class FacilityDeletionUnitTest {
         booking.setRequestedBy(requester);
         booking.setBookingDate(LocalDate.now().plusDays(1));
         booking.setStartTime(LocalTime.of(11, 0));
+        booking.setEndTime(LocalTime.of(12, 0));
 
         when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
         when(bookingRepository.findByFacility_Id(id)).thenReturn(List.of(booking));
@@ -159,7 +161,7 @@ public class FacilityDeletionUnitTest {
         ArgumentCaptor<EventEnvelope> eventCaptor = ArgumentCaptor.forClass(EventEnvelope.class);
         verify(notificationService).publish(eventCaptor.capture());
         EventEnvelope capturedEvent = eventCaptor.getValue();
-        assertEquals("FACILITY_REMOVED_CANCELLED", capturedEvent.getEventType());
+        assertEquals("FACILITY_UNAVAILABLE_CANCELLED", capturedEvent.getEventType());
         assertNotNull(capturedEvent.getMetadata());
         assertEquals(requester.getId().toString(), capturedEvent.getMetadata().get("userId"));
     }
@@ -181,6 +183,7 @@ public class FacilityDeletionUnitTest {
         booking.setRequestedBy(requester);
         booking.setBookingDate(LocalDate.now().minusDays(1));
         booking.setStartTime(LocalTime.of(9, 0));
+        booking.setEndTime(LocalTime.of(10, 0));
 
         when(facilityRepository.findById(id)).thenReturn(Optional.of(facility));
         when(bookingRepository.findByFacility_Id(id)).thenReturn(List.of(booking));

@@ -109,6 +109,7 @@ public class FacilityService {
     public FacilityResponseDTO createFacility(FacilityRequestDTO request) {
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
         validateTimeRange(normalizedRequest.getAvailabilityStartTime(), normalizedRequest.getAvailabilityEndTime());
+        validateOutOfServiceWindow(normalizedRequest.getOutOfServiceStart(), normalizedRequest.getOutOfServiceEnd());
 
         if (normalizedRequest.getFacilityCode() != null
                 && !normalizedRequest.getFacilityCode().isBlank()
@@ -138,6 +139,7 @@ public class FacilityService {
     public FacilityResponseDTO updateFacility(UUID facilityId, FacilityRequestDTO request) {
         Facility existingFacility = getFacilityEntity(facilityId);
         FacilityRequestDTO normalizedRequest = normalizeRequestType(request);
+        validateOutOfServiceWindow(normalizedRequest.getOutOfServiceStart(), normalizedRequest.getOutOfServiceEnd());
 
         // Log geofencing data
         log.info("Updating facility {}: latitude={}, longitude={}, geofenceRadius={}",
@@ -245,7 +247,7 @@ public class FacilityService {
         List<Booking> bookings = bookingRepository.findByFacility_Id(facilityId);
         LocalDateTime now = LocalDateTime.now();
         
-        // Use the effective start (cannot cancel past bookings anyway)
+        // Use the effective start so we only evaluate upcoming booking starts.
         LocalDateTime effectiveStart = start.isBefore(now) ? now : start;
 
         for (Booking booking : bookings) {
@@ -255,16 +257,15 @@ public class FacilityService {
                 }
 
                 LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
-                LocalDateTime bookingEnd = LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
 
-                // Check if booking overlaps with the unavailable range
+                // Cancel only when the booking start is within the unavailable window.
                 boolean overlaps = false;
                 if (end == null) {
-                    // Indefinite out of service starting from 'start'
-                    overlaps = !bookingEnd.isBefore(effectiveStart);
+                    // Open-ended out of service starting from effectiveStart
+                    overlaps = !bookingStart.isBefore(effectiveStart);
                 } else {
-                    // Discrete range [start, end]
-                    overlaps = !bookingEnd.isBefore(effectiveStart) && !bookingStart.isAfter(end);
+                    // Discrete range [effectiveStart, end]
+                    overlaps = !bookingStart.isBefore(effectiveStart) && !bookingStart.isAfter(end);
                 }
 
                 if (overlaps) {
@@ -375,6 +376,15 @@ public class FacilityService {
     private void validateDateTimeRange(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null || !start.isBefore(end)) {
             throw new ValidationException("Invalid date-time range");
+        }
+    }
+
+    private void validateOutOfServiceWindow(LocalDateTime start, LocalDateTime end) {
+        if (end != null && start == null) {
+            throw new ValidationException("Out-of-service start is required when end is provided");
+        }
+        if (start != null && end != null && !start.isBefore(end)) {
+            throw new ValidationException("Out-of-service end must be after start");
         }
     }
 

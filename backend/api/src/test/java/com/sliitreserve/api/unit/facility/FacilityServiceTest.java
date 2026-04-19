@@ -4,6 +4,7 @@ import com.sliitreserve.api.dto.facility.FacilityRequestDTO;
 import com.sliitreserve.api.dto.facility.FacilityResponseDTO;
 import com.sliitreserve.api.entities.facility.Facility;
 import com.sliitreserve.api.exception.ConflictException;
+import com.sliitreserve.api.exception.ValidationException;
 import com.sliitreserve.api.factories.FacilityFactory;
 import com.sliitreserve.api.repositories.facility.FacilityRepository;
 import com.sliitreserve.api.services.facility.FacilityService;
@@ -150,5 +151,38 @@ public class FacilityServiceTest {
         );
 
         assertFalse(result);
+    }
+
+    @Test
+    public void updateFacility_throwsValidationWhenOutOfServiceEndBeforeStart() {
+        UUID facilityId = UUID.randomUUID();
+
+        Facility existing = new Facility();
+        existing.setId(facilityId);
+        existing.setFacilityCode("LAB-001");
+        existing.setName("Lab 001");
+        existing.setType(Facility.FacilityType.LAB);
+        existing.setCapacity(30);
+        existing.setBuilding("A");
+        existing.setAvailabilityStartTime(LocalTime.of(8, 0));
+        existing.setAvailabilityEndTime(LocalTime.of(18, 0));
+        existing.setStatus(Facility.FacilityStatus.ACTIVE);
+
+        FacilityRequestDTO request = new FacilityRequestDTO();
+        request.setFacilityCode("LAB-001");
+        request.setName("Lab 001");
+        request.setType(Facility.FacilityType.LAB);
+        request.setCapacity(30);
+        request.setBuilding("A");
+        request.setAvailabilityStartTime(LocalTime.of(8, 0));
+        request.setAvailabilityEndTime(LocalTime.of(18, 0));
+        request.setStatus(Facility.FacilityStatus.ACTIVE);
+        request.setOutOfServiceStart(LocalDateTime.of(2026, 4, 20, 13, 0));
+        request.setOutOfServiceEnd(LocalDateTime.of(2026, 4, 19, 15, 0));
+
+        when(facilityRepository.findById(facilityId)).thenReturn(Optional.of(existing));
+
+        assertThrows(ValidationException.class, () -> facilityService.updateFacility(facilityId, request));
+        verify(facilityRepository, never()).save(any(Facility.class));
     }
 }
