@@ -94,6 +94,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smartcampus
     # Load runtime configuration from the backend .env file
     env_file:
       - ../backend/.env

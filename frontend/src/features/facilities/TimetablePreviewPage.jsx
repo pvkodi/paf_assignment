@@ -60,7 +60,8 @@ const TimetablePreviewPage = () => {
       const itemsToCreate = result.unmatchedRooms.map((r) => ({
         facilityCode: r.facilityCode,
         name: drafts[r.facilityCode]?.name || r.facilityCode,
-        location: drafts[r.facilityCode].location,
+        building: drafts[r.facilityCode].location,
+        locationDescription: drafts[r.facilityCode].location,
         floor: drafts[r.facilityCode].floor,
         capacity: drafts[r.facilityCode].capacity,
         type: drafts[r.facilityCode].type,
@@ -74,7 +75,8 @@ const TimetablePreviewPage = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to batch import facilities");
+      const msg = err?.response?.data?.message || err.message || "Failed to batch import facilities";
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -551,6 +551,19 @@ export default function FacilityManagementDashboard() {
     [filters]
   );
 
+  // ── Client-side search ────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const displayedFacilities = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return facilities;
+    return facilities.filter((f) =>
+      [f.name, f.type, f.building, f.floor, f.locationDescription]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(q))
+    );
+  }, [facilities, searchQuery]);
+
   // ── Data loading ──────────────────────────────────────────────────────────
 
   const load = useCallback(async (p = 0) => {
@@ -630,7 +643,12 @@ export default function FacilityManagementDashboard() {
         })),
       };
       if (editingFacility) {
-        await updateFacility(editingFacility.id, payload);
+        const updatedFacility = await updateFacility(editingFacility.id, payload);
+        // Immediately patch the updated facility into local state so the card
+        // reflects changes without waiting for the async refetch to resolve.
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === editingFacility.id ? { ...f, ...updatedFacility } : f))
+        );
         toast.success("Facility updated successfully.");
       } else {
         await createFacility(payload);
@@ -668,10 +686,16 @@ export default function FacilityManagementDashboard() {
           subtypeAttributes: facility.subtypeAttributes || {},
         };
         await updateFacility(id, reactivationPayload);
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, status: "ACTIVE" } : f))
+        );
         toast.success("Facility reactivated successfully.");
       } else {
         // Deactivate (soft delete)
         await markFacilityOutOfService(id);
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, status: "OUT_OF_SERVICE" } : f))
+        );
         toast.success("Facility deactivated.");
       }
       await load(page);
@@ -796,6 +820,39 @@ export default function FacilityManagementDashboard() {
             Manage campus resources, availability schedules, and operational status.
           </p>
         </div>
+
+        {/* Inline search */}
+        <div className="flex-1 max-w-sm">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              id="facility-search"
+              type="search"
+              placeholder="Search by name, type, building…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         
         <div className="flex items-center gap-4">
           {/* View Toggle */}
@@ -918,16 +975,20 @@ export default function FacilityManagementDashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : facilities.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#e2e8f0] bg-white py-16 text-center">
-          <p className="text-sm font-medium text-[#0f172a]">No facilities found</p>
-          <p className="mt-1 text-xs text-[#64748b]">
-            {filtersActive ? "Try adjusting or clearing your filters." : "Add a facility to get started."}
+      ) : displayedFacilities.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-gray-300 bg-white py-16 text-center">
+          <p className="text-sm font-medium text-gray-900">No facilities found</p>
+          <p className="mt-1 text-xs text-gray-500">
+            {searchQuery
+              ? `No results for "${searchQuery}". Try a different search term.`
+              : filtersActive
+              ? "Try adjusting or clearing your filters."
+              : "Add a facility to get started."}
           </p>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {facilities.map((f) => (
+          {displayedFacilities.map((f) => (
             <FacilityCard
               key={f.id}
               facility={f}
@@ -943,7 +1004,7 @@ export default function FacilityManagementDashboard() {
         </div>
       ) : (
         <FacilityTable 
-          facilities={facilities}
+          facilities={displayedFacilities}
           selectedIds={selectedIds}
           onSelect={toggleSelection}
           onSelectAll={toggleAll}

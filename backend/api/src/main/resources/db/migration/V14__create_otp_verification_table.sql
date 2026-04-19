@@ -1,4 +1,4 @@
--- Migration V12: Create OTP Verification table for email-based registration
+-- Migration V14: Create OTP Verification table for email-based registration
 -- This table stores OTP codes sent to users for email verification during registration
 
 CREATE TABLE IF NOT EXISTS public.otp_verification (
@@ -15,9 +15,9 @@ CREATE TABLE IF NOT EXISTS public.otp_verification (
 );
 
 -- Create indices for efficient OTP lookups
-CREATE INDEX idx_otp_email ON public.otp_verification(email);
-CREATE INDEX idx_otp_email_code ON public.otp_verification(email, code);
-CREATE INDEX idx_otp_status ON public.otp_verification(status);
+CREATE INDEX IF NOT EXISTS idx_otp_email ON public.otp_verification(email);
+CREATE INDEX IF NOT EXISTS idx_otp_email_code ON public.otp_verification(email, code);
+CREATE INDEX IF NOT EXISTS idx_otp_status ON public.otp_verification(status);
 
 -- Clean up expired OTPs periodically (optional: can be done via scheduled task)
 -- Records with status='VERIFIED' or expired are historical and can be archived
