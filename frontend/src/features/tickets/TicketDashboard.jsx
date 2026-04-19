@@ -647,13 +647,10 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
           name="title"
           value={formData.title}
           onChange={handleInputChange}
-          placeholder="Brief description of the issue"
+          placeholder="Add title here"
           maxLength="200"
           className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        {formData.title.length > 0 && formData.title.length < 20 && (
-          <p className="text-xs text-red-600 mt-1">Minimum 20 characters required</p>
-        )}
       </div>
 
       <div>
@@ -664,12 +661,12 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
           name="description"
           value={formData.description}
           onChange={handleInputChange}
-          placeholder="Detailed description of the issue (50+ chars)"
+          placeholder="Detailed description of the issue (10+ chars)"
           rows="3"
           className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        {formData.description.length > 0 && formData.description.length < 50 && (
-          <p className="text-xs text-red-600 mt-1">Minimum 50 characters required</p>
+        {formData.description.length > 0 && formData.description.length < 10 && (
+          <p className="text-xs text-red-600 mt-1">Minimum 10 characters required</p>
         )}
       </div>
 
