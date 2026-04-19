@@ -478,16 +478,16 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
       setError("Please select a facility");
       return false;
     }
-    if (!formData.title || formData.title.length < 20) {
-      setError("Title must be at least 20 characters");
+    if (!formData.title || formData.title.length < 10) {
+      setError("Title must be at least 10 characters");
       return false;
     }
     if (formData.title.length > 200) {
       setError("Title must not exceed 200 characters");
       return false;
     }
-    if (!formData.description || formData.description.length < 50) {
-      setError("Description must be at least 50 characters");
+    if (!formData.description || formData.description.length < 20) {
+      setError("Description must be at least 20 characters");
       return false;
     }
     return true;
@@ -655,13 +655,13 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
           name="title"
           value={formData.title}
           onChange={handleInputChange}
-          placeholder="Brief description of the issue (20-200 chars)"
+          placeholder="Brief description of the issue (10-200 chars)"
           maxLength="200"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        {formData.title.length < 20 && (
+        {formData.title.length < 10 && (
           <p className="text-xs text-red-600 mt-1">
-            Minimum 20 characters required
+            Minimum 10 characters required
           </p>
         )}
       </div>
@@ -675,13 +675,13 @@ function TicketCreationForm({ onTicketCreated, onCancel }) {
           name="description"
           value={formData.description}
           onChange={handleInputChange}
-          placeholder="Detailed description of the issue (50+ chars)"
+          placeholder="Detailed description of the issue (20+ chars)"
           rows="4"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        {formData.description.length < 50 && (
+        {formData.description.length < 20 && (
           <p className="text-xs text-red-600 mt-1">
-            Minimum 50 characters required
+            Minimum 20 characters required
           </p>
         )}
       </div>
