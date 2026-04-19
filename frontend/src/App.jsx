@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import { LoginPage, OAuthCallback } from "./features/auth";
 import { RegistrationPendingPage } from "./pages/RegistrationPendingPage";
@@ -36,7 +37,8 @@ import {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <NotificationProvider>
+        <Router>
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -243,6 +245,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

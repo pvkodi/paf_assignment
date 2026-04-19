@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../services/apiClient";
+import { useNotificationContext } from "../../contexts/NotificationContext";
 
 function formatTimestamp(value) {
   if (!value) {
@@ -22,6 +23,7 @@ function severityClass(severity) {
 }
 
 export function NotificationCenter() {
+  const { updateUnreadCount } = useNotificationContext();
   const [notifications, setNotifications] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -34,8 +36,10 @@ export function NotificationCenter() {
     const response = await apiClient.get("/v1/notifications/unread/count");
     const payload = response?.data || {};
     const value = payload.unreadCount ?? payload.unread_count ?? 0;
-    setUnreadCount(Number(value) || 0);
-  }, []);
+    const count = Number(value) || 0;
+    setUnreadCount(count);
+    updateUnreadCount(count);
+  }, [updateUnreadCount]);
 
   const fetchNotifications = useCallback(async (targetPage = 0) => {
     try {
