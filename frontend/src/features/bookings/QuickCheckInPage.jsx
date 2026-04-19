@@ -9,17 +9,7 @@ import CheckInComponent from "./CheckInComponent";
  * Accessible via QR code URL: /check-in/booking/:bookingId
  * Displays check-in UI for a specific booking
  * Auto-redirects to login if not authenticated
- *
- * Flow:
- * 1. User scans QR code
- * 2. Browser opens /check-in/booking/[bookingId]
- * 3. If not logged in → Redirects to /login?redirect=/check-in/booking/[bookingId]
- * 4. After login → Returns to this page
- * 5. Booking details load
- * 6. GPS collection auto-starts
- * 7. Check-in records
  */
-
 export default function QuickCheckInPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
@@ -57,10 +47,10 @@ export default function QuickCheckInPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-[#f8fafc]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading booking...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-200 border-t-indigo-600 mx-auto mb-4"></div>
+          <p className="text-[#64748b] font-medium">Loading booking...</p>
         </div>
       </div>
     );
@@ -68,16 +58,18 @@ export default function QuickCheckInPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-red-50 to-slate-100 p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-red-900 mb-2">
+      <div className="flex items-center justify-center min-h-screen bg-[#f8fafc] p-4">
+        <div className="bg-white rounded-2xl border border-[#e2e8f0] shadow-sm p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-[#fef2f2] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <h2 className="text-2xl font-bold text-[#0f172a] mb-2 tracking-tight">
             Check-In Failed
           </h2>
-          <p className="text-red-700 mb-6">{error}</p>
+          <p className="text-[#64748b] mb-6 leading-relaxed">{error}</p>
           <button
             onClick={() => navigate("/my-bookings")}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            className="px-6 py-2.5 bg-[#0f172a] text-white rounded-xl hover:bg-[#1e293b] transition-all font-semibold shadow-sm w-full"
           >
             ← Back to My Bookings
           </button>
@@ -87,17 +79,19 @@ export default function QuickCheckInPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-slate-100 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-[#f8fafc] p-4 py-12">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="text-5xl mb-2">📱</div>
-          <h1 className="text-3xl font-bold text-slate-900">Quick Check-In</h1>
-          <p className="text-slate-600 mt-2">
+        <div className="mb-8 text-center">
+          <div className="w-16 h-16 bg-white border border-[#e2e8f0] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <svg className="w-8 h-8 text-[#6366f1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+          </div>
+          <h1 className="text-3xl font-bold text-[#0f172a] tracking-tight">Quick Check-In</h1>
+          <p className="text-[#475569] mt-2 font-medium">
             {booking?.facility?.name || "Facility"}
           </p>
           {booking?.bookingDate && (
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-[#64748b] mt-1 font-mono">
               {booking.startTime} - {booking.endTime}
             </p>
           )}
@@ -105,28 +99,28 @@ export default function QuickCheckInPage() {
 
         {/* Booking Info Card */}
         {booking && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 mb-6 shadow-sm">
+            <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
               <div>
-                <span className="font-medium text-blue-900">Facility</span>
-                <p className="text-blue-700">{booking.facility?.name}</p>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider block mb-1">Facility</span>
+                <p className="text-[#0f172a] font-semibold">{booking.facility?.name}</p>
               </div>
               <div>
-                <span className="font-medium text-blue-900">Time</span>
-                <p className="text-blue-700">
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider block mb-1">Time</span>
+                <p className="text-[#0f172a] font-semibold">
                   {booking.startTime} - {booking.endTime}
                 </p>
               </div>
               <div className="col-span-2">
-                <span className="font-medium text-blue-900">Purpose</span>
-                <p className="text-blue-700 truncate">{booking.purpose}</p>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider block mb-1">Purpose</span>
+                <p className="text-[#475569] leading-relaxed bg-[#f8fafc] p-3 rounded-xl border border-[#e2e8f0]">{booking.purpose}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Check-In Component */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-1">
           <CheckInComponent
             bookingId={bookingId}
             onCheckInSuccess={handleCheckInSuccess}
@@ -135,11 +129,11 @@ export default function QuickCheckInPage() {
         </div>
 
         {/* Help Text */}
-        <div className="mt-6 text-center text-xs text-slate-600">
-          <p>
-            💡 Make sure location services are enabled on your device for GPS
-            verification
-          </p>
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#e2e8f0] shadow-sm text-xs text-[#64748b]">
+            <svg className="w-4 h-4 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Location services must be enabled for GPS verification
+          </div>
         </div>
       </div>
     </div>

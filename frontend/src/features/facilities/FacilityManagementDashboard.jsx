@@ -120,7 +120,7 @@ function TimetableUploader({ onUploadComplete }) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="shrink-0 flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors disabled:opacity-50"
+          className="shrink-0 flex items-center gap-1.5 rounded-2xl border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#334155] shadow-sm hover:bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors disabled:opacity-50"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -146,7 +146,7 @@ function StatusBadge({ status }) {
     ACTIVE: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 ring-emerald-200" },
     MAINTENANCE: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50 ring-amber-200" },
     OUT_OF_SERVICE: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50 ring-red-200" },
-  }[status] || { dot: "bg-gray-400", text: "text-gray-600", bg: "bg-gray-50 ring-gray-200" };
+  }[status] || { dot: "bg-gray-400", text: "text-[#475569]", bg: "bg-[#f8fafc] ring-gray-200" };
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${config.bg} ${config.text}`}>
@@ -160,7 +160,7 @@ function StatusBadge({ status }) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 animate-pulse">
+    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 animate-pulse">
       <div className="flex items-start justify-between mb-4">
         <div className="h-4 w-2/3 rounded bg-gray-200" />
         <div className="h-5 w-16 rounded-full bg-gray-200" />
@@ -203,7 +203,7 @@ function WindowScheduleBuilder({ windows, onChange }) {
         {windows.map((w, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200"
           >
             {DAY_ABBR[w.dayOfWeek]} {formatTime(w.startTime)}–{formatTime(w.endTime)}
             <button
@@ -219,17 +219,17 @@ function WindowScheduleBuilder({ windows, onChange }) {
           </span>
         ))}
         {windows.length === 0 && (
-          <p className="text-xs text-gray-400 italic">No windows added yet.</p>
+          <p className="text-xs text-[#94a3b8] italic">No windows added yet.</p>
         )}
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Day</label>
+          <label className="text-xs font-medium text-[#475569]">Day</label>
           <select
             value={draft.dayOfWeek}
             onChange={(e) => setDraft((p) => ({ ...p, dayOfWeek: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="rounded-xl border border-[#e2e8f0] px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             {DAYS_OF_WEEK.map((d) => (
               <option key={d} value={d}>{DAY_ABBR[d]}</option>
@@ -238,29 +238,29 @@ function WindowScheduleBuilder({ windows, onChange }) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">From</label>
+          <label className="text-xs font-medium text-[#475569]">From</label>
           <input
             type="time"
             value={draft.startTime}
             onChange={(e) => setDraft((p) => ({ ...p, startTime: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="rounded-xl border border-[#e2e8f0] px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">To</label>
+          <label className="text-xs font-medium text-[#475569]">To</label>
           <input
             type="time"
             value={draft.endTime}
             onChange={(e) => setDraft((p) => ({ ...p, endTime: e.target.value }))}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="rounded-xl border border-[#e2e8f0] px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
         <button
           type="button"
           onClick={add}
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+          className="rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
         >
           Add Window
         </button>
@@ -276,7 +276,7 @@ function BulkActionBar({ selectedCount, onDeactivate, onDelete, onClear }) {
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-8 duration-300">
-      <div className="bg-gray-900 text-white rounded-2xl shadow-2xl ring-1 ring-white/10 px-6 py-4 flex items-center gap-8 backdrop-blur-md bg-opacity-95">
+      <div className="bg-[#0f172a] text-white rounded-2xl shadow-2xl ring-1 ring-white/10 px-6 py-4 flex items-center gap-8 backdrop-blur-md bg-opacity-95">
         <div className="flex items-center gap-3 pr-8 border-r border-gray-700">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[11px] font-black">
             {selectedCount}
@@ -304,7 +304,7 @@ function BulkActionBar({ selectedCount, onDeactivate, onDelete, onClear }) {
 
         <button
           onClick={onClear}
-          className="ml-4 text-xs font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
+          className="ml-4 text-xs font-bold text-[#94a3b8] hover:text-white transition-colors uppercase tracking-widest"
         >
           Cancel
         </button>
@@ -332,34 +332,34 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
 
   const field = (id, label, children, error) => (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium text-gray-700">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-[#334155]">{label}</label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 
   const inputCls = (err) =>
-    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-shadow ${err
+    `w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-shadow ${err
       ? "border-red-400 focus:ring-red-300"
-      : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-200"
+      : "border-[#e2e8f0] focus:border-indigo-500 focus:ring-indigo-200"
     }`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-[#e2e8f0] bg-white shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-label={editing ? "Edit facility" : "Create facility"}
       >
-        <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900">
+        <div className="border-b border-[#f1f5f9] px-6 py-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-[#0f172a]">
             {editing ? "Edit Facility" : "Create Facility"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            className="rounded-xl p-1 text-[#94a3b8] hover:bg-[#f1f5f9] hover:text-[#334155] transition-colors"
             aria-label="Close dialog"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 20 20" stroke="currentColor">
@@ -372,7 +372,7 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
           <div className="px-6 py-5 space-y-6">
             {/* Basic info */}
             <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-3">
                 Basic Information
               </legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -431,7 +431,7 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
 
             {/* Location */}
             <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-3">
                 Location
               </legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -476,10 +476,10 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
 
             {/* Availability Schedule */}
             <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-1">
                 Availability Schedule
               </legend>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="text-xs text-[#64748b] mb-3">
                 Add one or more time windows. Multiple windows per day are supported.
               </p>
               <WindowScheduleBuilder
@@ -489,18 +489,18 @@ function FacilityFormModal({ isOpen, editing, formData, setFormData, onSubmit, o
             </fieldset>
           </div>
 
-          <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-end gap-3">
+          <div className="border-t border-[#f1f5f9] px-6 py-4 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className="rounded-2xl border border-[#e2e8f0] px-4 py-2 text-sm font-medium text-[#334155] hover:bg-[#f8fafc] transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || hasErrors}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+              className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
             >
               {saving ? "Saving..." : editing ? "Save Changes" : "Create Facility"}
             </button>
@@ -791,25 +791,25 @@ export default function FacilityManagementDashboard() {
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Facilities</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0f172a]">Facilities</h2>
+          <p className="mt-1 text-sm text-[#64748b]">
             Manage campus resources, availability schedules, and operational status.
           </p>
         </div>
         
         <div className="flex items-center gap-4">
           {/* View Toggle */}
-          <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">
+          <div className="flex items-center p-1 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0]">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-white shadow text-indigo-600" : "text-gray-500 hover:text-gray-900"}`}
+              className={`p-1.5 rounded-xl transition-all ${viewMode === "grid" ? "bg-white shadow text-indigo-600" : "text-[#64748b] hover:text-[#0f172a]"}`}
               title="Grid View"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow text-indigo-600" : "text-gray-500 hover:text-gray-900"}`}
+              className={`p-1.5 rounded-xl transition-all ${viewMode === "table" ? "bg-white shadow text-indigo-600" : "text-[#64748b] hover:text-[#0f172a]"}`}
               title="Table View"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -823,7 +823,7 @@ export default function FacilityManagementDashboard() {
                 type="button"
                 id="btn-add-facility"
                 onClick={openCreate}
-                className="shrink-0 flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -836,15 +836,15 @@ export default function FacilityManagementDashboard() {
       </div>
 
       {/* Filters bar */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="rounded-2xl border border-[#e2e8f0] bg-white p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-type" className="text-xs font-medium text-gray-500">Type</label>
+            <label htmlFor="filter-type" className="text-xs font-medium text-[#64748b]">Type</label>
             <select
               id="filter-type"
               value={filters.type}
               onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">All types</option>
               {FACILITY_TYPES.map((t) => (
@@ -854,7 +854,7 @@ export default function FacilityManagementDashboard() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-capacity" className="text-xs font-medium text-gray-500">Min Capacity</label>
+            <label htmlFor="filter-capacity" className="text-xs font-medium text-[#64748b]">Min Capacity</label>
             <input
               id="filter-capacity"
               type="number"
@@ -862,29 +862,29 @@ export default function FacilityManagementDashboard() {
               placeholder="e.g. 50"
               value={filters.minCapacity}
               onChange={(e) => setFilters((p) => ({ ...p, minCapacity: e.target.value }))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-building" className="text-xs font-medium text-gray-500">Building</label>
+            <label htmlFor="filter-building" className="text-xs font-medium text-[#64748b]">Building</label>
             <input
               id="filter-building"
               type="text"
               placeholder="e.g. Block A"
               value={filters.building}
               onChange={(e) => setFilters((p) => ({ ...p, building: e.target.value }))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="filter-status" className="text-xs font-medium text-gray-500">Status</label>
+            <label htmlFor="filter-status" className="text-xs font-medium text-[#64748b]">Status</label>
             <select
               id="filter-status"
               value={filters.status}
               onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">All statuses</option>
               {FACILITY_STATUSES.map((s) => (
@@ -898,7 +898,7 @@ export default function FacilityManagementDashboard() {
               type="button"
               onClick={resetFilters}
               disabled={!filtersActive}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm font-medium text-[#334155] hover:bg-[#f8fafc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Clear filters
             </button>
@@ -906,7 +906,7 @@ export default function FacilityManagementDashboard() {
         </div>
 
         {total > 0 && (
-          <p className="mt-3 text-xs text-gray-400">
+          <p className="mt-3 text-xs text-[#94a3b8]">
             {total} {total === 1 ? "result" : "results"} found
             {filtersActive ? " matching current filters" : ""}
           </p>
@@ -919,9 +919,9 @@ export default function FacilityManagementDashboard() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : facilities.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white py-16 text-center">
-          <p className="text-sm font-medium text-gray-900">No facilities found</p>
-          <p className="mt-1 text-xs text-gray-500">
+        <div className="rounded-2xl border border-dashed border-[#e2e8f0] bg-white py-16 text-center">
+          <p className="text-sm font-medium text-[#0f172a]">No facilities found</p>
+          <p className="mt-1 text-xs text-[#64748b]">
             {filtersActive ? "Try adjusting or clearing your filters." : "Add a facility to get started."}
           </p>
         </div>
@@ -1001,8 +1001,8 @@ export default function FacilityManagementDashboard() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500">
+        <div className="flex items-center justify-between border-t border-[#e2e8f0] pt-4">
+          <p className="text-xs text-[#64748b]">
             Page {page + 1} of {totalPages}
           </p>
           <div className="flex gap-2">
@@ -1010,7 +1010,7 @@ export default function FacilityManagementDashboard() {
               type="button"
               onClick={() => load(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-xs font-medium text-[#334155] hover:bg-[#f8fafc] disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
@@ -1018,7 +1018,7 @@ export default function FacilityManagementDashboard() {
               type="button"
               onClick={() => load(Math.min(totalPages - 1, page + 1))}
               disabled={page + 1 >= totalPages}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-xs font-medium text-[#334155] hover:bg-[#f8fafc] disabled:opacity-40 transition-colors"
             >
               Next
             </button>

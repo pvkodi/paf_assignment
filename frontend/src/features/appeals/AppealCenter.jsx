@@ -33,12 +33,12 @@ function formatDateTime(value) {
 
 function statusClasses(status) {
   if (status === "APPROVED") {
-    return "bg-emerald-100 text-emerald-700";
+    return "bg-[#e8f5e9] text-[#1b5e20] border-[#c8e6c9]";
   }
   if (status === "REJECTED") {
-    return "bg-red-100 text-red-700";
+    return "bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]";
   }
-  return "bg-amber-100 text-amber-700";
+  return "bg-[#fffbeb] text-[#b45309] border-[#fde68a]";
 }
 
 export function AppealCenter() {
@@ -103,71 +103,98 @@ export function AppealCenter() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-indigo-600" />
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
+        <p className="text-sm font-medium text-[#64748b]">Loading appeals...</p>
       </div>
     );
   }
 
   return (
-    <section className="space-y-5">
-      <header className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-xl font-semibold text-slate-900">Appeals</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          {isAdmin
-            ? "Review submitted appeals from suspended users."
-            : "Submit and track suspension appeals."}
-        </p>
+    <section className="space-y-6">
+      <header className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">Appeals Center</h2>
+          <p className="mt-1 text-sm font-medium text-[#64748b]">
+            {isAdmin
+              ? "Review and manage submitted appeals from suspended users."
+              : "Submit a new appeal to lift a suspension and track your history."}
+          </p>
+        </div>
+        <div className="w-12 h-12 bg-[#f8fafc] rounded-2xl border border-[#e2e8f0] flex items-center justify-center shadow-sm shrink-0">
+          <svg className="w-6 h-6 text-[#6366f1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        </div>
       </header>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[#fca5a5] bg-[#fef2f2] p-4 text-sm font-semibold text-[#991b1b] flex items-center gap-3 shadow-sm">
+          <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           {error}
         </div>
       )}
 
       {message && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+        <div className="rounded-xl border border-[#dcfce3] bg-[#f0fdf4] p-4 text-sm font-semibold text-[#166534] flex items-center gap-3 shadow-sm">
+          <svg className="w-5 h-5 text-[#16a34a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           {message}
         </div>
       )}
 
       {!isAdmin && (
-        <form onSubmit={submitAppeal} className="rounded-xl border border-slate-200 bg-white p-5">
-          <label htmlFor="appealReason" className="mb-2 block text-sm font-medium text-slate-700">
-            Why should this suspension be reviewed?
+        <form onSubmit={submitAppeal} className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm">
+          <label htmlFor="appealReason" className="mb-3 block text-sm font-bold text-[#0f172a] uppercase tracking-wide">
+            New Appeal Request
           </label>
+          <p className="text-xs text-[#64748b] mb-4 font-medium leading-relaxed">
+            Please provide a detailed explanation of why your suspension should be lifted. Include any relevant context or supporting information.
+          </p>
           <textarea
             id="appealReason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             rows={4}
             maxLength={1000}
-            placeholder="Provide details and supporting context"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            placeholder="Type your explanation here..."
+            className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-sm font-medium focus:bg-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#6366f1] transition-all resize-none shadow-sm"
           />
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-slate-500">{reason.length}/1000</p>
+            <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">{reason.length} / 1000 characters</p>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-[#0f172a] px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#1e293b] shadow-sm disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2"
             >
-              Submit Appeal
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                  Submit Appeal
+                </>
+              )}
             </button>
           </div>
         </form>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          {isAdmin ? "Pending Review" : "My Appeals"}
+      <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8] mb-5 border-b border-[#e2e8f0] pb-3">
+          {isAdmin ? "Appeal Submissions" : "Appeal History"}
         </h3>
 
         {appeals.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">No appeals found.</p>
+          <div className="text-center py-8">
+            <div className="w-12 h-12 bg-[#f8fafc] rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-[#94a3b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <p className="text-sm font-bold text-[#0f172a]">No appeals found</p>
+            <p className="text-xs font-medium text-[#64748b] mt-1">There are no appeals to display at this time.</p>
+          </div>
         ) : (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {appeals.map((appeal) => {
               const id = readField(appeal, "id", "id");
               const status = readField(appeal, "status", "status") || "SUBMITTED";
@@ -178,21 +205,44 @@ export function AppealCenter() {
               const reviewedBy = readField(appeal, "reviewedByUserEmail", "reviewed_by_user_email");
 
               return (
-                <article key={id} className="rounded-lg border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-slate-500">ID: {id}</p>
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClasses(status)}`}>
+                <article key={id} className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-5 transition-all hover:shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e2e8f0] pb-3 mb-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] font-mono">ID: {id}</p>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${statusClasses(status)}`}>
                       {status}
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-700">{submittedReason}</p>
+                  <div className="mb-4">
+                    <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-1.5">Submitted Reason</p>
+                    <p className="text-sm font-medium text-[#0f172a] leading-relaxed bg-white border border-[#e2e8f0] p-3 rounded-lg">
+                      {submittedReason}
+                    </p>
+                  </div>
 
-                  <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
-                    <p>Submitted: {formatDateTime(createdAt)}</p>
-                    <p>Reviewed: {formatDateTime(reviewedAt)}</p>
-                    <p>Reviewer: {reviewedBy || "-"}</p>
-                    <p>Decision: {decision || "-"}</p>
+                  <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4 bg-white p-3 rounded-lg border border-[#e2e8f0]">
+                    <div>
+                      <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-0.5">Submitted On</p>
+                      <p className="text-xs font-semibold text-[#475569]">{formatDateTime(createdAt)}</p>
+                    </div>
+                    {status !== "SUBMITTED" && (
+                      <>
+                        <div>
+                          <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-0.5">Reviewed On</p>
+                          <p className="text-xs font-semibold text-[#475569]">{formatDateTime(reviewedAt)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-0.5">Reviewed By</p>
+                          <p className="text-xs font-semibold text-[#475569] truncate">{reviewedBy || "-"}</p>
+                        </div>
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider mb-0.5">Decision Note</p>
+                          <p className="text-xs font-semibold text-[#475569] italic truncate" title={decision || ""}>
+                            {decision || "No note provided"}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </article>
               );

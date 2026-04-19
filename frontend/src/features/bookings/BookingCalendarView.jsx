@@ -97,33 +97,38 @@ export default function BookingCalendarView({ facilityId }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-slate-100">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-slate-900">{monthName}</h2>
+    <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#e2e8f0]">
+      <div className="flex items-center justify-between mb-6 border-b border-[#e2e8f0] pb-4">
+        <h2 className="text-xl font-bold text-[#0f172a]">{monthName}</h2>
         <div className="flex gap-2">
           <button
             onClick={handlePrevMonth}
-            className="px-3 py-1 rounded bg-slate-200 text-slate-900 hover:bg-slate-300 transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-[#f1f5f9] text-[#0f172a] font-semibold hover:bg-[#e2e8f0] transition-colors text-sm"
           >
             ← Prev
           </button>
           <button
             onClick={handleNextMonth}
-            className="px-3 py-1 rounded bg-slate-200 text-slate-900 hover:bg-slate-300 transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-[#f1f5f9] text-[#0f172a] font-semibold hover:bg-[#e2e8f0] transition-colors text-sm"
           >
             Next →
           </button>
         </div>
       </div>
 
-      {loading && <p className="text-center text-slate-600">Loading calendar...</p>}
-      {error && <p className="text-center text-red-600 text-sm">{error}</p>}
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin"></div>
+        </div>
+      )}
+      
+      {error && <p className="text-center text-[#ef4444] font-medium text-sm py-4">{error}</p>}
 
-      {!loading && (
-        <div className="grid grid-cols-7 gap-1">
+      {!loading && !error && (
+        <div className="grid grid-cols-7 gap-2">
           {/* Weekday headers */}
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div key={day} className="text-center font-semibold text-sm text-slate-700 py-2">
+            <div key={day} className="text-center font-bold text-[10px] uppercase tracking-wider text-[#94a3b8] py-2">
               {day}
             </div>
           ))}
@@ -134,26 +139,30 @@ export default function BookingCalendarView({ facilityId }) {
             return (
               <div
                 key={idx}
-                className={`min-h-24 p-2 rounded border ${
+                className={`min-h-[100px] p-2.5 rounded-xl border transition-all ${
                   day
                     ? dayBookings.length > 0
-                      ? "bg-yellow-50 border-yellow-200"
-                      : "bg-green-50 border-green-200"
-                    : "bg-slate-50 border-slate-200"
+                      ? "bg-[#fffbeb] border-[#fde68a] hover:shadow-sm"
+                      : "bg-[#f8fafc] border-[#e2e8f0] hover:bg-white hover:border-[#cbd5e1]"
+                    : "bg-transparent border-transparent"
                 }`}
               >
                 {day && (
                   <>
-                    <p className="text-sm font-semibold text-slate-900">{day}</p>
+                    <p className={`text-sm font-bold mb-2 ${dayBookings.length > 0 ? "text-[#b45309]" : "text-[#475569]"}`}>
+                      {day}
+                    </p>
                     {dayBookings.length > 0 && (
-                      <div className="mt-1 text-xs space-y-0.5">
+                      <div className="space-y-1.5">
                         {dayBookings.slice(0, 2).map((booking) => (
-                          <div key={booking.id} className="bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded truncate">
-                            {formatTime(booking.startTime)}
+                          <div key={booking.id} className="bg-white/60 border border-[#fde68a] text-[#92400e] px-1.5 py-1 rounded-md text-[10px] font-semibold truncate shadow-sm">
+                            {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                           </div>
                         ))}
                         {dayBookings.length > 2 && (
-                          <div className="text-slate-600">+{dayBookings.length - 2} more</div>
+                          <div className="text-[10px] font-bold text-[#b45309] px-1">
+                            +{dayBookings.length - 2} more
+                          </div>
                         )}
                       </div>
                     )}
@@ -165,13 +174,13 @@ export default function BookingCalendarView({ facilityId }) {
         </div>
       )}
 
-      <div className="mt-4 flex gap-4 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-100 border border-green-200" />
+      <div className="mt-6 pt-4 border-t border-[#e2e8f0] flex gap-6 text-xs font-semibold">
+        <div className="flex items-center gap-2 text-[#475569]">
+          <div className="w-3 h-3 rounded-full bg-[#f8fafc] border border-[#e2e8f0]" />
           <span>Available</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-yellow-100 border border-yellow-200" />
+        <div className="flex items-center gap-2 text-[#b45309]">
+          <div className="w-3 h-3 rounded-full bg-[#fffbeb] border border-[#fde68a]" />
           <span>Booked</span>
         </div>
       </div>

@@ -442,6 +442,99 @@ const registerWithEmailPassword = async (
   }
 };
 
+/**
+ * Send OTP to email address
+ * NEW OTP-based registration flow (no admin approval needed)
+ * Step 1: Request OTP
+ */
+const sendOtp = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/otp/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "Failed to send OTP",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Send OTP error:", error);
+    throw {
+      type: "OTP_SEND_FAILED",
+      message: error.message || "Failed to send OTP",
+      ...error,
+    };
+  }
+};
+
+/**
+ * Verify OTP and complete registration
+ * NEW OTP-based registration flow (no admin approval needed)
+ * Step 2: Verify OTP and auto-register
+ */
+const verifyOtpAndRegister = async (
+  email,
+  otp,
+  displayName,
+  password,
+  confirmPassword,
+  roleRequested = "USER",
+  registrationNumber = "",
+  employeeNumber = "",
+) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v1/auth/otp/verify-and-register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp,
+          displayName,
+          password,
+          confirmPassword,
+          roleRequested,
+          registrationNumber,
+          employeeNumber,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        status: response.status,
+        message: errorData.message || "OTP verification failed",
+        code: errorData.code,
+      };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    throw {
+      type: "OTP_VERIFICATION_FAILED",
+      message: error.message || "Failed to verify OTP and register",
+      ...error,
+    };
+  }
+};
+
 export const authService = {
   // Token management
   getAccessToken,
@@ -468,6 +561,10 @@ export const authService = {
   // Email/Password authentication
   loginWithEmailPassword,
   registerWithEmailPassword,
+
+  // OTP-based registration (new flow)
+  sendOtp,
+  verifyOtpAndRegister,
 
   // Logout
   logout,

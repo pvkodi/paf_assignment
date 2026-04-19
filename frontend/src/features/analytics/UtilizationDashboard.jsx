@@ -20,16 +20,16 @@ function GaugeChart({ value = 0, max = 100, label, color = "#6366f1", size = 120
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={half} cy={half} r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
+        <circle cx={half} cy={half} r={r} fill="none" stroke="#f8fafc" strokeWidth="10" />
         <circle cx={half} cy={half} r={r} fill="none" stroke={color} strokeWidth="10"
           strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
           strokeLinecap="round" transform={`rotate(-90 ${half} ${half})`}
           style={{ transition: "stroke-dashoffset 1s ease" }} />
-        <text x={half} y={half - 4} textAnchor="middle" className="fill-gray-900 text-lg font-black"
+        <text x={half} y={half - 4} textAnchor="middle" className="fill-[#0f172a] text-lg font-black"
           dominantBaseline="central" style={{ fontSize: size * 0.22 }}>
           {typeof value === "number" ? value.toFixed(1) : value}
         </text>
-        <text x={half} y={half + size * 0.14} textAnchor="middle" className="fill-gray-400"
+        <text x={half} y={half + size * 0.14} textAnchor="middle" className="fill-[#94a3b8]"
           style={{ fontSize: size * 0.09, fontWeight: 700 }}>
           {label || "%"}
         </text>
@@ -40,7 +40,7 @@ function GaugeChart({ value = 0, max = 100, label, color = "#6366f1", size = 120
 
 // ── Vertical Bar Chart ────────────────────────────────────────────────────────
 function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", label }) {
-  if (!data.length) return <p className="text-xs text-gray-400 italic p-4">No data</p>;
+  if (!data.length) return <p className="text-xs text-[#94a3b8] italic p-4">No data</p>;
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const barW = Math.max(6, Math.min(32, (width - 48) / data.length - 5));
   const chartH = height - 36;
@@ -80,12 +80,12 @@ function BarChart({ data = [], width = 320, height = 160, barColor = "#6366f1", 
 // ── Horizontal Bar Chart (Rankings) ───────────────────────────────────────────
 function HBarChart({ data = [], maxItems = 5, height = 160, color = "#6366f1", label }) {
   const items = data.slice(0, maxItems);
-  if (!items.length) return <p className="text-xs text-gray-400 italic p-4">No data</p>;
+  if (!items.length) return <p className="text-xs text-[#94a3b8] italic p-4">No data</p>;
   const maxVal = Math.max(...items.map(d => d.value), 1);
   const barH = Math.min(20, (height - 10) / items.length - 6);
   return (
     <div>
-      {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{label}</p>}
+      {label && <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mb-3">{label}</p>}
       <div className="space-y-2">
         {items.map((d, i) => (
           <div key={i} className="flex items-center gap-3 group">
@@ -147,7 +147,7 @@ function DonutChart({ segments = [], size = 140, label }) {
 
 // ── Area Sparkline ────────────────────────────────────────────────────────────
 function AreaChart({ data = [], width = 300, height = 80, color = "#6366f1", label, showDots }) {
-  if (data.length < 2) return <p className="text-xs text-gray-400 italic p-4">Insufficient data</p>;
+  if (data.length < 2) return <p className="text-xs text-[#94a3b8] italic p-4">Insufficient data</p>;
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const minVal = 0;
   const range = maxVal - minVal || 1;
@@ -456,8 +456,8 @@ export function UtilizationDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-        <h2 className="text-xl font-bold text-gray-400">Administration Access Required</h2>
+      <div className="p-10 text-center bg-[#f8fafc] rounded-2xl border-2 border-dashed border-[#e2e8f0]">
+        <h2 className="text-xl font-bold text-[#94a3b8]">Administration Access Required</h2>
       </div>
     );
   }
@@ -619,7 +619,7 @@ export function UtilizationDashboard() {
 
         {/* Row 2: Gauges */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <GaugeChart value={fOverall} label="Current Rate" color="#6366f1" size={130} />
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
@@ -628,7 +628,7 @@ export function UtilizationDashboard() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
             <GaugeChart value={u7} label="7-Day" color="#6366f1" size={130} />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center">
+          <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col items-center">
             <DonutChart segments={periodData} size={130} label="Usage by Period" />
           </div>
         </div>
@@ -665,7 +665,7 @@ export function UtilizationDashboard() {
               </div>
             ))}
             {(!ins.best_booking_slots || ins.best_booking_slots.length === 0) && (
-              <p className="text-xs text-gray-500 col-span-4 italic">No slot data yet — awaiting more booking history.</p>
+              <p className="text-xs text-[#64748b] col-span-4 italic">No slot data yet — awaiting more booking history.</p>
             )}
           </div>
         </div>

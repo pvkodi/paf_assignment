@@ -16,9 +16,9 @@ function formatTimestamp(value) {
 
 function severityClass(severity) {
   if (severity === "HIGH") {
-    return "bg-red-100 text-red-700";
+    return "bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]";
   }
-  return "bg-blue-100 text-blue-700";
+  return "bg-[#f0fdf4] text-[#166534] border-[#86efac]";
 }
 
 export function NotificationCenter() {
@@ -100,70 +100,87 @@ export function NotificationCenter() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-indigo-600" />
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
+        <p className="text-sm font-medium text-[#64748b]">Loading notifications...</p>
       </div>
     );
   }
 
   return (
-    <section className="space-y-5">
-      <header className="rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Notification Center</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Unread notifications: {unreadCount}
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={working || unreadCount === 0}
-            onClick={markAllAsRead}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Mark all as read
-          </button>
+    <section className="space-y-6">
+      <header className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">Notification Center</h2>
+          <p className="mt-1 text-sm font-medium text-[#64748b]">
+            Unread alerts: <span className="font-bold text-[#0f172a]">{unreadCount}</span>
+          </p>
         </div>
+        <button
+          type="button"
+          disabled={working || unreadCount === 0}
+          onClick={markAllAsRead}
+          className="rounded-xl border border-[#e2e8f0] px-4 py-2 text-sm font-bold text-[#475569] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+          Mark all as read
+        </button>
       </header>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[#fca5a5] bg-[#fef2f2] p-4 text-sm font-semibold text-[#991b1b] flex items-center gap-3 shadow-sm">
+          <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           {error}
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {notifications.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-            No notifications available.
+          <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-10 text-center shadow-sm">
+            <div className="w-16 h-16 bg-white border border-[#e2e8f0] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[#94a3b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            </div>
+            <p className="text-lg font-bold text-[#0f172a]">All caught up!</p>
+            <p className="text-sm text-[#64748b] mt-1">You have no new notifications.</p>
           </div>
         ) : (
           notifications.map((notification) => (
             <article
               key={notification.id}
-              className={`rounded-xl border p-4 ${
-                notification.read ? "border-slate-200 bg-white" : "border-indigo-200 bg-indigo-50"
+              className={`rounded-xl border p-5 transition-all ${
+                notification.read 
+                  ? "border-[#e2e8f0] bg-[#f8fafc]" 
+                  : "border-[#6366f1] bg-white shadow-sm ring-1 ring-inset ring-[#6366f1]/10"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">{notification.title}</h3>
-                  <p className="mt-1 text-sm text-slate-700">{notification.message}</p>
+                <div className="flex-1 pr-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    {!notification.read && <span className="w-2 h-2 rounded-full bg-[#6366f1] shrink-0 animate-pulse"></span>}
+                    <h3 className={`text-sm font-bold ${notification.read ? "text-[#475569]" : "text-[#0f172a]"}`}>
+                      {notification.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm font-medium text-[#475569] leading-relaxed ml-[1.125rem]">
+                    {notification.message}
+                  </p>
                 </div>
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${severityClass(notification.severity)}`}>
+                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${severityClass(notification.severity)}`}>
                   {notification.severity || "STANDARD"}
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-                <p>{formatTimestamp(notification.createdAt)}</p>
+              <div className="mt-4 ml-[1.125rem] flex flex-wrap items-center justify-between gap-3 border-t border-[#e2e8f0] pt-3">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  {formatTimestamp(notification.createdAt)}
+                </p>
                 {!notification.read && (
                   <button
                     type="button"
                     disabled={working}
                     onClick={() => markOneAsRead(notification.id)}
-                    className="rounded-md bg-indigo-600 px-2 py-1 font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-[#0f172a] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#1e293b] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
                   >
                     Mark as read
                   </button>
@@ -174,23 +191,23 @@ export function NotificationCenter() {
         )}
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 text-sm">
+      <div className="flex items-center justify-between rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
         <button
           type="button"
           disabled={page <= 0 || loading}
           onClick={() => fetchNotifications(page - 1)}
-          className="rounded-md border border-slate-300 px-3 py-1 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-[#e2e8f0] px-4 py-2 text-sm font-bold text-[#475569] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
-        <span className="text-slate-600">
+        <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">
           Page {page + 1} of {totalPages}
         </span>
         <button
           type="button"
           disabled={page >= totalPages - 1 || loading}
           onClick={() => fetchNotifications(page + 1)}
-          className="rounded-md border border-slate-300 px-3 py-1 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-[#e2e8f0] px-4 py-2 text-sm font-bold text-[#475569] transition hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>
