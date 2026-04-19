@@ -34,12 +34,11 @@ export default function BookingApprovalQueue() {
   }, []);
 
   const canApprove =
-    hasRole("LECTURER") || hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
+    hasRole("FACILITY_MANAGER") || hasRole("ADMIN");
 
   // DEBUG: Log role checks
   useEffect(() => {
     console.log("🎭 Role Check Results:");
-    console.log("  - hasRole('LECTURER'):", hasRole("LECTURER"));
     console.log(
       "  - hasRole('FACILITY_MANAGER'):",
       hasRole("FACILITY_MANAGER"),
@@ -173,8 +172,7 @@ export default function BookingApprovalQueue() {
           No Permission
         </p>
         <p className="text-[#64748b] mt-2">
-          You do not have permission to approve bookings. Only LECTURER,
-          FACILITY_MANAGER, and ADMIN roles can approve.
+          You do not have permission to approve bookings. Only FACILITY_MANAGER and ADMIN roles can approve.
         </p>
       </div>
     );

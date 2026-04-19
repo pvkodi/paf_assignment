@@ -87,11 +87,11 @@ public class BookingController {
 
     /**
      * Get pending bookings that require approval by the current user.
-     * LECTURER, FACILITY_MANAGER, and ADMIN can approve.
+     * FACILITY_MANAGER and ADMIN can approve.
      * Must be defined BEFORE /{bookingId} to avoid route matching issues.
      */
     @GetMapping("/pending-approvals")
-    @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'ADMIN')")
     public ResponseEntity<List<com.sliitreserve.api.dto.bookings.BookingDetailedResponseDTO>> getPendingApprovals(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
@@ -145,10 +145,10 @@ public class BookingController {
 
     /**
      * Approve a pending booking.
-     * Only LECTURER, FACILITY_MANAGER, and ADMIN can approve.
+     * Only FACILITY_MANAGER and ADMIN can approve.
      */
     @PostMapping("/{bookingId}/approve")
-    @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'ADMIN')")
     public ResponseEntity<BookingResponseDTO> approveBooking(
             @PathVariable UUID bookingId,
             @RequestParam(required = false) String note,
@@ -165,11 +165,11 @@ public class BookingController {
 
     /**
      * Reject a pending booking.
-     * Only LECTURER, FACILITY_MANAGER, and ADMIN can reject.
+     * Only FACILITY_MANAGER and ADMIN can reject.
      * Rejection reason is required.
      */
     @PostMapping("/{bookingId}/reject")
-    @PreAuthorize("hasAnyRole('LECTURER', 'FACILITY_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'ADMIN')")
     public ResponseEntity<BookingResponseDTO> rejectBooking(
             @PathVariable UUID bookingId,
             @RequestParam(required = false) String note,
