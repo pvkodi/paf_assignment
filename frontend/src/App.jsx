@@ -54,21 +54,64 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Dashboard */}
-            <Route index element={<DashboardPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            {/* Dashboard - Not accessible to TECHNICIAN */}
+            <Route
+              index
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="dashboard"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Facilities & Bookings */}
-            <Route path="bookings" element={<FacilitiesAndBookingsPage />} />
+            {/* Facilities & Bookings - Not accessible to TECHNICIAN */}
+            <Route
+              path="bookings"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <FacilitiesAndBookingsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="bookings/recommendations"
-              element={<BookingRecommendationsPage />}
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <BookingRecommendationsPage />
+                </ProtectedRoute>
+              }
             />
-            <Route path="my-bookings" element={<BookingsPage />} />
-            <Route path="facilities" element={<FacilitiesPage />} />
+            <Route
+              path="my-bookings"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <BookingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="facilities"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <FacilitiesPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="facilities/:id"
-              element={<FacilityDetailRoutePage />}
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <FacilityDetailRoutePage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
@@ -112,12 +155,22 @@ function App() {
               }
             />
 
-            {/* Tickets */}
+            {/* Tickets - Accessible to all authenticated users including TECHNICIAN */}
             <Route path="tickets" element={<TicketsPage />} />
             <Route path="tickets/:id" element={<TicketDetailPage />} />
 
-            {/* Notifications */}
+            {/* Notifications - Accessible to all authenticated users including TECHNICIAN */}
             <Route path="notifications" element={<NotificationsPage />} />
+
+            {/* Appeals - Not accessible to TECHNICIAN */}
+            <Route
+              path="appeals"
+              element={
+                <ProtectedRoute requiredRoles={["ADMIN", "FACILITY_MANAGER", "USER", "LECTURER"]}>
+                  <AppealsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin-only features */}
             <Route

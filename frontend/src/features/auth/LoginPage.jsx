@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -8,18 +8,21 @@ import { useAuth } from "../../contexts/AuthContext";
  * Implements FR-001: OAuth authentication via Google
  * Implements email/password authentication
  * Supports redirect parameter for post-login navigation (e.g., QR check-in flow)
+ * Role-based redirection: Admin/Facility Manager -> /dashboard, Others -> /bookings
  */
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const redirectUrl = searchParams.get("redirect");
 
   const {
     loginWithEmailPassword,
     registerWithEmailPassword,
     loading,
     error: authError,
+    user,
+    isAuthenticated,
   } = useAuth();
 
   // Local state
@@ -40,6 +43,31 @@ export function LoginPage() {
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const REDIRECT_URI = `${window.location.origin}/auth/callback`;
+
+  /**
+   * Handle role-based redirection after login
+   */
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // If explicit redirect URL provided, use it
+      if (redirectUrl) {
+        navigate(redirectUrl);
+        return;
+      }
+
+      // Role-based redirection
+      const userRoles = user?.roles || [];
+      const isAdmin = userRoles.includes("ADMIN");
+      const isFacilityManager = userRoles.includes("FACILITY_MANAGER");
+
+      if (isAdmin || isFacilityManager) {
+        navigate("/dashboard");
+      } else {
+        // Students, Lecturers, Technicians, etc. -> Bookings page
+        navigate("/bookings");
+      }
+    }
+  }, [isAuthenticated, user, navigate, redirectUrl]);
 
   /**
    * Initiates Google OAuth flow
@@ -102,7 +130,7 @@ export function LoginPage() {
     try {
       setIsProcessing(true);
       await loginWithEmailPassword(email, password);
-      navigate(redirectUrl);
+      // Navigation will be handled by the useEffect that watches isAuthenticated and user
     } catch (err) {
       setError(
         err.message || err.code === "INVALID_CREDENTIALS"

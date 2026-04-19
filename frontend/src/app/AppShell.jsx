@@ -8,6 +8,8 @@ function AppShell() {
   const location = useLocation();
   const userRoles = user?.roles || [];
   const isAdmin = userRoles.includes("ADMIN");
+  const isFacilityManager = userRoles.includes("FACILITY_MANAGER");
+  const isTechnician = userRoles.includes("TECHNICIAN");
   const canApproveBookings = userRoles.some((r) =>
     ["ADMIN", "LECTURER", "FACILITY_MANAGER"].includes(r),
   );
@@ -28,135 +30,154 @@ function AppShell() {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-hidden px-4 py-6 space-y-1">
-            <Link
-              to="/dashboard"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isDashboardActive
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/tickets"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/tickets")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Tickets
-            </Link>
-            <Link
-              to="/bookings"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/bookings") && !isActive("/admin/bookings")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Create Booking
-            </Link>
-            <Link
-              to="/my-bookings"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/my-bookings")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              My Bookings
-            </Link>
-            <Link
-              to="/facilities"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/facilities")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Facilities
-            </Link>
-            <Link
-              to="/appeals"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/appeals")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Appeals
-            </Link>
-            <Link
-              to="/notifications"
-              className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                isActive("/notifications")
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              Notifications
-            </Link>
-            {canApproveBookings && (
-              <Link
-                to="/approvals/bookings"
-                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                  isActive("/approvals/bookings")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                Booking Approvals
-              </Link>
-            )}
-            {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
-              <Link
-                to="/admin/bookings"
-                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                  isActive("/admin/bookings")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                All Bookings
-              </Link>
-            )}
-            {isAdmin && (
-              <Link
-                to="/approvals"
-                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                  isActive("/approvals") && !isActive("/approvals/bookings")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                Approval Queue
-              </Link>
-            )}
-            {isAdmin && (
-              <Link
-                to="/analytics"
-                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                  isActive("/analytics")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                Utilization
-              </Link>
-            )}
-            {isAdmin && (
-              <Link
-                to="/admin/user-management"
-                className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
-                  isActive("/admin/user-management")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                User Management
-              </Link>
+            {/* Technician: Show only Tickets and Notifications */}
+            {isTechnician ? (
+              <>
+                <Link
+                  to="/tickets"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/tickets")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Tickets
+                </Link>
+                <Link
+                  to="/notifications"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/notifications")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Notifications
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* Dashboard - Admin and Facility Managers only */}
+                {(isAdmin || isFacilityManager) && (
+                  <Link
+                    to="/dashboard"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                      isDashboardActive
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                )}
+                <Link
+                  to="/tickets"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/tickets")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Tickets
+                </Link>
+                <Link
+                  to="/bookings"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/bookings") && !isActive("/admin/bookings")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Create Booking
+                </Link>
+                <Link
+                  to="/my-bookings"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/my-bookings")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  My Bookings
+                </Link>
+                <Link
+                  to="/facilities"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/facilities")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Facilities
+                </Link>
+                <Link
+                  to="/appeals"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/appeals")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Appeals
+                </Link>
+                <Link
+                  to="/notifications"
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                    isActive("/notifications")
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Notifications
+                </Link>
+                {canApproveBookings && (
+                  <Link
+                    to="/approvals/bookings"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                      isActive("/approvals/bookings")
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Booking Approvals
+                  </Link>
+                )}
+                {(isAdmin || userRoles.includes("FACILITY_MANAGER")) && (
+                  <Link
+                    to="/admin/bookings"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                      isActive("/admin/bookings")
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    All Bookings
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    to="/approvals"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                      isActive("/approvals") && !isActive("/approvals/bookings")
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Approval Queue
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    to="/admin/user-management"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition ${
+                      isActive("/admin/user-management")
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    User Management
+                  </Link>
+                )}
+              </>
             )}
           </nav>
 
