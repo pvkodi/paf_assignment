@@ -208,7 +208,7 @@ Errors:
 
 ```
 ┌─────────────────────────────────────┐
-│  Smart Campus Registration          │
+│  VenueLink Registration          │
 ├─────────────────────────────────────┤
 │  Email Address                      │
 │  ┌─────────────────────────────────┐│
@@ -230,7 +230,7 @@ Response: OTP sent to email
 
 ```
 ┌─────────────────────────────────────┐
-│  Smart Campus Registration          │
+│  VenueLink Registration          │
 ├─────────────────────────────────────┤
 │  Code sent to student@smartcampus   │
 │                                     │
@@ -255,7 +255,7 @@ Note: OTP verification happens in Step 3
 
 ```
 ┌─────────────────────────────────────┐
-│  Smart Campus Registration          │
+│  VenueLink Registration          │
 ├─────────────────────────────────────┤
 │  Complete your registration details │
 │                                     │

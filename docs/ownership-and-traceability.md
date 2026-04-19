@@ -1,7 +1,7 @@
 # Module Ownership and Feature Traceability
 
 **Last Updated**: April 2026  
-**Document Purpose**: Establish clear module/endpoint ownership, ensure verifiable individual contributions, and maintain feature-to-code traceability across the Smart Campus Operations Hub project.
+**Document Purpose**: Establish clear module/endpoint ownership, ensure verifiable individual contributions, and maintain feature-to-code traceability across the VenueLink Operations Hub project.
 
 ---
 

@@ -275,7 +275,7 @@ public class EmailObserver implements Observer {
         body.append("Event Type: ").append(event.getEventType()).append("\n");
         body.append("Occurred At: ").append(event.getOccurrenceTime()).append("\n");
         body.append("Severity: ").append(event.getSeverity()).append("\n\n");
-        body.append("Smart Campus Operations System");
+        body.append("VenueLink Operations System");
         
         return body.toString();
     }

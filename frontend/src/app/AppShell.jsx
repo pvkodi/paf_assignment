@@ -25,7 +25,7 @@ function AppShell() {
         <aside className="w-64 h-screen sticky top-0 bg-white border-r border-slate-200 flex flex-col">
           {/* Brand/Logo */}
           <div className="p-6 border-b border-slate-200">
-            <h1 className="text-lg font-semibold text-indigo-600">Smart Campus</h1>
+            <h1 className="text-lg font-semibold text-indigo-600">VenueLink</h1>
           </div>
 
           {/* Navigation */}
@@ -206,7 +206,7 @@ function AppShell() {
         {isAuthenticated && (
           <header className="bg-white border-b border-slate-200 px-8 py-4">
             <h2 className="text-xl font-semibold text-slate-900">
-              Smart Campus Operations Hub
+              VenueLink Operations Hub
             </h2>
           </header>
         )}

@@ -1,4 +1,4 @@
-# Implementation Plan: Smart Campus Operations Hub
+# Implementation Plan: VenueLink Operations Hub
 
 **Branch**: `001-feat-pamali-smart-campus-ops-hub` | **Date**: 2026-03-23 | **Spec**: /Users/pamigee/Desktop/paf_assignment/specs/001-feat-pamali-smart-campus-ops-hub/spec.md
 **Input**: Feature specification from `/specs/001-feat-pamali-smart-campus-ops-hub/spec.md`
@@ -7,7 +7,7 @@
 
 ## Summary
 
-Deliver a Smart Campus Operations Hub that unifies authentication, facility discovery,
+Deliver a VenueLink Operations Hub that unifies authentication, facility discovery,
 policy-driven bookings, approval/escalation workflows, ticketing, notifications, and
 admin analytics in a locally deployable architecture. The technical approach is a Spring
 Boot 3.x Java 21 monolith with strict layered architecture and explicit design patterns,

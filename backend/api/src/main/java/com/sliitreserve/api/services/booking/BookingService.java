@@ -498,9 +498,24 @@ public class BookingService {
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
         
-        // Count current bookings (PENDING and APPROVED only)
+        // Count current bookings (PENDING, APPROVED, and CHECKED_IN statuses count as active)
         long weeklyBookings = bookingRepository.countWeeklyBookings(user.getId(), weekStart, weekEnd);
         long monthlyBookings = bookingRepository.countMonthlyBookings(user.getId(), monthStart, monthEnd);
+        
+        // Debug logging
+        System.out.println("DEBUG - Quota Status for user: " + user.getId());
+        System.out.println("DEBUG - Today: " + today);
+        System.out.println("DEBUG - Week range: " + weekStart + " to " + weekEnd);
+        System.out.println("DEBUG - Month range: " + monthStart + " to " + monthEnd);
+        System.out.println("DEBUG - Weekly bookings count: " + weeklyBookings);
+        System.out.println("DEBUG - Monthly bookings count: " + monthlyBookings);
+        
+        // Debug: Get all bookings for this user to see their dates
+        java.util.List<Booking> allBookings = bookingRepository.findUserBookingsWithDetails(user.getId());
+        System.out.println("DEBUG - All bookings for user: " + allBookings.size());
+        for (Booking b : allBookings) {
+            System.out.println("DEBUG   - Booking ID: " + b.getId() + ", Date: " + b.getBookingDate() + ", Status: " + b.getStatus());
+        }
         
         // Get quota limits
         int weeklyQuota = strategy.getWeeklyQuota();

@@ -59,7 +59,7 @@ export default function BookingCalendarView({ facilityId }) {
     const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       .toISOString()
       .split("T")[0];
-    return bookings.filter((b) => b.bookingDate === dateStr);
+    return bookings.filter((b) => b.booking_date === dateStr);
   };
 
   const formatTime = (timeStr) => {

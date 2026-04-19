@@ -284,12 +284,12 @@ Expected Error (400):
 
 ### Email Should Contain:
 
-- ✅ Subject: "🔐 Your OTP Code for Smart Campus Registration"
+- ✅ Subject: "🔐 Your OTP Code for VenueLink Registration"
 - ✅ Body: Welcome message
 - ✅ Body: 6-digit OTP code (clearly visible)
 - ✅ Body: Expiration time: "10 minutes"
 - ✅ Body: Security notice about not sharing
-- ✅ Body: Smart Campus branding
+- ✅ Body: VenueLink branding
 
 ## Step 7: Verify JWT Token
 

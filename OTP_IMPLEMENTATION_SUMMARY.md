@@ -153,12 +153,12 @@ Response: {
   - 6-digit OTP code
   - 10-minute expiration notice
   - Security warnings
-  - Smart Campus branding
+  - VenueLink branding
 
 **Email Template**:
 
 ```
-Subject: 🔐 Your OTP Code for Smart Campus Registration
+Subject: 🔐 Your OTP Code for VenueLink Registration
 
 Body:
 - Welcome message

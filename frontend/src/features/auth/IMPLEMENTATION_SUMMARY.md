@@ -260,7 +260,7 @@ VITE_API_URL=http://localhost:8080/api
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
 
 # App Config (optional)
-VITE_APP_NAME=Smart Campus Hub
+VITE_APP_NAME=VenueLink Hub
 VITE_APP_DEBUG=false
 ```
 

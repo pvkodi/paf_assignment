@@ -1,4 +1,4 @@
-# Smart Campus Operations Hub
+# VenueLink Operations Hub
 
 Easy setup guide to run the app locally.
 

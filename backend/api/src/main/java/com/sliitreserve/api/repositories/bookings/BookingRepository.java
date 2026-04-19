@@ -68,7 +68,7 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
     @Query("SELECT COUNT(b) FROM Booking b " +
            "WHERE b.bookedFor.id = :bookedForUserId " +
            "AND b.bookingDate >= :weekStart AND b.bookingDate <= :weekEnd " +
-           "AND b.status IN (com.sliitreserve.api.entities.booking.BookingStatus.PENDING, com.sliitreserve.api.entities.booking.BookingStatus.APPROVED)")
+           "AND (b.status = 'PENDING' OR b.status = 'APPROVED' OR b.status = 'CHECKED_IN')")
     long countWeeklyBookings(
             @Param("bookedForUserId") UUID bookedForUserId,
             @Param("weekStart") LocalDate weekStart,
@@ -77,7 +77,7 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
     @Query("SELECT COUNT(b) FROM Booking b " +
            "WHERE b.bookedFor.id = :bookedForUserId " +
            "AND b.bookingDate >= :monthStart AND b.bookingDate <= :monthEnd " +
-           "AND b.status IN (com.sliitreserve.api.entities.booking.BookingStatus.PENDING, com.sliitreserve.api.entities.booking.BookingStatus.APPROVED)")
+           "AND (b.status = 'PENDING' OR b.status = 'APPROVED' OR b.status = 'CHECKED_IN')")
     long countMonthlyBookings(
             @Param("bookedForUserId") UUID bookedForUserId,
             @Param("monthStart") LocalDate monthStart,

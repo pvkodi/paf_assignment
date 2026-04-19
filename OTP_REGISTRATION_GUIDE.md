@@ -251,15 +251,15 @@ Error Responses:
 1. Send OTP to valid email
 2. Check email inbox
 3. Verify email contains:
-   - Subject: "🔐 Your OTP Code for Smart Campus Registration"
+   - Subject: "🔐 Your OTP Code for VenueLink Registration"
    - 6-digit OTP code
    - Expiration time (10 minutes)
    - Security notice about not sharing code
-   - Smart Campus branding
+   - VenueLink branding
 
 ## Postman Testing
 
-### Collection: Smart Campus OTP Registration
+### Collection: VenueLink OTP Registration
 
 ```json
 {

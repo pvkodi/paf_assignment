@@ -94,7 +94,7 @@ public class OtpEmailObserver implements Observer {
       // Create and send OTP email
       SimpleMailMessage message = new SimpleMailMessage();
       message.setTo(email);
-      message.setSubject("🔐 Your OTP Code for Smart Campus Registration");
+      message.setSubject("🔐 Your OTP Code for VenueLink Registration");
       message.setText(formatOtpEmailBody(email, otpCode));
 
       javaMailSender.send(message);
@@ -133,7 +133,7 @@ public class OtpEmailObserver implements Observer {
    * @return Formatted email body text
    */
   private String formatOtpEmailBody(String email, String otpCode) {
-    return "Welcome to Smart Campus,\n\n"
+    return "Welcome to VenueLink,\n\n"
         + "Thank you for registering. To complete your registration, please use the following OTP code:\n\n"
         + "═══════════════════════════════════\n"
         + "OTP CODE: " + otpCode + "\n"
@@ -141,10 +141,10 @@ public class OtpEmailObserver implements Observer {
         + "This code will expire in 10 minutes.\n\n"
         + "Important Security Notice:\n"
         + "- Never share this code with anyone\n"
-        + "- Smart Campus staff will never ask for this code\n"
+        + "- VenueLink staff will never ask for this code\n"
         + "- If you did not request this code, please ignore this email\n\n"
         + "If you have any questions, please contact our support team.\n\n"
         + "Best regards,\n"
-        + "Smart Campus Operations System";
+        + "VenueLink Operations System";
   }
 }

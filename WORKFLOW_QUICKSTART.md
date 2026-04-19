@@ -2,7 +2,7 @@
 
 ## What's New
 
-Your Smart Campus API now has a complete check-in to suspension workflow:
+Your VenueLink API now has a complete check-in to suspension workflow:
 
 1. **Check-In Endpoints** - Users can check in via QR or staff can check them in manually
 2. **Automatic No-Show Detection** - Scheduler runs every 10 minutes to find no-shows
