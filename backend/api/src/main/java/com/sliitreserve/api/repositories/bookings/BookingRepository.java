@@ -84,38 +84,38 @@ public interface BookingRepository extends BaseRepository<Booking, UUID> {
             @Param("monthEnd") LocalDate monthEnd);
 
     @Query(value = "SELECT COUNT(*) FROM booking b " +
-           "WHERE b.facility_id = :facilityId " +
+           "WHERE b.facility_id = CAST(:facilityId AS UUID) " +
            "AND b.status IN ('APPROVED', 'PENDING') " +
-           "AND b.booking_date = DATE(:now) " +
-           "AND b.start_time <= TIME(:now) " +
-           "AND b.end_time > TIME(:now)", nativeQuery = true)
+           "AND b.booking_date = CAST(:now AS DATE) " +
+           "AND b.start_time <= CAST(:now AS TIME) " +
+           "AND b.end_time > CAST(:now AS TIME)", nativeQuery = true)
     long countActiveBookings(@Param("facilityId") String facilityId,
                              @Param("now") java.time.LocalDateTime now);
 
     @Query(value = "SELECT MIN(b.end_time) FROM booking b " +
-           "WHERE b.facility_id = :facilityId " +
+           "WHERE b.facility_id = CAST(:facilityId AS UUID) " +
            "AND b.status IN ('APPROVED', 'PENDING') " +
-           "AND b.end_time > TIME(:now)", nativeQuery = true)
+           "AND b.end_time > CAST(:now AS TIME)", nativeQuery = true)
     java.util.Optional<java.time.LocalTime> findNextAvailabilityTime(
             @Param("facilityId") String facilityId,
             @Param("now") java.time.LocalDateTime now);
 
     @Query(value = "SELECT * FROM booking b " +
-           "WHERE b.facility_id = :facilityId " +
+           "WHERE b.facility_id = CAST(:facilityId AS UUID) " +
            "AND b.status IN ('APPROVED', 'PENDING') " +
-           "AND b.booking_date >= DATE(:now) " +
-           "AND (b.booking_date > DATE(:now) OR b.start_time > TIME(:now)) " +
+           "AND b.booking_date >= CAST(:now AS DATE) " +
+           "AND (b.booking_date > CAST(:now AS DATE) OR b.start_time > CAST(:now AS TIME)) " +
            "ORDER BY b.booking_date ASC, b.start_time ASC " +
            "LIMIT 1", nativeQuery = true)
     java.util.Optional<Booking> findNextBooking(@Param("facilityId") String facilityId,
                                                 @Param("now") java.time.LocalDateTime now);
 
     @Query(value = "SELECT COUNT(*) FROM booking b " +
-           "WHERE b.facility_id = :facilityId " +
+           "WHERE b.facility_id = CAST(:facilityId AS UUID) " +
            "AND b.status IN ('APPROVED', 'PENDING') " +
-           "AND b.start_time < TIME(:endTime) " +
-           "AND b.end_time > TIME(:startTime) " +
-           "AND DATE(b.booking_date) = DATE(:startTime)", nativeQuery = true)
+           "AND b.start_time < CAST(:endTime AS TIME) " +
+           "AND b.end_time > CAST(:startTime AS TIME) " +
+           "AND b.booking_date = CAST(:startTime AS DATE)", nativeQuery = true)
     long countBookingsBetween(@Param("facilityId") String facilityId,
                              @Param("startTime") java.time.LocalDateTime startTime,
                              @Param("endTime") java.time.LocalDateTime endTime);

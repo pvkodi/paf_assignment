@@ -398,9 +398,27 @@ export function UtilizationDashboard() {
   useEffect(() => {
     if (!isAdmin) return;
     (async () => {
-      const facs = await fetchFacilities({ page: 0, size: 100 });
-      setFacList(facs.content || []);
-      if (facs.content?.length > 0) setSelectedFacility(facs.content[0].id);
+      try {
+        const pageSize = 100;
+        let page = 0;
+        let totalPages = 1;
+        const allFacilities = [];
+
+        do {
+          const facs = await fetchFacilities({ page, size: pageSize });
+          const pageItems = facs?.content || [];
+          allFacilities.push(...pageItems);
+          totalPages = Number.isFinite(facs?.totalPages) ? facs.totalPages : 1;
+          page += 1;
+        } while (page < totalPages);
+
+        setFacList(allFacilities);
+        if (allFacilities.length > 0) {
+          setSelectedFacility(prev => prev || allFacilities[0].id);
+        }
+      } catch {
+        setFacList([]);
+      }
       try { setRealTime(await fetchRealTimeStatus()); } catch {}
     })();
   }, [isAdmin]);
@@ -543,16 +561,24 @@ export function UtilizationDashboard() {
 
     // Derive hourly/daily from facility-specific heatmap
     const cells = facilityHeatmap?.cells || [];
+    
+    // Normalize heatmap cells to handle different API field names
+    const normalizedCells = cells.map(c => ({
+      dayOfWeek: c.dayOfWeek ?? c.day_of_week,
+      hour: c.hour ?? c.hourOfDay,
+      utilizationPercent: c.avgUtilizationPercent ?? c.avg_utilization_percent ?? c.utilizationPercent ?? 0
+    }));
+    
     const fDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const fByDay = fDays.map((name, d) => {
-      const c = cells.filter(h => Number(h.dayOfWeek ?? h.dayOfWeekIndex) === d);
-      return { name, value: c.length ? c.reduce((s, x) => s + Number(x.utilizationPercent ?? x.utilizationPercentage ?? 0), 0) / c.length : 0 };
+      const c = normalizedCells.filter(h => Number(h.dayOfWeek) === d);
+      return { name, value: c.length ? c.reduce((s, x) => s + Number(x.utilizationPercent), 0) / c.length : 0 };
     });
     const fByHour = Array(24).fill(0).map((_, h) => {
-      const c = cells.filter(x => Number(x.hourOfDay ?? x.hour) === h);
-      return { name: `${h}h`, value: c.length ? c.reduce((s, x) => s + Number(x.utilizationPercent ?? x.utilizationPercentage ?? 0), 0) / c.length : 0 };
+      const c = normalizedCells.filter(x => Number(x.hour) === h);
+      return { name: `${h}h`, value: c.length ? c.reduce((s, x) => s + Number(x.utilizationPercent), 0) / c.length : 0 };
     });
-    const fOverall = cells.length ? cells.reduce((s, c) => s + Number(c.utilizationPercent ?? c.utilizationPercentage ?? 0), 0) / cells.length : u30;
+    const fOverall = normalizedCells.length ? normalizedCells.reduce((s, c) => s + Number(c.utilizationPercent), 0) / normalizedCells.length : u30;
     const fPeakHour = fByHour.reduce((b, h) => h.value > b.value ? h : b, { value: 0, name: "-" });
     const fQuietHour = fByHour.filter(h => h.value > 0).reduce((b, h) => h.value < b.value ? h : b, { value: 999, name: "-" });
 
@@ -611,7 +637,7 @@ export function UtilizationDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
           <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-5">This Facility Utilization Heatmap</p>
-            <MiniHeatmap heatmapData={cells} />
+            <MiniHeatmap heatmapData={normalizedCells} />
           </div>
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center">
             <AreaChart data={fByHour} width={320} height={180} label="24-Hour Pattern" color="#8b5cf6" showDots />
@@ -697,10 +723,16 @@ export function UtilizationDashboard() {
             </button>
           </div>
           {scope === "facility" && (
-            <select value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)}
-              className="bg-gray-50 rounded-lg px-3 py-2 text-xs font-bold text-gray-700 border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              {facList.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
+            <div className="flex items-center gap-3">
+              <select value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)}
+                className="bg-gray-50 rounded-lg px-3 py-2 text-xs font-bold text-gray-700 border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">Select a facility...</option>
+                {facList.map(f => <option key={f.id} value={f.id}>{f.name} ({f.type?.replace(/_/g, " ")})</option>)}
+              </select>
+              {facList.length === 0 && (
+                <span className="text-xs text-gray-500 italic">No facilities available</span>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-3">
