@@ -1026,10 +1026,22 @@ export default function FacilityManagementDashboard() {
         );
         toast.success("Facility updated successfully.");
         console.log("✅ Facility updated successfully");
+
+        const detailId = updatedFacility?.id ?? editingFacility.id;
+        setModalOpen(false);
+        navigate(`/facilities/${detailId}`);
+        return;
       } else {
-        await createFacility(payload);
+        const createdFacility = await createFacility(payload);
         toast.success("Facility created successfully.");
         console.log("✅ Facility created successfully");
+
+        const detailId = createdFacility?.id;
+        setModalOpen(false);
+        if (detailId) {
+          navigate(`/facilities/${detailId}`);
+          return;
+        }
       }
       setModalOpen(false);
       await load(page);
